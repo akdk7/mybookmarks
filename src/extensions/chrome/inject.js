@@ -151,6 +151,31 @@
         // Immediate resolve; background will store state
         resolve({ success: true });
       });
+    },
+
+    async proxyFetch(request = {}) {
+      return new Promise((resolve, reject) => {
+        const requestId = 'proxy-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        window.postMessage({ type: 'PROXY_FETCH', requestId, request }, '*');
+
+        const timeout = setTimeout(() => {
+          reject(new Error('Timeout waiting for proxy response'));
+        }, 30000);
+
+        function handler(event) {
+          const data = event.data;
+          if (!data || data.type !== 'PROXY_FETCH_RESPONSE' || data.requestId !== requestId) return;
+          clearTimeout(timeout);
+          window.removeEventListener('message', handler);
+          if (data.result && data.result.error) {
+            reject(new Error(data.result.error));
+          } else {
+            resolve(data.result);
+          }
+        }
+
+        window.addEventListener('message', handler);
+      });
     }
   };
 

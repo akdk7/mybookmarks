@@ -2646,7 +2646,18 @@
     .feature-list.small {
       font-size: 0.9rem;
     }
-    
+
+    .link-shorteners-list .link-shorteners-item {
+      background-color: var(--bs-body-bg, #fff);
+      border-radius: 0.5rem;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      margin-bottom: 0.75rem;
+    }
+
+    .link-shorteners-list .badge {
+      font-size: 0.75rem;
+    }
+
     .text-purple {
       color: #6f42c1;
     }
@@ -4656,6 +4667,23 @@
       <li v-if="hasNtfyUrl() && contextLink.url" @click="shareLink(contextLink)">{{ getTranslation('menu.link.sendLink') }}</li>
       <li class="separator mb-context-menu-separator" v-if="contextLink.url"></li>
       <li @click="showQrCodeModal(contextLink.url)" v-if="contextLink.url">{{ getTranslation('menu.link.createQrCode') }}</li>
+      <li class="separator mb-context-menu-separator" v-if="(linkShortenerEnabledSet.size > 0)"></li>
+      <li class="submenu" tabindex="0" v-if="(linkShortenerEnabledSet.size > 0) || (linkShortenerServices && linkShortenerServices.length)">
+        {{ getTranslation('menu.link.shorten') || 'Shorten URL via…' }}
+        <ul class="context-submenu mb-context-submenu">
+          <li v-if="linkShortenerEnabledSet.size === 0" class="disabled">
+            {{ getTranslation('menu.link.shorten.disabled') || 'Configure providers in the settings to enable shortening' }}
+          </li>
+          <li v-for="service in linkShortenerMenuEntries" :key="'shortener-' + service.id"
+              :class="{ 'disabled': !contextLink || !contextLink.url }"
+              @click.prevent="contextLink && contextLink.url ? shortenLinkWithService(service) : null">
+            {{ service.name }}
+          </li>
+          <li v-if="contextLink && !contextLink.url" class="disabled">
+            {{ getTranslation('menu.link.shorten.noUrl') || 'No URL available' }}
+          </li>
+        </ul>
+      </li>
       <li class="separator mb-context-menu-separator"></li>
       <li class="submenu" tabindex="0">
         {{ getTranslation('menu.link.copyForCss') || 'Copy for CSS' }}
@@ -5392,6 +5420,71 @@
                       :rows="field.rows || 3"
                     ></textarea>
                     <div v-if="field.helpText" class="form-text mb-edit-field-help">{{ getTranslation(field.helpText) }}</div>
+                  </div>
+
+                  <!-- Link Shorteners Field -->
+                  <div v-else-if="field.type === 'linkShorteners'" class="link-shorteners-field">
+                    <label class="form-label mb-edit-field-label d-flex justify-content-between align-items-center flex-wrap gap-2">
+                      <span>{{ getTranslation(field.translateKey) || fieldKey }}</span>
+                      <small class="text-muted">{{ getTranslation('options.linkShorteners.menuHint') }}</small>
+                    </label>
+                    <div v-if="field.helpText" class="form-text mb-edit-field-help">{{ getTranslation(field.helpText) }}</div>
+                    <div class="list-group link-shorteners-list">
+                      <div v-for="service in linkShortenerServices" :key="service.id" class="list-group-item link-shorteners-item">
+                        <div class="d-flex flex-column flex-md-row align-items-md-start gap-3">
+                          <div class="flex-grow-1">
+                            <div class="form-check form-switch mb-2">
+                              <input class="form-check-input" type="checkbox" :id="'shortener-toggle-' + service.id"
+                                :checked="isShortenerEnabled(service.id, true)"
+                                @change="toggleShortenerService(service.id, $event.target.checked)">
+                              <label class="form-check-label fw-semibold" :for="'shortener-toggle-' + service.id">
+                                {{ service.name }}
+                              </label>
+                            </div>
+                            <div class="small text-muted">{{ getTranslation('options.linkShorteners.summary') }}: {{ getServiceText(service, 'summary') }}</div>
+                            <div class="small mt-1">{{ getTranslation('options.linkShorteners.audience') }}: {{ getServiceText(service, 'audience') }}</div>
+                            <div class="mt-2" v-if="service.integrations && service.integrations.length">
+                              <span class="badge rounded-pill bg-light text-secondary border me-1" v-for="integration in service.integrations" :key="service.id + '-' + integration.name">
+                                {{ integration.name }}
+                                <span v-if="integration.score !== null && integration.score !== undefined" class="ms-1 text-muted">{{ formatIntegrationScore(integration.score) }}</span>
+                              </span>
+                            </div>
+                          </div>
+                          <div class="text-md-end small flex-shrink-0">
+                            <span v-if="service.accountRequired" class="badge bg-warning text-dark">{{ getTranslation('options.linkShorteners.requiresAccount') }}</span>
+                            <span v-else class="badge bg-success text-white">{{ getTranslation('options.linkShorteners.optionalAccount') }}</span>
+                            <div v-if="!isShortenerEnabled(service.id, true)" class="mt-2 text-muted">
+                              {{ getTranslation('options.linkShorteners.notEnabled') }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row g-2 mt-3">
+                          <div class="col-md-6">
+                            <input type="text" class="form-control form-control-sm"
+                              :placeholder="getTranslation('options.linkShorteners.accountLabel')"
+                              :value="getShortenerAccount(service.id, true).label"
+                              :disabled="!isShortenerEnabled(service.id, true)"
+                              @input="updateShortenerAccount(service.id, 'label', $event.target.value)">
+                            <div class="form-text" v-if="getTranslation('options.linkShorteners.accountLabel.help')">{{ getTranslation('options.linkShorteners.accountLabel.help') }}</div>
+                          </div>
+                          <div class="col-md-6">
+                            <input type="text" class="form-control form-control-sm"
+                              :placeholder="getTranslation('options.linkShorteners.apiKey')"
+                              :value="getShortenerAccount(service.id, true).apiKey"
+                              :disabled="!isShortenerEnabled(service.id, true)"
+                              @input="updateShortenerAccount(service.id, 'apiKey', $event.target.value)">
+                            <div class="form-text" v-if="getTranslation('options.linkShorteners.apiKey.help')">{{ getTranslation('options.linkShorteners.apiKey.help') }}</div>
+                          </div>
+                        </div>
+                        <div class="d-flex justify-content-end mt-2">
+                          <button type="button" class="btn btn-sm btn-outline-secondary"
+                            :disabled="!getShortenerAccount(service.id, true).label && !getShortenerAccount(service.id, true).apiKey"
+                            @click="clearShortenerAccount(service.id)">
+                            {{ getTranslation('clear') || 'Leeren' }}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <!-- Action/Button Field -->
@@ -6956,6 +7049,29 @@ function getDefaultFaviconRules() {
         await window.MyBookmarksExtension.setDavAuth({ serverUrl, username, password });
         return true;
       } catch { return false; }
+    };
+
+    MB.Extension.proxyFetch = async function(request = {}) {
+      if (!MB.Extension.isAvailable()) {
+        throw new Error('Extension not available');
+      }
+      const extension = window.MyBookmarksExtension;
+      if (!extension || typeof extension.proxyFetch !== 'function') {
+        throw new Error('Extension proxyFetch API missing');
+      }
+      try {
+        const response = await extension.proxyFetch(request);
+        if (!response) {
+          throw new Error('Empty proxy response');
+        }
+        if (response.error) {
+          throw new Error(response.error);
+        }
+        return response;
+      } catch (error) {
+        debugLog('error', '[PROXY] Extension proxyFetch failed', { request, error });
+        throw error;
+      }
     };
 
     // ===== CARDDAV HELPERS (transport strictly via extension) =====
@@ -11471,6 +11587,518 @@ function getDefaultFaviconRules() {
 
     MB.Sync.SharingService = SharingService;
 
+    const LINK_SHORTENER_SERVICES = [
+      {
+        id: 'bitly',
+        name: 'Bitly',
+        demoDomain: 'https://bit.ly',
+        summaryKey: 'shorteners.services.bitly.summary',
+        audienceKey: 'shorteners.services.bitly.audience',
+        integrations: [
+          { name: 'Elementor', score: 3 },
+          { name: 'Branch', score: 3 },
+          { name: 'geotargetly.com', score: 3 }
+        ],
+        accountRequired: true
+      },
+      {
+        id: 'rebrandly',
+        name: 'Rebrandly',
+        demoDomain: 'https://rebrand.ly',
+        summaryKey: 'shorteners.services.rebrandly.summary',
+        audienceKey: 'shorteners.services.rebrandly.audience',
+        integrations: [
+          { name: 'Emelia', score: 3 },
+          { name: 'Zapier', score: 3 },
+          { name: 'Branch', score: 3 }
+        ],
+        accountRequired: true
+      },
+      {
+        id: 'tinyurl',
+        name: 'TinyURL',
+        demoDomain: 'https://tinyurl.com',
+        summaryKey: 'shorteners.services.tinyurl.summary',
+        audienceKey: 'shorteners.services.tinyurl.audience',
+        integrations: [
+          { name: 'Zapier', score: 2 },
+          { name: 'onstipe.com', score: 2 }
+        ],
+        accountRequired: false
+      },
+      {
+        id: 'blink',
+        name: 'BL.INK',
+        demoDomain: 'https://bl.ink',
+        summaryKey: 'shorteners.services.blink.summary',
+        audienceKey: 'shorteners.services.blink.audience',
+        integrations: [
+          { name: 'Zapier', score: 1 }
+        ],
+        accountRequired: true
+      },
+      {
+        id: 'shortio',
+        name: 'Short.io',
+        demoDomain: 'https://short.io',
+        summaryKey: 'shorteners.services.shortio.summary',
+        audienceKey: 'shorteners.services.shortio.audience',
+        integrations: [
+          { name: 'Zapier', score: 2 },
+          { name: 'Buffer', score: 2 }
+        ],
+        accountRequired: true
+      },
+      {
+        id: 'dub',
+        name: 'Dub',
+        demoDomain: 'https://dub.sh',
+        summaryKey: 'shorteners.services.dub.summary',
+        audienceKey: 'shorteners.services.dub.audience',
+        integrations: [
+          { name: 'Zapier', score: 1 }
+        ],
+        accountRequired: true
+      },
+      {
+        id: 'owly',
+        name: 'Ow.ly (Hootsuite)',
+        demoDomain: 'https://ow.ly',
+        summaryKey: 'shorteners.services.owly.summary',
+        audienceKey: 'shorteners.services.owly.audience',
+        integrations: [
+          { name: 'Social Media Dashboard', score: 1 }
+        ],
+        accountRequired: true
+      },
+      {
+        id: 'replug',
+        name: 'Replug',
+        demoDomain: 'https://replug.link',
+        summaryKey: 'shorteners.services.replug.summary',
+        audienceKey: 'shorteners.services.replug.audience',
+        integrations: [
+          { name: 'Buffer', score: 2 },
+          { name: 'Blogging Wizard', score: 2 }
+        ],
+        accountRequired: true
+      },
+      {
+        id: 't2m',
+        name: 'T2M',
+        demoDomain: 'https://t2m.one',
+        summaryKey: 'shorteners.services.t2m.summary',
+        audienceKey: 'shorteners.services.t2m.audience',
+        integrations: [
+          { name: 'companionlink.com', score: null }
+        ],
+        accountRequired: true
+      }
+    ];
+
+    const DEFAULT_PROXY_TIMEOUT_MS = 20000;
+
+    const LINK_SHORTENER_ADAPTERS = {
+      tinyurl: async ({ url, account = {}, options = {} }) => {
+        const apiKey = (account.apiKey || '').trim();
+        const slug = options.suggestedSlug || '';
+        const timeoutMs = options.timeoutMs || DEFAULT_PROXY_TIMEOUT_MS;
+
+        if (apiKey) {
+          const body = { url };
+          try {
+            const baseHost = options.baseUrl ? new URL(options.baseUrl).hostname : '';
+            if (baseHost && baseHost !== 'tinyurl.com') {
+              body.domain = baseHost;
+            }
+          } catch {}
+          if (slug) body.alias = slug;
+
+          return {
+            request: {
+              url: 'https://api.tinyurl.com/create',
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+              },
+              body: JSON.stringify(body),
+              timeoutMs
+            },
+            parse: (response) => {
+              if (!response) throw new Error('Empty response from TinyURL');
+              if (response.error) throw new Error(response.error);
+              let data = null;
+              try {
+                data = response.bodyText ? JSON.parse(response.bodyText) : null;
+              } catch (e) {
+                throw new Error('TinyURL returned invalid JSON');
+              }
+              if (!response.ok) {
+                const message = data?.errors?.[0]?.message || data?.message || `HTTP ${response.status}`;
+                throw new Error(message);
+              }
+              const shortUrl = data?.data?.tiny_url || data?.data?.tinyUrl || data?.tiny_url;
+              if (!shortUrl) {
+                throw new Error('TinyURL response missing tiny_url');
+              }
+              return {
+                shortUrl,
+                meta: {
+                  provider: 'tinyurl',
+                  id: data?.data?.id || null
+                }
+              };
+            }
+          };
+        }
+
+        const endpoint = new URL('https://tinyurl.com/api-create.php');
+        endpoint.searchParams.set('url', url);
+
+        return {
+          request: {
+            url: endpoint.toString(),
+            method: 'GET',
+            timeoutMs
+          },
+          parse: (response) => {
+            if (!response) throw new Error('Empty response from TinyURL');
+            if (response.error) throw new Error(response.error);
+            const text = (response.bodyText || '').trim();
+            if (!text) {
+              throw new Error('TinyURL returned an empty response');
+            }
+            if (!response.ok && response.status) {
+              throw new Error(text || `HTTP ${response.status}`);
+            }
+            if (/^error/i.test(text)) {
+              throw new Error(text);
+            }
+            return {
+              shortUrl: text,
+              meta: { provider: 'tinyurl' }
+            };
+          }
+        };
+      },
+      bitly: async ({ url, account = {}, options = {} }) => {
+        const token = (account.apiKey || '').trim();
+        if (!token) {
+          throw new Error('Bitly requires an API token.');
+        }
+        const domain = resolveDomain(account.label, options.baseUrl, 'bit.ly');
+        const body = { long_url: url };
+        if (domain) body.domain = domain;
+        if (options.suggestedSlug && domain) {
+          body.custom_bitlink = `${domain}/${options.suggestedSlug}`;
+        }
+        return {
+          request: {
+            url: 'https://api-ssl.bitly.com/v4/shorten',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body,
+            timeoutMs: options.timeoutMs || DEFAULT_PROXY_TIMEOUT_MS
+          },
+          parse: (response) => {
+            const data = parseJsonResponse(response, 'Bitly');
+            const shortUrl = data.link || data.id || '';
+            if (!shortUrl) throw new Error('Bitly response missing link');
+            return {
+              shortUrl,
+              meta: {
+                provider: 'bitly',
+                id: data.id || null
+              }
+            };
+          }
+        };
+      },
+      rebrandly: async ({ url, account = {}, options = {} }) => {
+        const apiKey = (account.apiKey || '').trim();
+        if (!apiKey) {
+          throw new Error('Rebrandly requires an API key.');
+        }
+        const body = {
+          destination: url
+        };
+        const domain = resolveDomain(account.label, options.baseUrl, 'rebrand.ly');
+        if (domain) {
+          body.domain = { fullName: domain };
+        }
+        if (options.suggestedSlug) {
+          body.slashtag = options.suggestedSlug;
+        }
+        return {
+          request: {
+            url: 'https://api.rebrandly.com/v1/links',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': apiKey
+            },
+            body,
+            timeoutMs: options.timeoutMs || DEFAULT_PROXY_TIMEOUT_MS
+          },
+          parse: (response) => {
+            const data = parseJsonResponse(response, 'Rebrandly');
+            const shortUrl = data.shortUrl || data.shortURL || data.link || '';
+            if (!shortUrl) throw new Error('Rebrandly response missing shortUrl');
+            return {
+              shortUrl: shortUrl.startsWith('http') ? shortUrl : `https://${shortUrl}`,
+              meta: {
+                provider: 'rebrandly',
+                id: data.id || null
+              }
+            };
+          }
+        };
+      },
+      blink: async ({ url, account = {}, options = {} }) => {
+        const apiKey = (account.apiKey || '').trim();
+        if (!apiKey) {
+          throw new Error('BL.INK requires an API token.');
+        }
+        const body = {
+          long_url: url
+        };
+        const domain = resolveDomain(account.label, options.baseUrl, 'bl.ink');
+        if (domain) body.domain = domain;
+        if (options.suggestedSlug) body.slashtag = options.suggestedSlug;
+        return {
+          request: {
+            url: 'https://blinkapi.com/api/v4/links',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body,
+            timeoutMs: options.timeoutMs || DEFAULT_PROXY_TIMEOUT_MS
+          },
+          parse: (response) => {
+            const data = parseJsonResponse(response, 'BL.INK');
+            const shortUrl = data.short_url || data.link || data.shortUrl || '';
+            if (!shortUrl) throw new Error('BL.INK response missing short_url');
+            return {
+              shortUrl,
+              meta: {
+                provider: 'blink',
+                id: data.id || data.uuid || null
+              }
+            };
+          }
+        };
+      },
+      'shortio': async ({ url, account = {}, options = {} }) => {
+        const apiKey = (account.apiKey || '').trim();
+        if (!apiKey) {
+          throw new Error('Short.io requires an API key.');
+        }
+        const domain = resolveDomain(account.label, options.baseUrl, 'short.io');
+        const body = {
+          originalURL: url
+        };
+        if (domain) body.domain = domain;
+        if (options.suggestedSlug) body.path = options.suggestedSlug;
+        return {
+          request: {
+            url: 'https://api.short.io/links',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'authorization': apiKey
+            },
+            body,
+            timeoutMs: options.timeoutMs || DEFAULT_PROXY_TIMEOUT_MS
+          },
+          parse: (response) => {
+            const data = parseJsonResponse(response, 'Short.io');
+            const shortUrl = data.shortURL || data.short_url || data.link || '';
+            if (!shortUrl) throw new Error('Short.io response missing shortURL');
+            return {
+              shortUrl,
+              meta: {
+                provider: 'shortio',
+                id: data.idString || data.id || null
+              }
+            };
+          }
+        };
+      },
+      dub: async ({ url, account = {}, options = {} }) => {
+        const apiKey = (account.apiKey || '').trim();
+        if (!apiKey) {
+          throw new Error('Dub requires an API token.');
+        }
+        const domain = resolveDomain(account.label, options.baseUrl, 'dub.sh');
+        const body = {
+          url
+        };
+        if (domain) body.domain = domain;
+        if (options.suggestedSlug) body.slug = options.suggestedSlug;
+        return {
+          request: {
+            url: 'https://api.dub.co/links',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body,
+            timeoutMs: options.timeoutMs || DEFAULT_PROXY_TIMEOUT_MS
+          },
+          parse: (response) => {
+            const data = parseJsonResponse(response, 'Dub');
+            const shortUrl = data.shortLink || data.shortUrl || data.link?.shortLink || data.link?.short_url || '';
+            if (!shortUrl) throw new Error('Dub response missing shortLink');
+            return {
+              shortUrl,
+              meta: {
+                provider: 'dub',
+                id: data.id || data.link?.id || null
+              }
+            };
+          }
+        };
+      },
+      owly: async ({ url, account = {}, options = {} }) => {
+        const apiKey = (account.apiKey || '').trim();
+        if (!apiKey) {
+          throw new Error('Ow.ly requires an OAuth token.');
+        }
+        const body = {
+          longUrl: url
+        };
+        if (options.suggestedSlug) body.alias = options.suggestedSlug;
+        return {
+          request: {
+            url: 'https://api.hootsuite.com/v1/links/shorten',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body,
+            timeoutMs: options.timeoutMs || DEFAULT_PROXY_TIMEOUT_MS
+          },
+          parse: (response) => {
+            const data = parseJsonResponse(response, 'Ow.ly');
+            const shortUrl = data.shortUrl || data.short_url || data.data?.owlyUrl || '';
+            if (!shortUrl) throw new Error('Ow.ly response missing shortUrl');
+            return {
+              shortUrl,
+              meta: {
+                provider: 'owly',
+                id: data.id || null
+              }
+            };
+          }
+        };
+      },
+      replug: async ({ url, account = {}, options = {} }) => {
+        const apiKey = (account.apiKey || '').trim();
+        if (!apiKey) {
+          throw new Error('Replug requires an API token.');
+        }
+        const domain = resolveDomain(account.label, options.baseUrl, 'replug.link');
+        const body = {
+          url
+        };
+        if (domain) body.domain = domain;
+        if (options.suggestedSlug) body.slug = options.suggestedSlug;
+        return {
+          request: {
+            url: 'https://app.replug.io/api/v1/links',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body,
+            timeoutMs: options.timeoutMs || DEFAULT_PROXY_TIMEOUT_MS
+          },
+          parse: (response) => {
+            const data = parseJsonResponse(response, 'Replug');
+            const shortUrl = data.short_url || data.shortUrl || data.data?.short_url || '';
+            if (!shortUrl) throw new Error('Replug response missing short_url');
+            return {
+              shortUrl,
+              meta: {
+                provider: 'replug',
+                id: data.id || data.data?.id || null
+              }
+            };
+          }
+        };
+      },
+      t2m: async ({ url, account = {}, options = {} }) => {
+        const apiKey = (account.apiKey || '').trim();
+        if (!apiKey) {
+          throw new Error('T2M requires an API key.');
+        }
+        const domain = resolveDomain(account.label, options.baseUrl, 't2m.io');
+        const body = {
+          long_url: url
+        };
+        if (domain) body.domain = domain;
+        if (options.suggestedSlug) body.custom_backhalf = options.suggestedSlug;
+        return {
+          request: {
+            url: 'https://t2mio.com/api/v1/shorten',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-API-KEY': apiKey
+            },
+            body,
+            timeoutMs: options.timeoutMs || DEFAULT_PROXY_TIMEOUT_MS
+          },
+          parse: (response) => {
+            const data = parseJsonResponse(response, 'T2M');
+            const shortUrl = data.short_url || data.shortUrl || data.data?.short_url || data.url || '';
+            if (!shortUrl) throw new Error('T2M response missing short_url');
+            return {
+              shortUrl,
+              meta: {
+                provider: 't2m',
+                id: data.id || data.data?.id || null
+              }
+            };
+          }
+        };
+      }
+    };
+
+    function resolveDomain(labelValue, baseUrl, fallback) {
+      const trimmed = (labelValue || '').trim();
+      if (trimmed) return trimmed;
+      if (baseUrl) {
+        try {
+          return new URL(baseUrl).hostname;
+        } catch {}
+      }
+      return fallback || '';
+    }
+
+    function parseJsonResponse(response, provider) {
+      let data = null;
+      try {
+        data = response?.bodyText ? JSON.parse(response.bodyText) : {};
+      } catch (err) {
+        throw new Error(`${provider} returned invalid JSON`);
+      }
+      if (!response?.ok) {
+        const message = data?.message || data?.error || data?.description || data?.errors?.[0]?.message || response?.statusText || `HTTP ${response?.status}`;
+        throw new Error(message);
+      }
+      return data || {};
+    }
+
     const initialData = {
       groups: [],
       savedSearches: [],
@@ -11513,6 +12141,10 @@ function getDefaultFaviconRules() {
           copyUrlFormat: '{title}: {url}', // Customizable format for copying links
           defaultUrlPrefix: CONSTS.DEFAULT_URL_PREFIX,
           faviconRules: getDefaultFaviconRules()
+        },
+        linkShorteners: {
+          enabledServices: [],
+          accounts: {}
         },
         buttons: {
           // Group quick-action buttons
@@ -11711,7 +12343,8 @@ function getDefaultFaviconRules() {
         customRuleSets: {},
         selectedRuleSetName: null,
         showSaveRuleSetDialog: false,
-        
+        linkShortenerServices: LINK_SHORTENER_SERVICES,
+
         // Visual CSS Rules search
         rulesFilterQuery: '',
         newRuleSetName: '',
@@ -12170,6 +12803,18 @@ function getDefaultFaviconRules() {
                 placeholder: '{title}: {url}'
               },
               
+            }
+          },
+          linkShorteners: {
+            translateKey: 'options.linkShorteners.title',
+            fields: {
+              services: {
+                id: 'LinkShortenersServices',
+                type: 'linkShorteners',
+                translateKey: 'options.linkShorteners.services',
+                optionPath: 'linkShorteners',
+                helpText: 'options.linkShorteners.services.help'
+              }
             }
           },
           buttons: {
@@ -12903,6 +13548,20 @@ function getDefaultFaviconRules() {
             'css.visual.linkPopoverFavicon': 'Popover favicon',
             'options.links.copyUrlFormat': 'Copy URL format',
             'options.links.copyUrlFormat.help': 'Format for copying links. Available placeholders: {title}, {url}, {keywords}, {date}, {time}',
+            'options.linkShorteners.title': 'Link shortener services',
+            'options.linkShorteners.services': 'Service catalogue',
+            'options.linkShorteners.services.help': 'Select the providers that should appear in the link menu and add optional account details.',
+            'options.linkShorteners.accountLabel': 'Account label',
+            'options.linkShorteners.accountLabel.help': 'Optional description (e.g. custom domain or workspace identifier).',
+            'options.linkShorteners.apiKey': 'API token',
+            'options.linkShorteners.apiKey.help': 'Optional API token or key used when calling the provider.',
+            'options.linkShorteners.requiresAccount': 'Account required',
+            'options.linkShorteners.optionalAccount': 'Account optional',
+            'options.linkShorteners.notEnabled': 'Not enabled in settings',
+            'options.linkShorteners.menuHint': 'Activate a provider in the settings to use it from the link menu.',
+            'options.linkShorteners.integrations': 'Integrations',
+            'options.linkShorteners.audience': 'Best suited for',
+            'options.linkShorteners.summary': 'Highlights',
             'options.buttons': 'Quick Action Buttons',
             'options.buttons.showAddLink': 'Show "Add Link" button',
             'options.buttons.showAddLink.help': 'Display the add link button in group headers',
@@ -13078,12 +13737,40 @@ function getDefaultFaviconRules() {
             'toast.error': 'Error',
             'toast.warning': 'Warning',
             'toast.info': 'Information',
+            'shorteners.toast.missingAccount': 'Please add account details for {service} first.',
+            'shorteners.toast.disabled': '{service} is not enabled. Toggle it in the settings.',
+            'shorteners.toast.extensionMissing': 'Browser extension required to shorten links. Please install and enable it.',
+            'shorteners.toast.extensionUnsupported': 'Installed extension version does not support link shortening yet.',
+            'shorteners.toast.success': 'Short link copied to clipboard: {shortUrl}',
+            'shorteners.toast.error': 'Could not create a short link.{message}',
+            'shorteners.toast.notSupported': '{service} is not yet supported.',
+            'shorteners.services.bitly.summary': 'Widely adopted with strong analytics, branding options, and deep API integrations.',
+            'shorteners.services.bitly.audience': 'Best for teams managing large link volumes with a focus on branded experiences.',
+            'shorteners.services.rebrandly.summary': 'Supports custom domains and fine-grained control for brand-conscious link management.',
+            'shorteners.services.rebrandly.audience': 'Ideal for marketers who want branded short URLs instead of shared public domains.',
+            'shorteners.services.tinyurl.summary': 'A classic shortener: simple, reliable, and free to start.',
+            'shorteners.services.tinyurl.audience': 'Great for casual or personal use when you need quick shortening without extra setup.',
+            'shorteners.services.blink.summary': 'Analytics-rich platform with team workflows for mid-sized and enterprise projects.',
+            'shorteners.services.blink.audience': 'Suited for organizations or agencies collaborating on multi-user campaigns.',
+            'shorteners.services.shortio.summary': 'Balances ease of use with branded domains, API access, and team collaboration.',
+            'shorteners.services.shortio.audience': 'Perfect for teams wanting more control without moving to heavy enterprise suites.',
+            'shorteners.services.dub.summary': 'Modern, developer-friendly shortening with automation and fresh UX.',
+            'shorteners.services.dub.audience': 'Great for innovators who prefer contemporary tooling and rapid iteration.',
+            'shorteners.services.owly.summary': 'Bundle link shortening with Hootsuite’s scheduling and analytics stack.',
+            'shorteners.services.owly.audience': 'Tailored for social media teams already living inside Hootsuite dashboards.',
+            'shorteners.services.replug.summary': 'Link rotation, retargeting, bio links, and deep analytics geared toward marketing campaigns.',
+            'shorteners.services.replug.audience': 'Designed for marketers optimizing campaign links with advanced targeting.',
+            'shorteners.services.t2m.summary': 'Feature-rich link platform delivering analytics and customization at a moderate price.',
+            'shorteners.services.t2m.audience': 'Good for users seeking many features without enterprise-level costs.',
             'menu.link.sendLink': 'Send link…',
             'menu.link.createQrCode': 'Create QR code',
             'menu.link.copyForCss': 'Copy for CSS',
             'menu.link.copyCssClass': 'Copy CSS class',
             'menu.link.copyUuid': 'Copy UUID',
             'menu.link.copyCssSelector': 'Copy CSS selector [data-link-uuid]',
+            'menu.link.shorten': 'Shorten URL via…',
+            'menu.link.shorten.disabled': 'Configure providers in the settings to enable shortening',
+            'menu.link.shorten.noUrl': 'Link has no URL',
             'menu.group.sendGroup': 'Send group…',
             'menu.group.members': 'Members…',
             'menu.group.inspectJSON': 'Inspect JSON',
@@ -13620,6 +14307,20 @@ function getDefaultFaviconRules() {
             'css.visual.linkPopoverFavicon': 'Popover-Favicon',
             'options.links.copyUrlFormat': 'URL-Kopierformat',
             'options.links.copyUrlFormat.help': 'Format zum Kopieren von Links. Verfügbare Platzhalter: {title}, {url}, {keywords}, {date}, {time}',
+            'options.linkShorteners.title': 'Link-Shortener-Dienste',
+            'options.linkShorteners.services': 'Dienstekatalog',
+            'options.linkShorteners.services.help': 'Wähle aus, welche Anbieter im Link-Menü erscheinen und hinterlege optional Zugangsdaten.',
+            'options.linkShorteners.accountLabel': 'Account-Bezeichnung',
+            'options.linkShorteners.accountLabel.help': 'Optionaler Freitext (z. B. eigene Domain oder Workspace-Kennung).',
+            'options.linkShorteners.apiKey': 'API-Token',
+            'options.linkShorteners.apiKey.help': 'Optionaler API-Schlüssel oder Token für diesen Anbieter.',
+            'options.linkShorteners.requiresAccount': 'Account erforderlich',
+            'options.linkShorteners.optionalAccount': 'Account optional',
+            'options.linkShorteners.notEnabled': 'In den Einstellungen (noch) nicht aktiviert',
+            'options.linkShorteners.menuHint': 'Aktiviere einen Dienst in den Einstellungen, um ihn im Link-Menü zu nutzen.',
+            'options.linkShorteners.integrations': 'Integrationen',
+            'options.linkShorteners.audience': 'Geeignet für',
+            'options.linkShorteners.summary': 'Highlights',
             'options.links.defaultUrlPrefix': 'Standard-URL-Präfix',
             'options.links.defaultUrlPrefix.help': 'Präfix, das ergänzt wird, wenn eine URL kein Schema hat (z. B. https://). Leer lassen, um nichts zu ergänzen.',
             'options.buttons': 'Schnellaktions-Schaltflächen',
@@ -13895,12 +14596,40 @@ function getDefaultFaviconRules() {
             'toast.error': 'Fehler',
             'toast.warning': 'Warnung',
             'toast.info': 'Information',
+            'shorteners.toast.missingAccount': 'Bitte hinterlege zuerst Account-Daten für {service}.',
+            'shorteners.toast.disabled': '{service} ist noch nicht aktiviert. Schalte den Dienst in den Einstellungen frei.',
+            'shorteners.toast.extensionMissing': 'Zum Kürzen wird die Browser-Erweiterung benötigt. Bitte installiere sie und erlaube den Zugriff.',
+            'shorteners.toast.extensionUnsupported': 'Die installierte Erweiterung unterstützt das Kürzen aktuell noch nicht.',
+            'shorteners.toast.success': 'Kurzlink in die Zwischenablage kopiert: {shortUrl}',
+            'shorteners.toast.error': 'Kurzlink konnte nicht erstellt werden.{message}',
+            'shorteners.toast.notSupported': '{service} wird derzeit noch nicht unterstützt.',
+            'shorteners.services.bitly.summary': 'Sehr verbreitet mit umfangreicher Analytics, Branding-Optionen und tiefer API-Integration.',
+            'shorteners.services.bitly.audience': 'Ideal für Teams, die große Link-Mengen verwalten und Wert auf Markenauftritt legen.',
+            'shorteners.services.rebrandly.summary': 'Unterstützt eigene Domains und feingranulare Steuerung für markenkonforme Kurz-Links.',
+            'shorteners.services.rebrandly.audience': 'Perfekt für Marketer, die gebrandete Short-URLs statt generischer Domains wünschen.',
+            'shorteners.services.tinyurl.summary': 'Der Klassiker: schnell, zuverlässig und kostenfrei im Einstieg.',
+            'shorteners.services.tinyurl.audience': 'Geeignet für private oder gelegentliche Nutzung ohne viel Aufwand.',
+            'shorteners.services.blink.summary': 'Analytics-starkes Tool mit Team-Workflows für mittelgroße bis große Projekte.',
+            'shorteners.services.blink.audience': 'Richtet sich an Organisationen oder Agenturen mit mehreren Beteiligten.',
+            'shorteners.services.shortio.summary': 'Ausgewogener Mix aus einfacher Bedienung, gebrandeten Domains und Team-Funktionen.',
+            'shorteners.services.shortio.audience': 'Für Teams, die mehr Kontrolle wünschen, ohne gleich zu Enterprise-Lösungen zu greifen.',
+            'shorteners.services.dub.summary': 'Moderner, entwicklerfreundlicher Shortener mit Automatisierungen und frischer UX.',
+            'shorteners.services.dub.audience': 'Optimal für Nutzer, die neue Tools testen und auf moderne Funktionen setzen.',
+            'shorteners.services.owly.summary': 'Verknüpft Link-Verkürzung mit Hootsuite-Planung und Analyse.',
+            'shorteners.services.owly.audience': 'Gedacht für Social-Media-Teams, die ohnehin mit dem Hootsuite-Dashboard arbeiten.',
+            'shorteners.services.replug.summary': 'Link-Rotation, Retargeting, Bio-Links und tiefe Analytics speziell für Marketing-Kampagnen.',
+            'shorteners.services.replug.audience': 'Für Marketer, die Kampagnen-Links gezielt steuern und optimieren möchten.',
+            'shorteners.services.t2m.summary': 'Funktionsreicher Link-Dienst mit starker Analyse zu moderaten Kosten.',
+            'shorteners.services.t2m.audience': 'Für Anwender, die viele Features wünschen, ohne Enterprise-Preise zu zahlen.',
             'menu.link.sendLink': 'Link senden…',
             'menu.link.createQrCode': 'QR‑Code erstellen',
             'menu.link.copyForCss': 'Für CSS kopieren',
             'menu.link.copyCssClass': 'CSS‑Klasse kopieren',
             'menu.link.copyUuid': 'UUID kopieren',
             'menu.link.copyCssSelector': 'CSS-Selektor kopieren [data-link-uuid]',
+            'menu.link.shorten': 'URL kürzen mit…',
+            'menu.link.shorten.disabled': 'Konfiguriere Dienste in den Einstellungen, um Kurzlinks zu erstellen',
+            'menu.link.shorten.noUrl': 'Kein URL-Wert vorhanden',
             'menu.group.sendGroup': 'Gruppe senden…',
             'menu.group.members': 'Mitglieder…',
             'menu.group.inspectJSON': 'JSON inspizieren',
@@ -14294,6 +15023,22 @@ function getDefaultFaviconRules() {
         }
       },
       computed: {
+        linkShortenerEnabledIds() {
+          const enabled = this.data.options?.linkShorteners?.enabledServices;
+          return Array.isArray(enabled) ? enabled : [];
+        },
+        linkShortenerEnabledSet() {
+          return new Set(this.linkShortenerEnabledIds);
+        },
+        linkShortenerMenuEntries() {
+          const enabledSet = this.linkShortenerEnabledSet;
+          if (!Array.isArray(this.linkShortenerServices) || enabledSet.size === 0) {
+            return [];
+          }
+          return this.linkShortenerServices
+            .filter(service => enabledSet.has(service.id))
+            .sort((a, b) => a.name.localeCompare(b.name));
+        },
         // Check if custom CSS has changes
         hasCustomCssChanges() {
           const currentCss = this.data.options?.customCss || '';
@@ -14371,6 +15116,10 @@ function getDefaultFaviconRules() {
                      this.settingsMatchesFilter(this.optionsDesign.links.autoFetchTitle.translateKey, this.optionsDesign.links.autoFetchTitle.helpText) ||
                      this.settingsMatchesFilter(this.optionsDesign.links.autoFetchFavicon.translateKey, this.optionsDesign.links.autoFetchFavicon.helpText) ||
                      this.settingsMatchesFilter(this.optionsDesign.links.showLinkBadges.translateKey, this.optionsDesign.links.showLinkBadges.helpText);
+            }
+
+            if (section === 'linkShorteners') {
+              return this.settingsMatchesFilter('options.linkShorteners.services', 'options.linkShorteners.services.help');
             }
             
             if (section === 'sharing') {
@@ -14728,6 +15477,244 @@ function getDefaultFaviconRules() {
         this.appInitialized = true;
       },
         methods: {
+        // ===== LINK SHORTENER SUPPORT =====
+        getMutableLinkShortenerOptions() {
+          if (this.genericEditConfig?.type === 'options' && this.genericEditData) {
+            if (!this.genericEditData.linkShorteners || typeof this.genericEditData.linkShorteners !== 'object') {
+              this.$set(this.genericEditData, 'linkShorteners', JSON.parse(JSON.stringify(initialData.options.linkShorteners)));
+            }
+            const options = this.genericEditData.linkShorteners;
+            if (!Array.isArray(options.enabledServices)) {
+              this.$set(options, 'enabledServices', []);
+            }
+            if (!options.accounts || typeof options.accounts !== 'object') {
+              this.$set(options, 'accounts', {});
+            }
+            return options;
+          }
+          this.fixOptions();
+          return this.data.options.linkShorteners;
+        },
+        isShortenerEnabled(serviceId, preferDraft = true) {
+          const source = (preferDraft && this.genericEditConfig?.type === 'options' && this.genericEditData?.linkShorteners)
+            ? this.genericEditData.linkShorteners
+            : this.data.options?.linkShorteners;
+          const enabled = source?.enabledServices;
+          return Array.isArray(enabled) ? enabled.includes(serviceId) : false;
+        },
+        toggleShortenerService(serviceId, enabled) {
+          const options = this.getMutableLinkShortenerOptions();
+          if (!options) return;
+          const list = Array.isArray(options.enabledServices) ? [...options.enabledServices] : [];
+          const index = list.indexOf(serviceId);
+          if (enabled && index === -1) {
+            list.push(serviceId);
+          } else if (!enabled && index !== -1) {
+            list.splice(index, 1);
+          }
+          this.$set(options, 'enabledServices', list);
+        },
+        ensureShortenerAccount(serviceId) {
+          const options = this.getMutableLinkShortenerOptions();
+          if (!options) return null;
+          if (!options.accounts) {
+            this.$set(options, 'accounts', {});
+          }
+          if (!options.accounts[serviceId]) {
+            this.$set(options.accounts, serviceId, { label: '', apiKey: '' });
+          }
+          return options.accounts[serviceId];
+        },
+        getShortenerAccount(serviceId, preferDraft = true) {
+          const source = (preferDraft && this.genericEditConfig?.type === 'options' && this.genericEditData?.linkShorteners)
+            ? this.genericEditData.linkShorteners
+            : this.data.options?.linkShorteners;
+          const account = source?.accounts?.[serviceId];
+          if (account) return account;
+          return { label: '', apiKey: '' };
+        },
+        updateShortenerAccount(serviceId, field, value) {
+          const account = this.ensureShortenerAccount(serviceId);
+          if (!account) return;
+          this.$set(account, field, value);
+        },
+        clearShortenerAccount(serviceId) {
+          const options = this.getMutableLinkShortenerOptions();
+          if (!options || !options.accounts) return;
+          if (options.accounts[serviceId]) {
+            this.$delete(options.accounts, serviceId);
+          }
+        },
+        getServiceText(service, key) {
+          if (!service) return '';
+          const translationKey = service[`${key}Key`];
+          if (translationKey) {
+            const translated = this.getTranslation(translationKey);
+            if (translated && translated !== translationKey) {
+              return translated;
+            }
+          }
+          const directValue = service[key];
+          if (!directValue) return '';
+          if (typeof directValue === 'string') {
+            return directValue;
+          }
+          const lang = (this.data.options?.common?.language || 'en').toLowerCase();
+          if (directValue[lang]) return directValue[lang];
+          return directValue.en || directValue.de || '';
+        },
+        formatIntegrationScore(score) {
+          if (score === null || score === undefined) return '';
+          const prefix = score > 0 ? '+' : '';
+          return `${prefix}${score}`;
+        },
+        normalizeShortenerBase(service) {
+          const base = (service?.demoDomain || service?.baseUrl || `https://${service?.id || 'short'}.example`).trim();
+          if (!base) return 'https://short.example';
+          return base.replace(/\/+$/, '');
+        },
+        generateShortLinkSlug(input, length = 7) {
+          const text = String(input || '');
+          let hash = 0;
+          for (let i = 0; i < text.length; i += 1) {
+            hash = (hash << 5) - hash + text.charCodeAt(i);
+            hash |= 0; // Convert to 32bit integer
+          }
+          let slug = Math.abs(hash).toString(36);
+          while (slug.length < length) {
+            slug += Math.random().toString(36).slice(2);
+          }
+          return slug.slice(0, length).toLowerCase();
+        },
+        async shortenLinkWithService(service) {
+          if (!service || !this.contextLink || !this.contextLink.url) {
+            this.showToast(this.getTranslation('menu.link.shorten.noUrl') || 'No URL available', 'warning');
+            this.hideMenus();
+            return;
+          }
+          if (!this.extensionAvailable || !MB.Extension.isAvailable()) {
+            this.showToast(this.getTranslation('shorteners.toast.extensionMissing') || 'Browser extension required.', 'warning');
+            this.hideMenus();
+            return;
+          }
+          if (!window.MyBookmarksExtension || typeof window.MyBookmarksExtension.proxyFetch !== 'function') {
+            this.showToast(this.getTranslation('shorteners.toast.extensionUnsupported') || 'Link shortening not supported by extension.', 'warning');
+            this.hideMenus();
+            return;
+          }
+          const enabled = this.linkShortenerEnabledSet.has(service.id);
+          if (!enabled) {
+            const msg = (this.getTranslation('shorteners.toast.disabled') || '{service} is not enabled.')
+              .replace('{service}', service.name);
+            this.showToast(msg, 'info');
+            this.hideMenus();
+            return;
+          }
+          const rawAccount = this.data.options?.linkShorteners?.accounts?.[service.id] || {};
+          const accountInfo = {
+            label: String(rawAccount.label || '').trim(),
+            apiKey: String(rawAccount.apiKey || '').trim()
+          };
+          const hasAccount = !!(accountInfo.apiKey || accountInfo.label);
+          if (service.accountRequired && !hasAccount) {
+            const msg = (this.getTranslation('shorteners.toast.missingAccount') || 'Please add account details for {service}.')
+              .replace('{service}', service.name);
+            this.showToast(msg, 'warning');
+            this.hideMenus();
+            return;
+          }
+
+          const adapter = LINK_SHORTENER_ADAPTERS[service.id];
+          if (typeof adapter !== 'function') {
+            const msg = (this.getTranslation('shorteners.toast.notSupported') || '{service} is not yet supported.')
+              .replace('{service}', service.name);
+            this.showToast(msg, 'info');
+            this.hideMenus();
+            return;
+          }
+
+          const normalizedUrl = MB.Utils.ensureProtocol(this.contextLink.url);
+          if (!MB.Utils.isValidHttpUrl(normalizedUrl)) {
+            this.showToast(this.getTranslation('menu.link.shorten.noUrl') || 'No URL available', 'warning');
+            this.hideMenus();
+            return;
+          }
+
+          try {
+            const adapterOptions = {
+              baseUrl: this.normalizeShortenerBase(service),
+              suggestedSlug: this.generateShortLinkSlug(`${service?.id || 'short'}-${normalizedUrl}`),
+              linkId: this.contextLink.uuid || null,
+              groupId: this.contextGroup?.uuid || null,
+              context: {
+                serviceName: service.name,
+                linkText: this.contextLink.text || '',
+                keywords: this.contextLink.keywords || ''
+              },
+              timeoutMs: DEFAULT_PROXY_TIMEOUT_MS
+            };
+
+            const adapterResult = await adapter({ url: normalizedUrl, account: accountInfo, options: adapterOptions });
+            if (!adapterResult || !adapterResult.request) {
+              throw new Error('Shortener adapter did not return a request configuration');
+            }
+
+            const requestConfig = Object.assign({}, adapterResult.request);
+            if (!requestConfig.url) {
+              throw new Error('Adapter request missing URL');
+            }
+            requestConfig.method = (requestConfig.method || 'POST').toUpperCase();
+            requestConfig.timeoutMs = requestConfig.timeoutMs || adapterOptions.timeoutMs;
+
+            const normalizedHeaders = {};
+            if (requestConfig.headers && typeof requestConfig.headers === 'object') {
+              Object.entries(requestConfig.headers).forEach(([key, value]) => {
+                if (key) normalizedHeaders[key] = value;
+              });
+            }
+            requestConfig.headers = normalizedHeaders;
+
+            const hasJsonContentType = Object.keys(normalizedHeaders).some(h => h.toLowerCase() === 'content-type' && /json/i.test(String(normalizedHeaders[h])));
+            if (requestConfig.body && typeof requestConfig.body !== 'string') {
+              if (!hasJsonContentType) {
+                normalizedHeaders['Content-Type'] = 'application/json';
+              }
+              requestConfig.body = JSON.stringify(requestConfig.body);
+            }
+
+            const proxyResponse = await MB.Extension.proxyFetch(requestConfig);
+            if (!proxyResponse) {
+              throw new Error('No response from proxy fetch');
+            }
+            if (proxyResponse.error) {
+              throw new Error(proxyResponse.error);
+            }
+
+            const parseFn = typeof adapterResult.parse === 'function'
+              ? adapterResult.parse
+              : (resp) => ({ shortUrl: (resp.bodyText || '').trim() });
+
+            const parsedResult = await parseFn(proxyResponse, { service, account: accountInfo, options: adapterOptions });
+            const shortUrl = parsedResult?.shortUrl || (typeof parsedResult === 'string' ? parsedResult : '') || '';
+            if (!shortUrl) {
+              throw new Error('No short URL returned');
+            }
+            await this.copyToClipboard(shortUrl);
+            const successTemplate = (this.getTranslation('shorteners.toast.success') || 'Short link copied: {shortUrl}')
+              .replace('{service}', service.name)
+              .replace('{shortUrl}', shortUrl);
+            this.showToast(successTemplate, 'success');
+          } catch (error) {
+            debugLog('warn', '[SHORTENER] Failed to create short link', { service: service?.id, error });
+            const errorDetail = (error && error.message) ? error.message : '';
+            const template = this.getTranslation('shorteners.toast.error') || 'Could not create a short link. {message}';
+            const errMsg = template.replace('{message}', errorDetail ? ` (${errorDetail})` : '');
+            this.showToast(errMsg.trim(), 'error');
+          } finally {
+            this.hideMenus();
+          }
+        },
+
         // ===== BROWSER EXTENSION INTEGRATION =====
 
         initializeExtension() {
@@ -25784,6 +26771,16 @@ footer a:hover {
           if (!Array.isArray(this.data.options.links.faviconRules)) {
             this.$set(this.data.options.links, 'faviconRules', getDefaultFaviconRules());
           }
+          if (!this.data.options.linkShorteners || typeof this.data.options.linkShorteners !== 'object') {
+            this.$set(this.data.options, 'linkShorteners', JSON.parse(JSON.stringify(defaultOptions.linkShorteners)));
+          }
+          const shortenerOptions = this.data.options.linkShorteners;
+          if (!Array.isArray(shortenerOptions.enabledServices)) {
+            this.$set(shortenerOptions, 'enabledServices', []);
+          }
+          if (!shortenerOptions.accounts || typeof shortenerOptions.accounts !== 'object') {
+            this.$set(shortenerOptions, 'accounts', {});
+          }
           // Ensure Nextcloud Bookmarks block exists and preserves saved values (including rootFolderId)
           this.data.options.bookmarks = Object.assign({}, defaultOptions.bookmarks || { serverUrl:'', username:'', password:'', rootFolderId:0, syncIntervalSec:0, folderHashes:{} }, this.data.options.bookmarks || {});
           this.data.options.sharing = Object.assign({}, defaultOptions.sharing || {}, this.data.options.sharing || {});
@@ -26166,8 +27163,19 @@ footer a:hover {
               const fieldLabel = this.getTranslation(field.translateKey) || fieldKey;
               const helpText = this.getTranslation(field.helpText) || '';
               
-              if (fieldLabel.toLowerCase().includes(filter) || 
-                  helpText.toLowerCase().includes(filter)) {
+              let matches = fieldLabel.toLowerCase().includes(filter) || 
+                  helpText.toLowerCase().includes(filter);
+
+              if (!matches && field.type === 'linkShorteners') {
+                matches = (this.linkShortenerServices || []).some(service => {
+                  const name = (service.name || '').toLowerCase();
+                  const summary = (this.getServiceText(service, 'summary') || '').toLowerCase();
+                  const audience = (this.getServiceText(service, 'audience') || '').toLowerCase();
+                  return name.includes(filter) || summary.includes(filter) || audience.includes(filter);
+                });
+              }
+
+              if (matches) {
                 matchingFields[fieldKey] = field;
               }
             }
@@ -26836,8 +27844,18 @@ footer a:hover {
             for (const [fieldKey, field] of Object.entries(section.fields)) {
               const fieldLabel = this.getTranslation(field.translateKey) || fieldKey;
               const fieldHelp = this.getTranslation(field.helpText) || '';
-              
-              if (fieldLabel.toLowerCase().includes(filter) || fieldHelp.toLowerCase().includes(filter)) {
+              let matches = fieldLabel.toLowerCase().includes(filter) || fieldHelp.toLowerCase().includes(filter);
+
+              if (!matches && field.type === 'linkShorteners') {
+                matches = (this.linkShortenerServices || []).some(service => {
+                  const name = (service.name || '').toLowerCase();
+                  const summary = (this.getServiceText(service, 'summary') || '').toLowerCase();
+                  const audience = (this.getServiceText(service, 'audience') || '').toLowerCase();
+                  return name.includes(filter) || summary.includes(filter) || audience.includes(filter);
+                });
+              }
+
+              if (matches) {
                 filteredFields[fieldKey] = field;
                 sectionMatches = true;
               }

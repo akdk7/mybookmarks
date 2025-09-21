@@ -76,6 +76,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       return true;
 
+    case 'proxyFetch':
+      console.log('[PROXY] Fetch request received:', request.request?.url);
+      handleProxyFetch(request.request || {}).then(result => {
+        sendResponse(result);
+      }).catch(err => {
+        console.warn('[PROXY] Failed:', err);
+        sendResponse({ error: err.message || 'Proxy fetch failed' });
+      });
+      return true;
+
     case 'ping':
       console.log('Ping received');
       sendResponse({ success: true, message: 'Extension is active' });
@@ -836,6 +846,56 @@ function setCachedMetadata(url, metadata) {
   if (metadataCache.size > 1000) {
     const firstKey = metadataCache.keys().next().value;
     metadataCache.delete(firstKey);
+  }
+}
+
+async function handleProxyFetch(request) {
+  const { url, method = 'GET', headers = {}, body, timeoutMs = 20000, credentials = 'omit', redirect = 'follow', mode, cache } = request || {};
+  if (!url) {
+    throw new Error('Missing URL');
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const fetchOptions = {
+      method,
+      headers,
+      credentials,
+      redirect,
+      signal: controller.signal
+    };
+
+    if (mode) fetchOptions.mode = mode;
+    if (cache) fetchOptions.cache = cache;
+
+    const upperMethod = String(method || 'GET').toUpperCase();
+    if (body !== undefined && upperMethod !== 'GET' && upperMethod !== 'HEAD') {
+      fetchOptions.body = body;
+    }
+
+    const response = await fetch(url, fetchOptions);
+    const headersObj = {};
+    response.headers.forEach((value, key) => { headersObj[key] = value; });
+    const bodyText = await response.text();
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url,
+      headers: headersObj,
+      bodyText,
+      success: response.ok
+    };
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Proxy fetch timed out');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

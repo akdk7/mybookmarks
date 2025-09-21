@@ -170,6 +170,28 @@ window.addEventListener('message', async (event) => {
       }
       break;
 
+    case 'PROXY_FETCH':
+      chrome.runtime.sendMessage({
+        action: 'proxyFetch',
+        request: message.request || {}
+      }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error('Background script error:', chrome.runtime.lastError);
+          window.postMessage({
+            type: 'PROXY_FETCH_RESPONSE',
+            requestId: message.requestId,
+            result: { error: chrome.runtime.lastError.message }
+          }, '*');
+        } else {
+          window.postMessage({
+            type: 'PROXY_FETCH_RESPONSE',
+            requestId: message.requestId,
+            result: response
+          }, '*');
+        }
+      });
+      break;
+
     case 'CLEAR_EXTENSION_CACHE':
       // Ask background to clear caches (metadata, etc.)
       chrome.runtime.sendMessage({ action: 'clearCache' }, (response) => {
@@ -221,7 +243,8 @@ setTimeout(() => {
       'fetchMetadata',
       'batchFetchMetadata',
       'addBookmark',
-      'davRequest'
+      'davRequest',
+      'proxyFetch'
     ]
   }, '*');
 }, 100);
