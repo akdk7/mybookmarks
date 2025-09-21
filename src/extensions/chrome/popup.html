@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyBookmarks Companion</title>
+  <style>
+    body {
+      width: 350px;
+      min-height: 400px;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    h1 {
+      color: white;
+      font-size: 20px;
+      margin: 0 0 20px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon {
+      width: 32px;
+      height: 32px;
+      background: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .status {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 15px;
+      color: white;
+    }
+
+    .status.connected {
+      background: rgba(76, 175, 80, 0.3);
+    }
+
+    .status.disconnected {
+      background: rgba(244, 67, 54, 0.3);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #764ba2;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    button {
+      background: white;
+      color: #764ba2;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .footer {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      text-align: center;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 12px;
+    }
+
+    .footer a {
+      color: white;
+      text-decoration: none;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .message {
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .message.success {
+      background: rgba(76, 175, 80, 0.2);
+      color: white;
+      display: block;
+    }
+
+    .message.error {
+      background: rgba(244, 67, 54, 0.2);
+      color: white;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>
+      <div class="icon">📚</div>
+      MyBookmarks Companion
+    </h1>
+
+    <div class="status" id="status">
+      <div>🔍 Checking connection...</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-value" id="bookmarkCount">-</div>
+        <div class="stat-label">Bookmarks</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="folderCount">-</div>
+        <div class="stat-label">Folders</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="openMyBookmarks" class="primary">
+        📖 Open MyBookmarks
+      </button>
+
+      <button id="importBookmarks">
+        ⬇️ Import Browser Bookmarks
+      </button>
+
+      <button id="fetchMetadata">
+        🌐 Fetch Metadata for Current Tab
+      </button>
+
+      <button id="addCurrentTab">
+        ➕ Add Current Tab to MyBookmarks
+      </button>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <div class="footer">
+      <a href="#" id="settings">Settings</a> •
+      <a href="#" id="help">Help</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

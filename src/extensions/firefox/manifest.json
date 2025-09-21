@@ -1,0 +1,53 @@
+{
+  "manifest_version": 2,
+  "name": "MyBookmarks Companion",
+  "version": "1.0.0",
+  "description": "Browser extension for MyBookmarks - Sync bookmarks and fetch metadata",
+
+
+  "permissions": [
+    "bookmarks",
+    "tabs",
+    "activeTab",
+    "storage",
+    "<all_urls>",
+    "webRequest",
+    "webRequestBlocking"
+  ],
+
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "*://mybookmarks.local/*",
+        "*://mybookmarks.example.com/*",
+        "file:///*/*"
+      ],
+      "js": ["content-script.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_title": "MyBookmarks Companion"
+  },
+
+  "web_accessible_resources": [
+    "inject.js"
+  ],
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "mybookmarks-companion@example.com",
+      "strict_min_version": "89.0"
+    }
+  }
+}
