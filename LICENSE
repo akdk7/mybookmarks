@@ -19,3 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Any public use, distribution, or modification of this software, whether in original or altered form, must include the following footer element, displayed in a visible area of the application (e.g., the bottom of each page):
+
+<footer id="footer" class="copyrightBar mb-footer">
+  <span>&copy; 2024-2025 <a href="mailto:mybookmarks@msging.de">Jörg Pannbacker</a>. Check for <a href="https://github.com/akdk7/mybookmarks" target="_blank">new version</a>. Version: {{ version }}</span>
+</footer>
+
+This footer must remain unchanged, except for the {{ version }} placeholder, which may be updated to reflect the actual version used.
