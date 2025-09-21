@@ -2658,6 +2658,32 @@
       font-size: 0.75rem;
     }
 
+    .link-security-summary {
+      padding: 0.35rem 0.75rem;
+    }
+
+    .link-security-summary .badge {
+      font-size: 0.75rem;
+      width: 100%;
+      justify-content: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+
+    .mb-edit-link-security {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    .mb-edit-link-security .badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+
     .text-purple {
       color: #6f42c1;
     }
@@ -5338,6 +5364,12 @@
                       :disabled="isFieldDisabled(sectionKey, fieldKey)"
                     >
                     <div v-if="field.helpText" class="form-text mb-edit-field-help">{{ getTranslation(field.helpText) }}</div>
+                    <div v-if="genericEditConfig.type === 'link'" class="form-text mb-edit-field-help mb-edit-link-security">
+                      <span :class="['badge', linkSecurityBadgeClass(genericEditData, { asPill: true })]" :title="linkSecurityScoreLabel(genericEditData)">
+                        {{ linkSecurityScore(genericEditData) }}/100
+                      </span>
+                      <span>{{ linkSecuritySummary(genericEditData) }}</span>
+                    </div>
                   </div>
                   
                   <!-- Number Field -->
@@ -12074,6 +12106,132 @@ function getDefaultFaviconRules() {
       }
     };
 
+    const LINK_SHORTENER_DOMAINS = new Set(LINK_SHORTENER_SERVICES.map(service => {
+      try {
+        return new URL(service.demoDomain).hostname.toLowerCase();
+      } catch (e) {
+        return (service.demoDomain || '').replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+      }
+    }).filter(Boolean));
+
+    const LINK_SUSPICIOUS_QUERY_KEYS = ['token', 'access_token', 'session', 'sessionid', 'password', 'pass', 'auth', 'apikey', 'api_key', 'jwt'];
+    const LINK_DANGEROUS_PROTOCOLS = ['javascript:', 'data:', 'vbscript:'];
+    const LINK_SUSPICIOUS_PATTERNS = ['<script', '%3cscript', 'onerror=', 'onclick=', 'document.cookie', 'window.location'];
+
+    window.MB = window.MB || {};
+
+    MB.Network = {
+      DEFAULT_TIMEOUT: DEFAULT_PROXY_TIMEOUT_MS,
+      getProxyConfig() {
+        const app = window.app;
+        const opts = app?.data?.options?.proxy;
+        if (opts) return opts;
+        return initialData.options.proxy;
+      },
+      isProxyEnabled() {
+        const config = this.getProxyConfig() || {};
+        if (!config.enabled) return false;
+        return !!(config.baseUrl && config.baseUrl.trim());
+      },
+      getProxyBaseUrl() {
+        const base = (this.getProxyConfig()?.baseUrl || '').trim();
+        return base.replace(/\/$/, '');
+      },
+      getProxyHeaders() {
+        const config = this.getProxyConfig() || {};
+        const headers = {};
+        const token = (config.apiKey || '').trim();
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const extra = (config.extraHeaders || '').split('\n');
+        extra.forEach(line => {
+          const trimmed = line.trim();
+          if (!trimmed) return;
+          const idx = trimmed.indexOf(':');
+          if (idx === -1) return;
+          const key = trimmed.slice(0, idx).trim();
+          const value = trimmed.slice(idx + 1).trim();
+          if (!key) return;
+          headers[key] = value;
+        });
+        return headers;
+      },
+      normalizeRequestConfig(config = {}) {
+        const normalized = Object.assign({ method: 'POST', headers: {} }, config);
+        normalized.method = (normalized.method || 'POST').toUpperCase();
+        if (!normalized.headers || typeof normalized.headers !== 'object') normalized.headers = {};
+        const headers = {};
+        Object.entries(normalized.headers).forEach(([key, value]) => {
+          if (key) headers[key] = value;
+        });
+        normalized.headers = headers;
+        const hasJsonContentType = Object.keys(headers).some(h => h.toLowerCase() === 'content-type' && /json/i.test(String(headers[h])));
+        if (normalized.body && typeof normalized.body !== 'string' && normalized.method !== 'GET' && normalized.method !== 'HEAD') {
+          if (!hasJsonContentType) headers['Content-Type'] = 'application/json';
+          normalized.body = JSON.stringify(normalized.body);
+        }
+        if (normalized.timeoutMs === undefined) normalized.timeoutMs = this.DEFAULT_TIMEOUT;
+        return normalized;
+      },
+      async fetchViaProxy(request) {
+        if (!this.isProxyEnabled()) {
+          const err = new Error('proxyDisabled');
+          err.code = 'proxyDisabled';
+          throw err;
+        }
+        const baseUrl = this.getProxyBaseUrl();
+        if (!baseUrl) {
+          const err = new Error('proxyMissingBaseUrl');
+          err.code = 'proxyMissingBaseUrl';
+          throw err;
+        }
+        const endpoint = `${baseUrl}/fetch`;
+        const payload = { request };
+        const headers = Object.assign({ 'Content-Type': 'application/json' }, this.getProxyHeaders());
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), request.timeoutMs || this.DEFAULT_TIMEOUT);
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+            credentials: 'omit'
+          });
+          const json = await response.json().catch(() => null);
+          if (!response.ok) {
+            const err = new Error(json?.error || `${response.status} ${response.statusText}`);
+            err.code = 'proxyFetchFailed';
+            throw err;
+          }
+          return json;
+        } catch (error) {
+          if (error.name === 'AbortError') {
+            const err = new Error('proxyTimeout');
+            err.code = 'proxyTimeout';
+            throw err;
+          }
+          throw error;
+        } finally {
+          clearTimeout(timeout);
+        }
+      },
+      hasExtensionTransport() {
+        return !!(window.MyBookmarksExtension && typeof window.MyBookmarksExtension.proxyFetch === 'function');
+      },
+      async performRequest(config) {
+        const normalized = this.normalizeRequestConfig(config);
+        if (this.isProxyEnabled()) {
+          return await this.fetchViaProxy(normalized);
+        }
+        if (this.hasExtensionTransport()) {
+          return await MB.Extension.proxyFetch(normalized);
+        }
+        const err = new Error('noTransport');
+        err.code = 'noTransport';
+        throw err;
+      }
+    };
+
     function resolveDomain(labelValue, baseUrl, fallback) {
       const trimmed = (labelValue || '').trim();
       if (trimmed) return trimmed;
@@ -12145,6 +12303,12 @@ function getDefaultFaviconRules() {
         linkShorteners: {
           enabledServices: [],
           accounts: {}
+        },
+        proxy: {
+          enabled: false,
+          baseUrl: '',
+          apiKey: '',
+          extraHeaders: ''
         },
         buttons: {
           // Group quick-action buttons
@@ -12814,6 +12978,43 @@ function getDefaultFaviconRules() {
                 translateKey: 'options.linkShorteners.services',
                 optionPath: 'linkShorteners',
                 helpText: 'options.linkShorteners.services.help'
+              }
+            }
+          },
+          proxy: {
+            translateKey: 'options.proxy.title',
+            fields: {
+              enabled: {
+                id: 'ProxyEnabled',
+                type: 'checkbox',
+                translateKey: 'options.proxy.enabled',
+                optionPath: 'proxy.enabled',
+                helpText: 'options.proxy.enabled.help'
+              },
+              baseUrl: {
+                id: 'ProxyBaseUrl',
+                type: 'text',
+                translateKey: 'options.proxy.baseUrl',
+                optionPath: 'proxy.baseUrl',
+                helpText: 'options.proxy.baseUrl.help',
+                placeholder: 'https://proxy.example.com'
+              },
+              apiKey: {
+                id: 'ProxyApiKey',
+                type: 'text',
+                translateKey: 'options.proxy.apiKey',
+                optionPath: 'proxy.apiKey',
+                helpText: 'options.proxy.apiKey.help',
+                placeholder: 'Optional API token'
+              },
+              extraHeaders: {
+                id: 'ProxyExtraHeaders',
+                type: 'textarea',
+                translateKey: 'options.proxy.extraHeaders',
+                optionPath: 'proxy.extraHeaders',
+                helpText: 'options.proxy.extraHeaders.help',
+                rows: 3,
+                placeholder: 'Header-Name: Wert'
               }
             }
           },
@@ -13744,6 +13945,7 @@ function getDefaultFaviconRules() {
             'shorteners.toast.success': 'Short link copied to clipboard: {shortUrl}',
             'shorteners.toast.error': 'Could not create a short link.{message}',
             'shorteners.toast.notSupported': '{service} is not yet supported.',
+            'shorteners.toast.noTransport': 'No network transport configured. Enable the browser extension or configure a proxy.',
             'shorteners.services.bitly.summary': 'Widely adopted with strong analytics, branding options, and deep API integrations.',
             'shorteners.services.bitly.audience': 'Best for teams managing large link volumes with a focus on branded experiences.',
             'shorteners.services.rebrandly.summary': 'Supports custom domains and fine-grained control for brand-conscious link management.',
@@ -13762,6 +13964,17 @@ function getDefaultFaviconRules() {
             'shorteners.services.replug.audience': 'Designed for marketers optimizing campaign links with advanced targeting.',
             'shorteners.services.t2m.summary': 'Feature-rich link platform delivering analytics and customization at a moderate price.',
             'shorteners.services.t2m.audience': 'Good for users seeking many features without enterprise-level costs.',
+            'link.security.safe': 'No obvious issues detected.',
+            'link.security.info.shortener': 'Shortener domain detected ({host}) – final destination unknown.',
+            'link.security.info.ip': 'Hostname is an IP address ({host}).',
+            'link.security.warning.punycode': 'Hostname uses punycode ({host}); double-check for impersonation.',
+            'link.security.warning.query': 'Sensitive query parameter detected ({key}).',
+            'link.security.warning.protocol': 'Uncommon protocol detected ({protocol}).',
+            'link.security.warning.generic': 'Potential issue detected.',
+            'link.security.danger.protocol': 'Blocked protocol detected ({protocol}).',
+            'link.security.danger.malformed': 'URL appears malformed or incomplete.',
+            'link.security.danger.suspicious': 'Suspicious pattern detected in URL.',
+            'link.security.scoreLabel': 'Security score: {score}/100',
             'menu.link.sendLink': 'Send link…',
             'menu.link.createQrCode': 'Create QR code',
             'menu.link.copyForCss': 'Copy for CSS',
@@ -14603,6 +14816,7 @@ function getDefaultFaviconRules() {
             'shorteners.toast.success': 'Kurzlink in die Zwischenablage kopiert: {shortUrl}',
             'shorteners.toast.error': 'Kurzlink konnte nicht erstellt werden.{message}',
             'shorteners.toast.notSupported': '{service} wird derzeit noch nicht unterstützt.',
+            'shorteners.toast.noTransport': 'Kein Netzwerk-Transport konfiguriert. Aktiviere die Browser-Erweiterung oder richte einen Proxy ein.',
             'shorteners.services.bitly.summary': 'Sehr verbreitet mit umfangreicher Analytics, Branding-Optionen und tiefer API-Integration.',
             'shorteners.services.bitly.audience': 'Ideal für Teams, die große Link-Mengen verwalten und Wert auf Markenauftritt legen.',
             'shorteners.services.rebrandly.summary': 'Unterstützt eigene Domains und feingranulare Steuerung für markenkonforme Kurz-Links.',
@@ -14621,6 +14835,17 @@ function getDefaultFaviconRules() {
             'shorteners.services.replug.audience': 'Für Marketer, die Kampagnen-Links gezielt steuern und optimieren möchten.',
             'shorteners.services.t2m.summary': 'Funktionsreicher Link-Dienst mit starker Analyse zu moderaten Kosten.',
             'shorteners.services.t2m.audience': 'Für Anwender, die viele Features wünschen, ohne Enterprise-Preise zu zahlen.',
+            'link.security.safe': 'Keine Auffälligkeiten erkannt.',
+            'link.security.info.shortener': 'Shortener-Domain erkannt ({host}) – Zieladresse unbekannt.',
+            'link.security.info.ip': 'Hostname ist eine IP-Adresse ({host}).',
+            'link.security.warning.punycode': 'Hostname verwendet Punycode ({host}); auf mögliche Nachahmung prüfen.',
+            'link.security.warning.query': 'Sensitiver Parameter gefunden ({key}).',
+            'link.security.warning.protocol': 'Ungewöhnliches Protokoll erkannt ({protocol}).',
+            'link.security.warning.generic': 'Mögliche Auffälligkeit erkannt.',
+            'link.security.danger.protocol': 'Blockiertes Protokoll erkannt ({protocol}).',
+            'link.security.danger.malformed': 'URL scheint fehlerhaft oder unvollständig zu sein.',
+            'link.security.danger.suspicious': 'Verdächtiges Muster in der URL entdeckt.',
+            'link.security.scoreLabel': 'Sicherheits-Score: {score}/100',
             'menu.link.sendLink': 'Link senden…',
             'menu.link.createQrCode': 'QR‑Code erstellen',
             'menu.link.copyForCss': 'Für CSS kopieren',
@@ -15568,6 +15793,186 @@ function getDefaultFaviconRules() {
           const prefix = score > 0 ? '+' : '';
           return `${prefix}${score}`;
         },
+        getProxyConfig() {
+          return MB.Network.getProxyConfig();
+        },
+        isProxyEnabled() {
+          return MB.Network.isProxyEnabled();
+        },
+        getProxyBaseUrl() {
+          return MB.Network.getProxyBaseUrl();
+        },
+        getProxyHeaders() {
+          return MB.Network.getProxyHeaders();
+        },
+        hasNetworkTransport() {
+          return MB.Network.isProxyEnabled() || MB.Network.hasExtensionTransport();
+        },
+        normalizeRequestConfig(config = {}) {
+          return MB.Network.normalizeRequestConfig(config);
+        },
+        async fetchViaConfiguredProxy(requestConfig) {
+          try {
+            return await MB.Network.fetchViaProxy(requestConfig);
+          } catch (error) {
+            throw error;
+          }
+        },
+        async performNetworkRequest(request) {
+          const normalized = this.normalizeRequestConfig(request);
+          try {
+            return await MB.Network.performRequest(normalized);
+          } catch (error) {
+            if (error?.code === 'proxyMissingBaseUrl') {
+              throw new Error(this.getTranslation('proxy.error.missingBaseUrl') || 'Proxy base URL missing');
+            }
+            if (error?.code === 'proxyTimeout') {
+              throw new Error(this.getTranslation('proxy.error.fetchFailed')?.replace('{message}', 'Timeout') || 'Proxy request timed out');
+            }
+            if (error?.code === 'noTransport') {
+              throw new Error(this.getTranslation('proxy.error.noTransport') || 'No network transport available');
+            }
+            if (error?.code === 'proxyFetchFailed') {
+              const message = error.message || '';
+              throw new Error(this.getTranslation('proxy.error.fetchFailed')?.replace('{message}', message) || message);
+            }
+            throw error;
+          }
+        },
+        evaluateLinkSecurity(url) {
+          const issues = [];
+          const addIssue = (severity, code, meta = {}) => {
+            issues.push({ severity, code, meta });
+          };
+
+          if (!url || typeof url !== 'string') {
+            addIssue(3, 'malformed');
+            return { severity: 3, issues };
+          }
+
+          let parsed;
+          try {
+            parsed = new URL(url);
+          } catch (e) {
+            addIssue(3, 'malformed');
+            return { severity: 3, issues };
+          }
+
+          const protocol = parsed.protocol.toLowerCase();
+          if (!/^https?:$/.test(protocol)) {
+            if (LINK_DANGEROUS_PROTOCOLS.includes(protocol)) {
+              addIssue(3, 'dangerProtocol', { protocol });
+            } else {
+              addIssue(2, 'unusualProtocol', { protocol });
+            }
+          }
+
+          const hostname = parsed.hostname.toLowerCase();
+          if (hostname.startsWith('xn--') || hostname.includes('---') || hostname.includes('--')) {
+            addIssue(2, 'punycode', { host: hostname });
+          }
+
+          if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+            addIssue(1, 'ipAddress', { host: hostname });
+          }
+
+          if (LINK_SHORTENER_DOMAINS.has(hostname)) {
+            addIssue(1, 'shortener', { host: hostname });
+          }
+
+          const query = new URLSearchParams(parsed.search);
+          for (const key of query.keys()) {
+            const lowered = key.toLowerCase();
+            if (LINK_SUSPICIOUS_QUERY_KEYS.includes(lowered)) {
+              addIssue(2, 'sensitiveQuery', { key: lowered });
+            }
+          }
+
+          const fullUrlLower = url.toLowerCase();
+          for (const pattern of LINK_SUSPICIOUS_PATTERNS) {
+            if (fullUrlLower.includes(pattern)) {
+              addIssue(3, 'suspiciousPattern', { pattern });
+              break;
+            }
+          }
+
+          const severity = issues.reduce((max, issue) => Math.max(max, issue.severity), 0);
+          return { severity, issues };
+        },
+        translateSecurityIssue(issue) {
+          const code = issue?.code || 'generic';
+          const meta = issue?.meta || {};
+          const t = this.getTranslation.bind(this);
+          switch (code) {
+            case 'malformed':
+              return t('link.security.danger.malformed') || 'Malformed URL';
+            case 'dangerProtocol':
+              return (t('link.security.danger.protocol') || 'Disallowed protocol: {protocol}').replace('{protocol}', meta.protocol || '');
+            case 'unusualProtocol':
+              return (t('link.security.warning.protocol') || 'Unusual protocol: {protocol}').replace('{protocol}', meta.protocol || '');
+            case 'punycode':
+              return (t('link.security.warning.punycode') || 'Hostname uses punycode: {host}').replace('{host}', meta.host || '');
+            case 'ipAddress':
+              return (t('link.security.info.ip') || 'Hostname is an IP address: {host}').replace('{host}', meta.host || '');
+            case 'shortener':
+              return (t('link.security.info.shortener') || 'URL uses a shortener service: {host}').replace('{host}', meta.host || '');
+            case 'sensitiveQuery':
+              return (t('link.security.warning.query') || 'Sensitive parameter detected: {key}').replace('{key}', meta.key || '');
+            case 'suspiciousPattern':
+              return (t('link.security.danger.suspicious') || 'Suspicious pattern detected in URL').replace('{pattern}', meta.pattern || '');
+            default:
+              return t('link.security.warning.generic') || 'Potential issue detected';
+          }
+        },
+        getLinkSecurity(link) {
+          if (!link || !link.url) {
+            return {
+              severity: 3,
+              issues: [{ severity: 3, code: 'malformed', meta: {} }]
+            };
+          }
+          return this.evaluateLinkSecurity(link.url);
+        },
+        linkSecurityBadgeClass(link, opts = {}) {
+          const data = typeof link === 'object' ? this.getLinkSecurity(link) : link;
+          const severity = data?.severity ?? 0;
+          const base = [];
+          if (opts.asPill) base.push('rounded-pill');
+          if (severity >= 3) base.push('bg-danger');
+          else if (severity === 2) base.push('bg-warning', 'text-dark');
+          else if (severity === 1) base.push('bg-info', 'text-dark');
+          else base.push('bg-success');
+          return base.join(' ');
+        },
+        linkSecuritySummary(link) {
+          const data = this.getLinkSecurity(link);
+          if (!data || !Array.isArray(data.issues) || data.issues.length === 0) {
+            return this.getTranslation('link.security.safe') || 'No issues detected.';
+          }
+          const severity = data.severity || 0;
+          if (severity === 0) {
+            return this.getTranslation('link.security.safe') || 'No issues detected.';
+          }
+          const sortedIssues = [...data.issues].sort((a, b) => b.severity - a.severity);
+          const topIssue = sortedIssues[0];
+          return this.translateSecurityIssue(topIssue);
+        },
+        linkSecurityScore(link) {
+          const data = this.getLinkSecurity(link);
+          const severity = data?.severity ?? 0;
+          const deductions = (data?.issues?.length || 0) * 5;
+          let baseScore;
+          if (severity >= 3) baseScore = 20;
+          else if (severity === 2) baseScore = 50;
+          else if (severity === 1) baseScore = 80;
+          else baseScore = 95;
+          const score = Math.max(5, Math.min(100, baseScore - deductions));
+          return Math.round(score);
+        },
+        linkSecurityScoreLabel(link) {
+          const score = this.linkSecurityScore(link);
+          return (this.getTranslation('link.security.scoreLabel') || 'Security score: {score}/100').replace('{score}', score);
+        },
         normalizeShortenerBase(service) {
           const base = (service?.demoDomain || service?.baseUrl || `https://${service?.id || 'short'}.example`).trim();
           if (!base) return 'https://short.example';
@@ -15597,11 +16002,11 @@ function getDefaultFaviconRules() {
             this.hideMenus();
             return;
           }
-          if (!window.MyBookmarksExtension || typeof window.MyBookmarksExtension.proxyFetch !== 'function') {
-            this.showToast(this.getTranslation('shorteners.toast.extensionUnsupported') || 'Link shortening not supported by extension.', 'warning');
-            this.hideMenus();
-            return;
-          }
+            if (!this.hasNetworkTransport()) {
+              this.showToast(this.getTranslation('shorteners.toast.noTransport') || 'No network transport configured.', 'warning');
+              this.hideMenus();
+              return;
+            }
           const enabled = this.linkShortenerEnabledSet.has(service.id);
           if (!enabled) {
             const msg = (this.getTranslation('shorteners.toast.disabled') || '{service} is not enabled.')
@@ -15682,7 +16087,7 @@ function getDefaultFaviconRules() {
               requestConfig.body = JSON.stringify(requestConfig.body);
             }
 
-            const proxyResponse = await MB.Extension.proxyFetch(requestConfig);
+            const proxyResponse = await this.performNetworkRequest(requestConfig);
             if (!proxyResponse) {
               throw new Error('No response from proxy fetch');
             }
@@ -26781,6 +27186,21 @@ footer a:hover {
           if (!shortenerOptions.accounts || typeof shortenerOptions.accounts !== 'object') {
             this.$set(shortenerOptions, 'accounts', {});
           }
+          if (!this.data.options.proxy || typeof this.data.options.proxy !== 'object') {
+            this.$set(this.data.options, 'proxy', JSON.parse(JSON.stringify(defaultOptions.proxy)));
+          }
+          if (typeof this.data.options.proxy.enabled !== 'boolean') {
+            this.$set(this.data.options.proxy, 'enabled', false);
+          }
+          if (typeof this.data.options.proxy.baseUrl !== 'string') {
+            this.$set(this.data.options.proxy, 'baseUrl', '');
+          }
+          if (typeof this.data.options.proxy.apiKey !== 'string') {
+            this.$set(this.data.options.proxy, 'apiKey', '');
+          }
+          if (typeof this.data.options.proxy.extraHeaders !== 'string') {
+            this.$set(this.data.options.proxy, 'extraHeaders', '');
+          }
           // Ensure Nextcloud Bookmarks block exists and preserves saved values (including rootFolderId)
           this.data.options.bookmarks = Object.assign({}, defaultOptions.bookmarks || { serverUrl:'', username:'', password:'', rootFolderId:0, syncIntervalSec:0, folderHashes:{} }, this.data.options.bookmarks || {});
           this.data.options.sharing = Object.assign({}, defaultOptions.sharing || {}, this.data.options.sharing || {});
@@ -31426,3 +31846,31 @@ footer a:hover {
  </body>
 
 </html>
+            'options.proxy.title': 'Proxy',
+            'options.proxy.enabled': 'Use proxy for outgoing requests',
+            'options.proxy.enabled.help': 'When enabled, MyBookmarks sends all network calls (shorteners, metadata, link checks) via the configured proxy instead of the browser extension.',
+            'options.proxy.baseUrl': 'Proxy endpoint',
+            'options.proxy.baseUrl.help': 'Base URL of your proxy service (e.g., https://proxy.example.com). MyBookmarks will call POST /fetch on this server.',
+            'options.proxy.apiKey': 'Proxy API token',
+            'options.proxy.apiKey.help': 'Optional Bearer token sent as Authorization header.',
+            'options.proxy.extraHeaders': 'Additional headers',
+            'options.proxy.extraHeaders.help': 'Optional custom headers to send with every proxy request (one per line as "Header-Name: Value").',
+            'proxy.error.missingBaseUrl': 'Proxy is enabled but no base URL is configured.',
+            'proxy.error.fetchFailed': 'Proxy request failed: {message}',
+            'proxy.error.noTransport': 'No network transport available. Configure a proxy or install the browser extension.',
+            'proxy.info.usingProxy': 'Using configured proxy for network requests.',
+            'proxy.info.usingExtension': 'Using browser extension for network requests.',
+            'options.proxy.title': 'Proxy',
+            'options.proxy.enabled': 'Proxy für ausgehende Anfragen verwenden',
+            'options.proxy.enabled.help': 'Wenn aktiviert, laufen alle Netzwerkaufrufe (Shortener, Metadaten, Link-Prüfungen) über den konfigurierten Proxy statt über die Browser-Erweiterung.',
+            'options.proxy.baseUrl': 'Proxy-Endpunkt',
+            'options.proxy.baseUrl.help': 'Basis-URL deines Proxy-Services (z. B. https://proxy.meinedomain.de). MyBookmarks ruft darüber POST /fetch auf.',
+            'options.proxy.apiKey': 'Proxy-API-Token',
+            'options.proxy.apiKey.help': 'Optionales Bearer-Token, das als Authorization-Header gesendet wird.',
+            'options.proxy.extraHeaders': 'Zusätzliche Header',
+            'options.proxy.extraHeaders.help': 'Optionale eigene Header (eine Zeile pro Eintrag im Format „Header-Name: Wert“).',
+            'proxy.error.missingBaseUrl': 'Proxy ist aktiviert, aber es wurde keine Basis-URL hinterlegt.',
+            'proxy.error.fetchFailed': 'Proxy-Anfrage fehlgeschlagen: {message}',
+            'proxy.error.noTransport': 'Kein Netzwerk-Transport verfügbar. Bitte Proxy konfigurieren oder die Browser-Erweiterung installieren.',
+            'proxy.info.usingProxy': 'Netzwerkaufrufe laufen über den konfigurierten Proxy.',
+            'proxy.info.usingExtension': 'Netzwerkaufrufe laufen über die Browser-Erweiterung.',
