@@ -1,7 +1,28 @@
 ## Version 2025-09-21
 
-- Neu: Favicon Regeln mit URL Prefix, Domain und Regex mit Favicon Upload für Standardicons
+### New Features
 
+- Favicon rules with Url Prefix, Domain and Regex and upload for default icons
+- Added built-in link shortener workflow across Chrome/Firefox extensions (Bitly, Rebrandly, TinyURL, Blink, Dub, Ow.ly, Replug, T2M) for sharing links directly from the app.
+- Introduced a proxy-aware network layer with link security heuristics and UI feedback for risky URLs.
+
+### Improvements
+
+- Inlined the i18n and network services to simplify the single-file build and refreshed dark-mode styling for link shortener and favicon-rule dialogs.
+- Refactored link-shortener handling into the reusable MB.LinkShorteners service.
+- Extracted link security helpers into the new MB.Security utility, enabling consistent analyse/format helpers throughout the UI.
+- Updated proxy translation strings and their placement.
+
+### Documentation & Assets
+
+- Extended the README (multiple tweaks plus new screenshot).
+- Updated the LICENSE and footer information.
+- Logged refactor follow-up ideas in docs/tasks/refactor_ideas.md.
+
+### Maintenance
+
+- Version bump to V2025-09-21.
+- Adjusted .gitignore to drop DB_STORE artifacts.
 
 ## Version 2025-09-19
 
