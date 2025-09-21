@@ -12120,1237 +12120,7 @@ function getDefaultFaviconRules() {
 
     window.MB = window.MB || {};
 
-    MB.Network = {
-      DEFAULT_TIMEOUT: DEFAULT_PROXY_TIMEOUT_MS,
-      getProxyConfig() {
-        const app = window.app;
-        const opts = app?.data?.options?.proxy;
-        if (opts) return opts;
-        return initialData.options.proxy;
-      },
-      isProxyEnabled() {
-        const config = this.getProxyConfig() || {};
-        if (!config.enabled) return false;
-        return !!(config.baseUrl && config.baseUrl.trim());
-      },
-      getProxyBaseUrl() {
-        const base = (this.getProxyConfig()?.baseUrl || '').trim();
-        return base.replace(/\/$/, '');
-      },
-      getProxyHeaders() {
-        const config = this.getProxyConfig() || {};
-        const headers = {};
-        const token = (config.apiKey || '').trim();
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        const extra = (config.extraHeaders || '').split('\n');
-        extra.forEach(line => {
-          const trimmed = line.trim();
-          if (!trimmed) return;
-          const idx = trimmed.indexOf(':');
-          if (idx === -1) return;
-          const key = trimmed.slice(0, idx).trim();
-          const value = trimmed.slice(idx + 1).trim();
-          if (!key) return;
-          headers[key] = value;
-        });
-        return headers;
-      },
-      normalizeRequestConfig(config = {}) {
-        const normalized = Object.assign({ method: 'POST', headers: {} }, config);
-        normalized.method = (normalized.method || 'POST').toUpperCase();
-        if (!normalized.headers || typeof normalized.headers !== 'object') normalized.headers = {};
-        const headers = {};
-        Object.entries(normalized.headers).forEach(([key, value]) => {
-          if (key) headers[key] = value;
-        });
-        normalized.headers = headers;
-        const hasJsonContentType = Object.keys(headers).some(h => h.toLowerCase() === 'content-type' && /json/i.test(String(headers[h])));
-        if (normalized.body && typeof normalized.body !== 'string' && normalized.method !== 'GET' && normalized.method !== 'HEAD') {
-          if (!hasJsonContentType) headers['Content-Type'] = 'application/json';
-          normalized.body = JSON.stringify(normalized.body);
-        }
-        if (normalized.timeoutMs === undefined) normalized.timeoutMs = this.DEFAULT_TIMEOUT;
-        return normalized;
-      },
-      async fetchViaProxy(request) {
-        if (!this.isProxyEnabled()) {
-          const err = new Error('proxyDisabled');
-          err.code = 'proxyDisabled';
-          throw err;
-        }
-        const baseUrl = this.getProxyBaseUrl();
-        if (!baseUrl) {
-          const err = new Error('proxyMissingBaseUrl');
-          err.code = 'proxyMissingBaseUrl';
-          throw err;
-        }
-        const endpoint = `${baseUrl}/fetch`;
-        const payload = { request };
-        const headers = Object.assign({ 'Content-Type': 'application/json' }, this.getProxyHeaders());
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), request.timeoutMs || this.DEFAULT_TIMEOUT);
-        try {
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(payload),
-            signal: controller.signal,
-            credentials: 'omit'
-          });
-          const json = await response.json().catch(() => null);
-          if (!response.ok) {
-            const err = new Error(json?.error || `${response.status} ${response.statusText}`);
-            err.code = 'proxyFetchFailed';
-            throw err;
-          }
-          return json;
-        } catch (error) {
-          if (error.name === 'AbortError') {
-            const err = new Error('proxyTimeout');
-            err.code = 'proxyTimeout';
-            throw err;
-          }
-          throw error;
-        } finally {
-          clearTimeout(timeout);
-        }
-      },
-      hasExtensionTransport() {
-        return !!(window.MyBookmarksExtension && typeof window.MyBookmarksExtension.proxyFetch === 'function');
-      },
-      async performRequest(config) {
-        const normalized = this.normalizeRequestConfig(config);
-        if (this.isProxyEnabled()) {
-          return await this.fetchViaProxy(normalized);
-        }
-        if (this.hasExtensionTransport()) {
-          return await MB.Extension.proxyFetch(normalized);
-        }
-        const err = new Error('noTransport');
-        err.code = 'noTransport';
-        throw err;
-      }
-    };
-
-    function resolveDomain(labelValue, baseUrl, fallback) {
-      const trimmed = (labelValue || '').trim();
-      if (trimmed) return trimmed;
-      if (baseUrl) {
-        try {
-          return new URL(baseUrl).hostname;
-        } catch {}
-      }
-      return fallback || '';
-    }
-
-    function parseJsonResponse(response, provider) {
-      let data = null;
-      try {
-        data = response?.bodyText ? JSON.parse(response.bodyText) : {};
-      } catch (err) {
-        throw new Error(`${provider} returned invalid JSON`);
-      }
-      if (!response?.ok) {
-        const message = data?.message || data?.error || data?.description || data?.errors?.[0]?.message || response?.statusText || `HTTP ${response?.status}`;
-        throw new Error(message);
-      }
-      return data || {};
-    }
-
-    const initialData = {
-      groups: [],
-      savedSearches: [],
-      snapshots: [],
-      schemaVersion: 1,
-      identity: { uuid: '', name: '', pubKey: '', privKey: '' },
-      contacts: [],
-      inbox: [],
-      pendingNcDeletes: [],
-      options: { // Default options structure
-        common: {
-          language: 'en',
-          pageTitle: 'My Bookmarks',
-          searchAsYouType: false,
-          confirmDeleteGroup: true,
-        confirmDeleteLink: true,
-        },
-        groups: {
-          collapseGroupsOnStart: false,
-          hoverExpandDelayMs: CONSTS.HOVER_EXPAND_DELAY_MS,
-          hoverExpandEnabled: true,
-          defaultGroupFormatting: '',
-          defaultGroupTitleFormatting: '',
-          defaultGroupLinkFormatting: '',
-          defaultGroupBadgeFormatting: '',
-          defaultGroupPillFormatting: '',
-          defaultLinkFormatting: '',
-          clearClosesAllGroups: false,
-          keywordClickExpandsAll: false,
-          searchAutoExpandFound: false,
-        },
-        links: {
-          openInNewTab: true,
-          addViaDialog: false,
-          autoFetchTitle: false,
-          autoFetchFavicon: false,
-          showLinkBadges: false,
-          showLinkPopover: true,
-          progressiveLoadingThreshold: CONSTS.PROGRESSIVE_LOADING_THRESHOLD,
-          copyUrlFormat: '{title}: {url}', // Customizable format for copying links
-          defaultUrlPrefix: CONSTS.DEFAULT_URL_PREFIX,
-          faviconRules: getDefaultFaviconRules()
-        },
-        linkShorteners: {
-          enabledServices: [],
-          accounts: {}
-        },
-        proxy: {
-          enabled: false,
-          baseUrl: '',
-          apiKey: '',
-          extraHeaders: ''
-        },
-        buttons: {
-          // Group quick-action buttons
-          showAddLink: true,      // Show "Add link" button in group header
-          showDeleteGroup: true,  // Show "Delete group" button in group header
-          // Link quick-action buttons
-          showCopyUrl: true,      // Show "Copy URL" button for links
-          showQrCode: true,       // Show "QR Code" button for links
-          showDeleteLink: true    // Show "Delete link" button for links
-        },
-        sharing: {
-          ntfyServerUrl: 'https://ntfy.sh',
-          ntfyAuthToken: '',
-          defaultTtl: 0,
-          quickCodeTtlSec: CONSTS.QUICK_CODE_TTL_SEC,
-          contactOnlineTimeoutSeconds: CONSTS.CONTACT_ONLINE_TIMEOUT_SEC,
-        },
-        groupSharing: {
-          topicPrefix: 'mb-g-',
-        },
-        colors: {
-          background: '',  // Changed from websiteBackground to match optionPath
-          toolbarBackground: '',
-          titleBarBackground: '',
-          titleTextColor: '',
-          keywordContainer: '',
-          keywordBackground: ''  // Default keyword formatting (container and badges background)
-        },
-        customCss: '',
-        eventlog: {
-          snapshotInterval: CONSTS.EVENT_LOG_SNAPSHOT_INTERVAL,
-          maxEvents: CONSTS.EVENT_LOG_MAX_EVENTS * 2, // Double for main setting
-          syncStrategy: 'owner-leads'
-        },
-        // CardDAV configuration defaults
-        carddav: {
-          serverUrl: '',
-          username: '',
-          password: '',
-          addressbookPath: '',
-          createAddressbookIfMissing: true,
-          syncIntervalSec: 0, // 0 = manual only
-          lastSyncAt: 0,
-          addressbookUrl: '',
-          syncToken: ''
-        },
-        // Nextcloud Bookmarks settings
-        bookmarks: {
-          serverUrl: '',
-          username: '',
-          password: '',
-          rootFolderId: 0, // 0 = all folders
-          syncIntervalSec: 0,
-          folderHashes: {}
-        },
-        performance: {
-          virtualizeLinks: false,
-          initialLimit: 200,
-          pageSize: 200
-        }
-      },
-    };
-
-    let linksDb = null;
-    let sharing = null;
-
-    
-
-    // Small debounce helper
-    function debounce(fn, wait) {
-      let t = null;
-      function debounced(...args) {
-        const ctx = this;
-        if (t) clearTimeout(t);
-        t = setTimeout(() => fn.apply(ctx, args), wait);
-      }
-      debounced.cancel = () => { if (t) { clearTimeout(t); t = null; } };
-      return debounced;
-    }
-
-    // Custom directive for focusing elements
-    Vue.directive('focus', {
-      inserted: function (el, binding) {
-        if (binding.value) {
-          el.focus();
-        }
-      },
-      update: function (el, binding) {
-        if (binding.value && binding.oldValue !== binding.value) {
-          // Need $nextTick to ensure the element is visible/rendered before focusing
-          Vue.nextTick(() => {
-            el.focus();
-          });
-        }
-      }
-    });
-
-
-    // Main Vue instance
-    let app = new Vue({
-      el: '#app',
-      directives: {
-        focus: {
-          inserted: function(el, binding) {
-            // Store element reference for later use
-            el._focusHandler = () => {
-              const focusElement = () => {
-                el.focus();
-                el.select();
-                // Keep trying if focus was stolen
-                if (document.activeElement !== el) {
-                  setTimeout(() => {
-                    el.focus();
-                    el.select();
-                  }, 100);
-                }
-              };
-              
-              // Try multiple times to ensure focus stays
-              setTimeout(focusElement, CONSTS.FOCUS_DELAY_SHORT_MS);
-              setTimeout(focusElement, CONSTS.FOCUS_DELAY_MEDIUM_MS);
-              setTimeout(focusElement, CONSTS.FOCUS_DELAY_LONG_MS);
-            };
-            
-            // Focus on initial insert if value is true
-            if (binding.value) {
-              el._focusHandler();
-            }
-          },
-          update: function(el, binding) {
-            // When value changes from false/null to true, focus the element
-            if (binding.value && !binding.oldValue) {
-              if (el._focusHandler) {
-                el._focusHandler();
-              }
-            }
-          },
-          unbind: function(el) {
-            // Clean up
-            delete el._focusHandler;
-          }
-        }
-      },
-      data: {
-        title: 'My Bookmarks', // Will be updated from options
-        filterText: '',
-        data: JSON.parse(JSON.stringify(initialData)), // Deep clone initial data
-        dataId: -1, // ID for the IndexedDB record
-        isDarkMode: false, // Dark mode state
-        // Sync progress UI
-        syncInProgress: false,
-        syncProgress: 0,
-        syncProgressText: '' ,
-        storageUsed: 0, // Current storage usage in bytes
-        customColors: {
-          background: '#fafbfc',
-          toolbar: '#ffffff',
-          titleBar: '#f8f9fa',
-          titleText: '#1a1a1a',
-          keywordContainer: '#f0f0f0'
-        },
-        // UI State
-        contextMenuTarget: null, // { type: 'link'/'group', item: object }
-        isLinkMenuVisible: false,
-        // Conflict Resolution UI
-        showConflictNotification: false,
-        conflictNotificationText: '',
-        conflictNotificationTimeout: null,
-        // Visual CSS Editor
-        cssSidebarVisible: false,
-        visualCssRules: [],
-        visualCssAvailableSelectors: [],
-        showMigrationNotice: false,
-        customCssDraft: '', // Keep for computed properties compatibility
-        cssSidebarWidth: 400,
-        isCssSidebarWidthResizing: false,
-        selectedVisualTemplate: null,
-        editingRuleId: null,
-        editingRuleName: '',
-        collapsedRules: [],
-        designTokensCollapsed: false,
-        // Feature Overview Sidebar
-        featureSidebarVisible: false,
-        helpLanguageTab: 'de', // Default to German
-        selectedColor: '#000000',
-        // Browser Extension
-        extensionAvailable: false,
-        extensionVersion: null,
-        autoFetchTimeout: null, // Timeout for debounced auto-fetch
-        // CSS Templates
-        cssTemplates: [],
-        selectedTemplateId: null,
-        showSaveTemplateDialog: false,
-        newTemplateName: '',
-        // Custom Rule Sets
-        customRuleSets: {},
-        selectedRuleSetName: null,
-        showSaveRuleSetDialog: false,
-        linkShortenerServices: LINK_SHORTENER_SERVICES,
-
-        // Visual CSS Rules search
-        rulesFilterQuery: '',
-        newRuleSetName: '',
-        // Toast Notifications
-        toastMessage: '',
-        toastType: 'success', // success, error, info
-        toastVisible: false,
-        // CSS Sidebar resize
-        isCssSidebarResizing: false,
-        cssSidebarTopHeight: 300, // Default height in pixels
-        cssSidebarStartY: 0,
-        cssSidebarStartHeight: 0,
-        // CSS Sidebar width resize
-        isCssSidebarWidthResizing: false,
-        cssSidebarWidth: 400, // Default width in pixels
-        cssSidebarStartX: 0,
-        cssSidebarStartWidth: 0,
-        // Element Picker & Pseudo States
-        elementPickerActive: false,
-        currentPickerRule: null,
-        lastHighlightedEl: null,
-        lastHighlightedOutline: null,
-        // Design Tokens
-        designTokens: [],
-        // CSS Presets
-        cssPresets: [
-          { id: 'card-shadow', name: 'Card Shadow', properties: {
-            'box-shadow': '0 2px 8px rgba(0,0,0,0.12)',
-            'border-radius': '12px',
-            'background-color': '#ffffff'
-          }},
-          { id: 'subtle-border', name: 'Subtle Border', properties: {
-            'border': '1px solid rgba(0,0,0,0.08)',
-            'border-radius': '8px',
-            'background-color': '#ffffff'
-          }},
-          { id: 'button-primary', name: 'Button Primary', properties: {
-            'background-color': '#0d6efd',
-            'color': '#ffffff',
-            'border': '1px solid #0d6efd',
-            'padding': '0.375rem 0.75rem',
-            'border-radius': '0.375rem'
-          }}
-        ],
-        cssHookClasses: [
-          'body',
-          '#app.container-fluid.mb-app',
-          '.mb-titlebar',
-          '.mb-titlebar h1',
-          '.mb-toolbar',
-          '.btn-toolbar',
-          '.mb-tools',
-          '.mb-toolbar__search',
-          '.mb-toolbar__search .input-group-text',
-          '.mb-toolbar__storage',
-          '.mb-footer',
-          '.groupContainer',
-          '.mb-group',
-          '.groupContainerHeader',
-          '.mb-group__header',
-          '.groupTitle',
-          '.mb-group__title',
-          '.groupLinkCount',
-          '.mb-linkcount-badge',
-          '.mb-group__badges',
-          '.group-info-section',
-          '.mb-group-info-section',
-          '.mb-group-info-header',
-          '.mb-group-info-label',
-          '.mb-group-info-content',
-          '.linkContainer',
-          '.mb-link',
-          '.mb-links',
-          '.linkText',
-          '.linkText a',
-          '.mb-link__anchor',
-          '.linkTextCategory',
-          '.mb-link__badges',
-          '.badge',
-          '.keyword-badge',
-          '.mb-keyword',
-          '.mb-group__keyword-badge',
-          '.mb-link__keyword-badge',
-          '.mb-keywords-cloud',
-          '.mb-keyword-label',
-          '.keyword-container',
-          '.mb-keyword-bar',
-          '.btn',
-          '.mb-btn',
-          '.btn-primary',
-          '.btn-success',
-          '.btn-danger',
-          '.btn-secondary',
-          '.btn-outline-secondary',
-          '.form-control',
-          '.form-select',
-          '.modal',
-          '.mb-modal',
-          '.modal-content',
-          '.modal-header',
-          '.modal-body',
-          '.modal-footer',
-          '.mb-context-menu',
-          '.mb-css-sidebar',
-          '.mb-css-sidebar-header',
-          '.mb-css-sidebar-title',
-          '.mb-css-sidebar-close',
-          '.mb-css-sidebar-container',
-          '.mb-css-sidebar-help',
-          '.mb-css-sidebar-help-content',
-          '.mb-css-help-hint',
-          '.mb-css-help-code',
-          '.mb-css-sidebar-divider',
-          '.mb-css-sidebar-editor-section',
-          '.mb-css-editor',
-          '.mb-css-editor-wrapper',
-          '.mb-css-editor-toolbar',
-          '.mb-css-editor-title',
-          '.mb-css-editor-buttons',
-          '.mb-css-editor-textarea',
-          '.mb-css-highlighted-container',
-          '.mb-css-highlighted-pre',
-          '.mb-css-highlighted-code',
-          '.mb-css-save-btn',
-          '.mb-css-cancel-btn',
-          '.mb-css-reset-btn',
-          '.mb-css-colorpicker-btn',
-          '.mb-css-template-select',
-          '.mb-css-template-buttons',
-          '.mb-css-hook-insert-btn',
-          '.mb-css-hook-selector',
-          '.css-sidebar-resize-handle',
-          '.sidebar-split-container',
-          '.sidebar-top-section',
-          '.sidebar-bottom-section',
-          '.sidebar-divider',
-          '.editor-header',
-          '.editor-content',
-          '.sidebar-content',
-          '.mb-feature-sidebar',
-          '.mb-feature-sidebar-header',
-          '.mb-feature-sidebar-title',
-          '.mb-feature-sidebar-close',
-          '.mb-feature-sidebar-content',
-          '.feature-sidebar',
-          '.feature-section',
-          '.feature-card',
-          '.context-menu',
-          '.context-menu-visible',
-          '.context-menu ul',
-          '.context-menu ul li',
-          '.context-menu .separator',
-          '.context-menu .submenu',
-          '.context-menu .submenu::after',
-          '.context-submenu',
-          '.context-submenu li',
-          '.mb-context-menu',
-          '.mb-context-menu-visible',
-          '.mb-context-menu ul',
-          '.mb-context-menu ul li',
-          '.mb-context-menu-separator',
-          '.mb-context-submenu',
-          '.mb-context-submenu-item',
-          '.mb-context-submenu::after',
-          '.mb-group-menu-btn',
-          '.mb-link-menu-btn',
-          '.mb-snapshots-dropdown',
-          '.mb-snapshots-btn',
-          '.mb-snapshots-menu',
-          '.mb-edit-modal-title',
-          '.mb-edit-modal-body',
-          '.mb-edit-modal-footer',
-          '.mb-edit-form',
-          '.mb-edit-filter-container',
-          '.mb-edit-filter-group',
-          '.mb-edit-filter-input',
-          '.mb-edit-section',
-          '.mb-edit-section-header',
-          '.mb-edit-section-body',
-          '.mb-edit-field-row',
-          '.mb-edit-field-label',
-          '.mb-edit-field-help',
-          '.mb-edit-text-input',
-          '.mb-edit-url-input',
-          '.mb-edit-number-input',
-          '.mb-edit-checkbox',
-          '.mb-edit-select',
-          '.mb-edit-save-btn',
-          '.mb-edit-cancel-btn',
-          '.mb-edit-reset-btn',
-          '.mb-toast',
-          '.mb-toast-success',
-          '.mb-toast-error',
-          '.mb-toast-warning',
-          '.mb-toast-info',
-          '.mb-toast-content',
-          '.mb-toast-title',
-          '.mb-toast-body',
-          '.mb-toast-close',
-          '.mb-toast-progress',
-          '.mb-toast-progress-fill',
-          '.group-uuid-<uuid>',
-          '.link-uuid-<uuid>'
-        ],
-        // Sync All state
-        syncAllCooldown: 0,
-        isSyncingAll: false,
-        lastSyncAllTime: 0,
-        isGroupMenuVisible: false,
-        contextMenuStyle: { top: '0px', left: '0px' },
-        editLink: null, // Link being edited in modal
-        editLinkOriginalValues: null, // Original values before editing (for event-log)
-        linkModalVisible: false, // Track when link edit modal is visible
-        // Metadata fetch UI state (for edit/add dialog)
-        titleFetchState: 'idle', // idle|loading|ok|fail
-        faviconFetchState: 'idle', // idle|loading|ok|fail
-        metadataMessage: '',
-        editGroup: null, // Group being edited in modal
-        editGroupEnableStyling: true, // UI switch for per-group styling
-        qrCodeUrl: '',
-        bookmarkletHref: '',
-        // Duplicates dialog
-        duplicatesFound: {},
-        showDuplicatesDialog: false,
-        pasteContent: '',
-        pasteHint: '',
-        parsedLinks: null,
-        detectedFormat: '',
-        importGroupTitle: '',
-        isFullExport: false,
-        fullExportData: null,
-        importUrl: '',
-        fetchingUrl: false,
-        urlFetchError: '',
-        fetchingBrowserBookmarks: false,
-        browserBookmarksInfo: '',
-        importCollapsedGroups: {}, // Track which groups are collapsed in import preview
-        exportSelection: [],
-        exportFormat: 'json',
-        
-        prevIdentityName: '',
-        // NC Folder Picker state
-        ncFolders: [],
-        ncFoldersLoading: false,
-        ncFolderSelected: 0,
-        // Drag & Drop
-        dropManager: null, // Will be initialized in mounted()
-        dragState: null, // Reactive state for drag & drop
-        expandHoverTimers: {}, // timers for auto-expanding collapsed groups while dragging links
-
-        // Saved searches
-        savedSearches: [],
-        
-        // Info popup
-        infoPopupContent: '',
-        infoPopupTimer: null,
-        linkPopover: {
-          visible: false,
-          link: null,
-          style: { top: '0px', left: '0px' },
-          titleHtml: '',
-          displayUrl: '',
-          url: '',
-          rawUrlInput: '',
-          favicon: '',
-          keywords: [],
-          emoji: '',
-          uuid: '',
-          createdAt: { full: '—', relative: '', raw: null },
-          updatedAt: { full: '—', relative: '', raw: null }
-        },
-        linkPopoverHideTimer: null,
-        selectedSavedSearch: '',
-        
-        // JSON Inspector
-        inspectedGroup: null,
-        inspectedGroupJSON: '',
-
-        // History (Undo/Redo)
-        appInitialized: false,
-        historyPast: [],
-        historyFuture: [],
-        historyLock: false,
-        lastSavedJson: '',
-        carddavTimer: null,
-
-        // Quick-Connect dialog state
-        qcDialog: { visible: false, mode: 'receive', code: '', status: [], progress: 'idle' },
-        contactsDialog: { visible: false, tab: 'contacts' },
-        shareDialog: { visible: false, mode: 'link', payload: null, selectedContacts: {} },
-        // Contact online status tracking
-        contactOnlineStatus: {}, // { contactUuid: { online: boolean, lastCheck: timestamp } }
-        pendingPings: {}, // { pingId: { resolve: function, reject: function, timeout: timeoutId } }
-        // Removed from group notification
-        removedGroupInfo: {
-          groupName: '',
-          ownerName: '',
-          removedAt: null,
-          groupId: null
-        },
-        // Invitation dialog for immediate acceptance/rejection
-        invitationDialog: { 
-          visible: false, 
-          type: '', // 'group' or 'link'
-          env: null, 
-          groupName: '', 
-          linkCount: 0,
-          fromName: '',
-          preview: [] // Preview of links to be added
-        },
-        processedMsgIds: new Set(),
-
-        // --- Generic Edit Dialog Data ---
-        genericEditConfig: {
-          title: '',
-          type: '', // 'options', 'group', or 'link'
-          design: {}, // The design structure
-          saveCallback: null
-        },
-        genericEditData: null, // The data being edited
-        genericFilterText: '', // Filter text for generic dialog
-        genericExpandedSections: {}, // Track which sections are expanded
-        // Legacy properties for old dialogs - kept for compatibility
-        expandedLinkSections: {},
-        expandedGroupSections: {},
-        expandedSections: {},
-        settingsFilterText: '',
-        optionsDesign: { // Struktur für generischen Dialog
-          common: {
-            translateKey: 'options.common',
-            fields: {
-              language: { id: 'CommonLanguage', type: 'select', translateKey: 'options.common.language', values: { 'en': 'options.common.language.english', 'de': 'options.common.language.german' }, optionPath: 'common.language', helpText: 'options.common.language.help' },
-              pageTitle: { id: 'CommonPageTitle', type: 'text', translateKey: 'options.common.pageTitle', optionPath: 'common.pageTitle', helpText: 'options.common.pageTitle.help' },
-              
-              searchAsYouType: { id: 'SearchAsYouType', type: 'checkbox', translateKey: 'options.common.searchAsYouType', optionPath: 'common.searchAsYouType', helpText: 'options.common.searchAsYouType.help' },
-              confirmDeleteGroup: { id: 'CommonConfirmDeleteGroup', type: 'checkbox', translateKey: 'options.common.confirmDeleteGroup', optionPath: 'common.confirmDeleteGroup', helpText: 'options.common.confirmDeleteGroup.help' },
-              confirmDeleteLink: { id: 'CommonConfirmDeleteLink', type: 'checkbox', translateKey: 'options.common.confirmDeleteLink', optionPath: 'common.confirmDeleteLink', helpText: 'options.common.confirmDeleteLink.help' }
-            }
-          },
-          groups: {
-            translateKey: 'options.groups',
-            fields: {
-              collapseGroupsOnStart: {
-                id: 'GroupsCollapseGroupsOnStart',
-                type: 'checkbox',
-                translateKey: 'options.groups.collapseGroupsOnStart',
-                optionPath: 'groups.collapseGroupsOnStart',
-                helpText: 'options.groups.collapseGroupsOnStart.help'
-              },
-              hoverExpandEnabled: {
-                id: 'GroupsHoverExpandEnabled',
-                type: 'checkbox',
-                translateKey: 'options.groups.hoverExpandEnabled',
-                optionPath: 'groups.hoverExpandEnabled',
-                helpText: 'options.groups.hoverExpandEnabled.help'
-              },
-              hoverExpandDelay: {
-                id: 'GroupsHoverExpandDelay',
-                type: 'number',
-                translateKey: 'options.groups.hoverExpandDelay',
-                optionPath: 'groups.hoverExpandDelayMs',
-                helpText: 'options.groups.hoverExpandDelay.help'
-              },
-              clearClosesAllGroups: {
-                id: 'GroupsClearClosesAll',
-                type: 'checkbox',
-                translateKey: 'options.groups.clearClosesAllGroups',
-                optionPath: 'groups.clearClosesAllGroups',
-                helpText: 'options.groups.clearClosesAllGroups.help'
-              },
-              keywordClickExpandsAll: {
-                id: 'GroupsKeywordClickExpandsAll',
-                type: 'checkbox',
-                translateKey: 'options.groups.keywordClickExpandsAll',
-                optionPath: 'groups.keywordClickExpandsAll',
-                helpText: 'options.groups.keywordClickExpandsAll.help'
-              },
-              searchAutoExpandFound: {
-                id: 'GroupsSearchAutoExpandFound',
-                type: 'checkbox',
-                translateKey: 'options.groups.searchAutoExpandFound',
-                optionPath: 'groups.searchAutoExpandFound',
-                helpText: 'options.groups.searchAutoExpandFound.help'
-              }
-            }
-          },
-          links: {
-            translateKey: 'options.links',
-            fields: {
-              openInNewTab: {
-              id: 'LinksOpenInNewTab',
-              type: 'checkbox',
-              translateKey: 'options.links.openInNewTab',
-              optionPath: 'links.openInNewTab',
-              helpText: 'options.links.openInNewTab.help'
-              },
-              progressiveLoadingThreshold: {
-              id: 'LinksProgressiveLoadingThreshold',
-              type: 'number',
-              translateKey: 'options.links.progressiveLoadingThreshold',
-              optionPath: 'links.progressiveLoadingThreshold',
-              helpText: 'options.links.progressiveLoadingThreshold.help',
-              defaultValue: 100
-              },
-              addViaDialog: {
-              id: 'LinksAddViaDialog',
-              type: 'checkbox',
-              translateKey: 'options.links.addViaDialog',
-              optionPath: 'links.addViaDialog',
-              helpText: 'options.links.addViaDialog.help'
-              },
-              defaultUrlPrefix: {
-              id: 'LinksDefaultUrlPrefix',
-              type: 'text',
-              translateKey: 'options.links.defaultUrlPrefix',
-              optionPath: 'links.defaultUrlPrefix',
-              helpText: 'options.links.defaultUrlPrefix.help',
-              placeholder: 'https://'
-              },
-              autoFetchTitle: {
-              id: 'LinksAutoFetchTitle',
-              type: 'checkbox',
-              translateKey: 'options.links.autoFetchTitle',
-              optionPath: 'links.autoFetchTitle',
-              helpText: 'options.links.autoFetchTitle.help'
-              },
-              autoFetchFavicon: {
-              id: 'LinksAutoFetchFavicon',
-              type: 'checkbox',
-              translateKey: 'options.links.autoFetchFavicon',
-              optionPath: 'links.autoFetchFavicon',
-              helpText: 'options.links.autoFetchFavicon.help'
-              },
-              showLinkBadges: {
-              id: 'LinksShowLinkBadges',
-              type: 'checkbox',
-              translateKey: 'options.links.showLinkBadges',
-              optionPath: 'links.showLinkBadges',
-              helpText: 'options.links.showLinkBadges.help'
-              },
-              showLinkPopover: {
-              id: 'LinksShowLinkPopover',
-              type: 'checkbox',
-              translateKey: 'options.links.showLinkPopover',
-              optionPath: 'links.showLinkPopover',
-              helpText: 'options.links.showLinkPopover.help',
-              defaultValue: true
-              },
-              copyUrlFormat: {
-                id: 'LinksCopyUrlFormat',
-                type: 'text',
-                translateKey: 'options.links.copyUrlFormat',
-                optionPath: 'links.copyUrlFormat',
-                helpText: 'options.links.copyUrlFormat.help',
-                defaultValue: '{title}: {url}',
-                placeholder: '{title}: {url}'
-              },
-              
-            }
-          },
-          linkShorteners: {
-            translateKey: 'options.linkShorteners.title',
-            fields: {
-              services: {
-                id: 'LinkShortenersServices',
-                type: 'linkShorteners',
-                translateKey: 'options.linkShorteners.services',
-                optionPath: 'linkShorteners',
-                helpText: 'options.linkShorteners.services.help'
-              }
-            }
-          },
-          proxy: {
-            translateKey: 'options.proxy.title',
-            fields: {
-              enabled: {
-                id: 'ProxyEnabled',
-                type: 'checkbox',
-                translateKey: 'options.proxy.enabled',
-                optionPath: 'proxy.enabled',
-                helpText: 'options.proxy.enabled.help'
-              },
-              baseUrl: {
-                id: 'ProxyBaseUrl',
-                type: 'text',
-                translateKey: 'options.proxy.baseUrl',
-                optionPath: 'proxy.baseUrl',
-                helpText: 'options.proxy.baseUrl.help',
-                placeholder: 'https://proxy.example.com'
-              },
-              apiKey: {
-                id: 'ProxyApiKey',
-                type: 'text',
-                translateKey: 'options.proxy.apiKey',
-                optionPath: 'proxy.apiKey',
-                helpText: 'options.proxy.apiKey.help',
-                placeholder: 'Optional API token'
-              },
-              extraHeaders: {
-                id: 'ProxyExtraHeaders',
-                type: 'textarea',
-                translateKey: 'options.proxy.extraHeaders',
-                optionPath: 'proxy.extraHeaders',
-                helpText: 'options.proxy.extraHeaders.help',
-                rows: 3,
-                placeholder: 'Header-Name: Wert'
-              }
-            }
-          },
-          buttons: {
-            translateKey: 'options.buttons',
-            fields: {
-              showAddLink: {
-                id: 'ButtonsShowAddLink',
-                type: 'checkbox',
-                translateKey: 'options.buttons.showAddLink',
-                optionPath: 'buttons.showAddLink',
-                helpText: 'options.buttons.showAddLink.help',
-                defaultValue: true
-              },
-              showDeleteGroup: {
-                id: 'ButtonsShowDeleteGroup',
-                type: 'checkbox',
-                translateKey: 'options.buttons.showDeleteGroup',
-                optionPath: 'buttons.showDeleteGroup',
-                helpText: 'options.buttons.showDeleteGroup.help',
-                defaultValue: true
-              },
-              showCopyUrl: {
-                id: 'ButtonsShowCopyUrl',
-                type: 'checkbox',
-                translateKey: 'options.buttons.showCopyUrl',
-                optionPath: 'buttons.showCopyUrl',
-                helpText: 'options.buttons.showCopyUrl.help',
-                defaultValue: true
-              },
-              showQrCode: {
-                id: 'ButtonsShowQrCode',
-                type: 'checkbox',
-                translateKey: 'options.buttons.showQrCode',
-                optionPath: 'buttons.showQrCode',
-                helpText: 'options.buttons.showQrCode.help',
-                defaultValue: true
-              },
-              showDeleteLink: {
-                id: 'ButtonsShowDeleteLink',
-                type: 'checkbox',
-                translateKey: 'options.buttons.showDeleteLink',
-                optionPath: 'buttons.showDeleteLink',
-                helpText: 'options.buttons.showDeleteLink.help',
-                defaultValue: true
-              }
-            }
-          },
-          sharing: {
-            translateKey: 'options.sharing',
-            fields: {
-              // Move display name here to show above ntfy server URL
-              identityName: { id: 'CommonIdentityName', type: 'text', translateKey: 'options.common.identityName', optionPath: 'common.identityName', helpText: 'options.common.identityName.help' },
-              ntfyServerUrl: { id: 'SharingNtfyServer', type: 'text', translateKey: 'options.sharing.ntfyServerUrl', optionPath: 'sharing.ntfyServerUrl', helpText: 'options.sharing.ntfyServerUrl.help' },
-              ntfyAuthToken: { id: 'SharingNtfyToken', type: 'text', translateKey: 'options.sharing.ntfyAuthToken', optionPath: 'sharing.ntfyAuthToken', helpText: 'options.sharing.ntfyAuthToken.help' },
-              defaultTtl: { id: 'SharingDefaultTtl', type: 'number', translateKey: 'options.sharing.defaultTtl', optionPath: 'sharing.defaultTtl', helpText: 'options.sharing.defaultTtl.help' },
-              quickCodeTtlSec: { id: 'SharingQuickCodeTtl', type: 'number', translateKey: 'options.sharing.quickCodeTtl', optionPath: 'sharing.quickCodeTtlSec', helpText: 'options.sharing.quickCodeTtl.help' },
-              contactOnlineTimeoutSeconds: { id: 'SharingContactOnlineTimeout', type: 'number', translateKey: 'options.sharing.contactOnlineTimeout', optionPath: 'sharing.contactOnlineTimeoutSeconds', helpText: 'options.sharing.contactOnlineTimeout.help' }
-            }
-          },
-          sync: {
-            translateKey: 'options.sync',
-            fields: {
-              // Settings for all users (Owner & Member)
-              conflictNotificationLevel: { 
-                id: 'SyncConflictNotifications', 
-                type: 'select', 
-                translateKey: 'options.sync.conflictNotificationLevel', 
-                optionPath: 'sync.conflictNotificationLevel',
-                helpText: 'options.sync.conflictNotificationLevel.help',
-                roleScope: 'all', // For everyone
-                values: {
-                  'silent': 'options.sync.conflictNotificationLevel.silent',
-                  'minimal': 'options.sync.conflictNotificationLevel.minimal',
-                  'verbose': 'options.sync.conflictNotificationLevel.verbose'
-                }
-              },
-              autoSyncInterval: {
-                id: 'SyncAutoInterval',
-                type: 'select',
-                translateKey: 'options.sync.autoSyncInterval',
-                optionPath: 'sync.autoSyncInterval',
-                helpText: 'options.sync.autoSyncInterval.help',
-                roleScope: 'all',
-                values: {
-                  '300': 'options.sync.autoSyncInterval.5min',
-                  '600': 'options.sync.autoSyncInterval.10min',
-                  '1800': 'options.sync.autoSyncInterval.30min',
-                  '3600': 'options.sync.autoSyncInterval.1hour',
-                  '0': 'options.sync.autoSyncInterval.manual'
-                }
-              },
-              offlineMode: {
-                id: 'SyncOfflineMode',
-                type: 'select',
-                translateKey: 'options.sync.offlineMode',
-                optionPath: 'sync.offlineMode',
-                helpText: 'options.sync.offlineMode.help',
-                roleScope: 'all',
-                values: {
-                  'optimistic': 'options.sync.offlineMode.optimistic',
-                  'conservative': 'options.sync.offlineMode.conservative'
-                }
-              },
-              // Settings only for Owners
-              conflictResolution: {
-                id: 'SyncConflictResolution',
-                type: 'select',
-                translateKey: 'options.sync.conflictResolution',
-                optionPath: 'sync.conflictResolution',
-                helpText: 'options.sync.conflictResolution.help',
-                roleScope: 'owner', // Only for group owners
-                values: {
-                  'owner-wins': 'options.sync.conflictResolution.ownerWins',
-                  'last-write-wins': 'options.sync.conflictResolution.lastWriteWins',
-                  'manual': 'options.sync.conflictResolution.manual'
-                }
-              },
-              memberRateLimit: {
-                id: 'SyncMemberRateLimit',
-                type: 'number',
-                translateKey: 'options.sync.memberRateLimit',
-                optionPath: 'sync.memberRateLimit',
-                helpText: 'options.sync.memberRateLimit.help',
-                roleScope: 'owner',
-                min: 0,
-                max: 100,
-                suffix: 'options.sync.memberRateLimit.suffix'
-              },
-              validationLevel: {
-                id: 'SyncValidationLevel',
-                type: 'select',
-                translateKey: 'options.sync.validationLevel',
-                optionPath: 'sync.validationLevel',
-                helpText: 'options.sync.validationLevel.help',
-                roleScope: 'owner',
-                values: {
-                  'strict': 'options.sync.validationLevel.strict',
-                  'moderate': 'options.sync.validationLevel.moderate',
-                  'permissive': 'options.sync.validationLevel.permissive'
-                }
-              },
-              // Settings only for Members
-              localCacheStrategy: {
-                id: 'SyncLocalCache',
-                type: 'select',
-                translateKey: 'options.sync.localCacheStrategy',
-                optionPath: 'sync.localCacheStrategy',
-                helpText: 'options.sync.localCacheStrategy.help',
-                roleScope: 'member', // Only for members
-                values: {
-                  'full': 'options.sync.localCacheStrategy.full',
-                  'minimal': 'options.sync.localCacheStrategy.minimal'
-                }
-              },
-              errorHandling: {
-                id: 'SyncErrorHandling',
-                type: 'select',
-                translateKey: 'options.sync.errorHandling',
-                optionPath: 'sync.errorHandling',
-                helpText: 'options.sync.errorHandling.help',
-                roleScope: 'member',
-                values: {
-                  'retry': 'options.sync.errorHandling.retry',
-                  'queue': 'options.sync.errorHandling.queue',
-                  'discard': 'options.sync.errorHandling.discard'
-                }
-              }
-            }
-          },
-          syncEngine: {
-            translateKey: 'options.sync.engine',
-            fields: {
-              backend: {
-                id: 'SyncBackend', type: 'select', translateKey: 'options.sync.backend', optionPath: 'sync.backend', helpText: 'options.sync.backend.help',
-                values: { 'carddav': 'options.sync.backend.carddav', 'nc-bookmarks': 'options.sync.backend.nc' }
-              }
-            }
-          },
-          bookmarks: {
-            translateKey: 'bookmarks.title',
-            fields: {
-              serverUrl: { id: 'BkServerUrl', type: 'text', translateKey: 'bookmarks.serverUrl', optionPath: 'bookmarks.serverUrl', helpText: 'bookmarks.serverUrl.help' },
-              username:  { id: 'BkUsername',  type: 'text', translateKey: 'bookmarks.username',  optionPath: 'bookmarks.username',  helpText: 'bookmarks.username.help' },
-              password:  { id: 'BkPassword',  type: 'text', translateKey: 'bookmarks.password',  optionPath: 'bookmarks.password',  helpText: 'bookmarks.password.help' },
-              rootFolderId: { id: 'BkRootFolder', type: 'select', translateKey: 'bookmarks.rootFolderId', optionPath: 'bookmarks.rootFolderId', helpText: 'bookmarks.rootFolderId.help', values: { '0': 'All folders' } },
-              autoCreateFolders: { id: 'BkAutoCreate', type: 'checkbox', translateKey: 'bookmarks.autoCreate', optionPath: 'bookmarks.autoCreateFolders', helpText: 'bookmarks.autoCreate.help' },
-              autoRenameFolders: { id: 'BkAutoRename', type: 'checkbox', translateKey: 'bookmarks.autoRename', optionPath: 'bookmarks.autoRenameFolders', helpText: 'bookmarks.autoRename.help' },
-              syncIntervalSec: { id: 'BkSyncInterval', type: 'select', translateKey: 'carddav.syncInterval', optionPath: 'bookmarks.syncIntervalSec', helpText: 'carddav.syncInterval.help', values: { '0':'carddav.syncInterval.manual','300':'carddav.syncInterval.5min','600':'carddav.syncInterval.10min','1800':'carddav.syncInterval.30min','3600':'carddav.syncInterval.1hour' } },
-              // Actions at the end of the section: Test + Reset in one row
-              actionsRow: { type: 'actions', actions: [
-                { key: 'testConnection', translateKey: 'carddav.testConnection', buttonClass: 'btn-outline-primary' },
-                { key: 'resetBindings', translateKey: 'sync.resetBindings', buttonLabel: 'sync.resetBindings', buttonClass: 'btn-outline-danger' }
-              ]}
-            }
-          },
-          carddav: {
-            translateKey: 'carddav.title',
-            fields: {
-              serverUrl: { id: 'CardDAVServerUrl', type: 'text', translateKey: 'carddav.serverUrl', optionPath: 'carddav.serverUrl', helpText: 'carddav.serverUrl.help' },
-              username: { id: 'CardDAVUsername', type: 'text', translateKey: 'carddav.username', optionPath: 'carddav.username', helpText: 'carddav.username.help' },
-              password: { id: 'CardDAVPassword', type: 'text', translateKey: 'carddav.password', optionPath: 'carddav.password', helpText: 'carddav.password.help' },
-              addressbookPath: { id: 'CardDAVAddressbookPath', type: 'text', translateKey: 'carddav.addressbookPath', optionPath: 'carddav.addressbookPath', helpText: 'carddav.addressbookPath.help' },
-              createAddressbookIfMissing: { id: 'CardDAVCreateAB', type: 'checkbox', translateKey: 'carddav.createAddressbookIfMissing', optionPath: 'carddav.createAddressbookIfMissing', helpText: 'carddav.createAddressbookIfMissing.help' },
-              syncIntervalSec: {
-                id: 'CardDAVSyncInterval', type: 'select', translateKey: 'carddav.syncInterval', optionPath: 'carddav.syncIntervalSec', helpText: 'carddav.syncInterval.help',
-                values: { '0': 'carddav.syncInterval.manual', '300': 'carddav.syncInterval.5min', '600': 'carddav.syncInterval.10min', '1800': 'carddav.syncInterval.30min', '3600': 'carddav.syncInterval.1hour' }
-              }
-            }
-          },
-          eventlog: {
-            translateKey: 'options.eventlog.title',
-            fields: {
-              snapshotInterval: {
-                id: 'eventLogSnapshotInterval',
-                type: 'number',
-                translateKey: 'options.eventlog.snapshotInterval',
-                optionPath: 'eventlog.snapshotInterval',
-                helpText: 'options.eventlog.snapshotInterval.help',
-                min: 10,
-                max: 1000,
-                suffix: 'Events'
-              },
-              maxEvents: {
-                id: 'eventLogMaxEvents',
-                type: 'number',
-                translateKey: 'options.eventlog.maxEvents',
-                optionPath: 'eventlog.maxEvents',
-                helpText: 'options.eventlog.maxEvents.help',
-                min: 100,
-                max: 10000,
-                suffix: 'Events'
-              },
-              syncStrategy: {
-                id: 'syncStrategy',
-                type: 'select',
-                translateKey: 'options.eventlog.syncStrategy',
-                optionPath: 'eventlog.syncStrategy',
-                helpText: 'options.eventlog.syncStrategy.help',
-                values: {
-                  'owner-leads': 'options.eventlog.syncStrategy.ownerLeads',
-                  'all-equal': 'options.eventlog.syncStrategy.allEqual',
-                  'smart-merge': 'options.eventlog.syncStrategy.smartMerge'
-                }
-              }
-            }
-          }
-        },
-        // Group Edit Dialog Configuration
-        groupEditDesign: {
-          basic: {
-            translateKey: 'group.basic',
-            fields: {
-              name: {
-                type: 'text',
-                translateKey: 'group.name',
-                placeholder: 'Enter group name',
-                helpText: 'group.name.help'
-              },
-              emoji: {
-                type: 'emoji',
-                translateKey: 'group.emoji',
-                placeholder: 'group.emoji.placeholder',
-                helpText: 'group.emoji.help'
-              },
-              keywords: {
-                type: 'text',
-                translateKey: 'group.keywords',
-                placeholder: 'e.g. work, personal, docs',
-                helpText: 'group.keywords.help'
-              }
-            }
-          },
-          advanced: {
-            translateKey: 'group.advanced',
-            fields: {
-              infoHtml: {
-                type: 'textarea',
-                translateKey: 'group.infoHtml',
-                placeholder: 'group.infoHtml.placeholder',
-                helpText: 'group.infoHtml.help',
-                rows: 4
-              }
-            }
-          }
-        },
-        // Link Edit Dialog Configuration
-        linkEditDesign: {
-          basic: {
-            translateKey: 'link.basic',
-            fields: {
-              text: {
-                type: 'text',
-                translateKey: 'link.text',
-                placeholder: 'Enter link text',
-                helpText: 'link.text.help'
-              },
-              url: {
-                type: 'url',
-                translateKey: 'link.url',
-                placeholder: 'https://example.com',
-                helpText: 'link.url.info',
-                validation: 'url',
-                autofocus: true
-              },
-              emoji: {
-                type: 'emoji',
-                translateKey: 'link.emoji',
-                placeholder: 'link.emoji.placeholder',
-                helpText: 'link.emoji.help'
-              },
-              keywords: {
-                type: 'text',
-                translateKey: 'link.keywords',
-                placeholder: 'e.g. work, personal, docs',
-                helpText: 'link.keywords.help'
-              }
-            }
-          },
-          advanced: {
-            translateKey: 'link.advanced',
-            fields: {
-              infoHtml: {
-                type: 'textarea',
-                translateKey: 'link.infoHtml',
-                placeholder: 'link.infoHtml.placeholder',
-                helpText: 'link.infoHtml.help',
-                rows: 4
-              }
-            }
-          }
-        },
-        // Favicon Rules working state (Options modal)
-        faviconRulesWorking: [],
-        faviconRulesTestUrl: '',
-        i18n: { // Übersetzungen jetzt hier
+    const MB_I18N_TRANSLATIONS = { // Übersetzungen jetzt hier
           'en': {
             // Favicon rules
             'options.links.faviconRules': 'Favicon rules',
@@ -15211,7 +13981,1281 @@ function getDefaultFaviconRules() {
             , 'close': 'Schließen'
             , 'ok': 'OK'
           }
+        };
+
+    MB.I18n = (function() {
+      const defaultLocale = 'en';
+      const translations = MB_I18N_TRANSLATIONS;
+
+      function normalizeLocale(locale) {
+        if (!locale) return defaultLocale;
+        return String(locale).trim().toLowerCase() || defaultLocale;
+      }
+
+      return {
+        defaultLocale,
+        getAvailableLocales() {
+          return Object.keys(translations);
         },
+        getTranslations(locale) {
+          return translations[normalizeLocale(locale)] || translations[defaultLocale] || {};
+        },
+        get(locale, key) {
+          if (!key) return '';
+          const normalized = normalizeLocale(locale);
+          const preferred = translations[normalized]?.[key];
+          if (preferred !== undefined) return preferred;
+          if (normalized !== defaultLocale) {
+            const fallback = translations[defaultLocale]?.[key];
+            if (fallback !== undefined) return fallback;
+          }
+          return '';
+        },
+        setTranslations(locale, entries) {
+          if (!locale || typeof entries !== 'object') return;
+          const normalized = normalizeLocale(locale);
+          const target = translations[normalized] || (translations[normalized] = {});
+          Object.assign(target, entries);
+        },
+        replaceTranslations(locale, entries) {
+          if (!locale || typeof entries !== 'object') return;
+          translations[normalizeLocale(locale)] = Object.assign({}, entries);
+        }
+      };
+    })();
+
+
+
+    MB.Network = {
+      DEFAULT_TIMEOUT: DEFAULT_PROXY_TIMEOUT_MS,
+      getProxyConfig() {
+        const app = window.app;
+        const opts = app?.data?.options?.proxy;
+        if (opts) return opts;
+        return initialData.options.proxy;
+      },
+      isProxyEnabled() {
+        const config = this.getProxyConfig() || {};
+        if (!config.enabled) return false;
+        return !!(config.baseUrl && config.baseUrl.trim());
+      },
+      getProxyBaseUrl() {
+        const base = (this.getProxyConfig()?.baseUrl || '').trim();
+        return base.replace(/\/$/, '');
+      },
+      getProxyHeaders() {
+        const config = this.getProxyConfig() || {};
+        const headers = {};
+        const token = (config.apiKey || '').trim();
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const extra = (config.extraHeaders || '').split('\n');
+        extra.forEach(line => {
+          const trimmed = line.trim();
+          if (!trimmed) return;
+          const idx = trimmed.indexOf(':');
+          if (idx === -1) return;
+          const key = trimmed.slice(0, idx).trim();
+          const value = trimmed.slice(idx + 1).trim();
+          if (!key) return;
+          headers[key] = value;
+        });
+        return headers;
+      },
+      normalizeRequestConfig(config = {}) {
+        const normalized = Object.assign({ method: 'POST', headers: {} }, config);
+        normalized.method = (normalized.method || 'POST').toUpperCase();
+        if (!normalized.headers || typeof normalized.headers !== 'object') normalized.headers = {};
+        const headers = {};
+        Object.entries(normalized.headers).forEach(([key, value]) => {
+          if (key) headers[key] = value;
+        });
+        normalized.headers = headers;
+        const hasJsonContentType = Object.keys(headers).some(h => h.toLowerCase() === 'content-type' && /json/i.test(String(headers[h])));
+        if (normalized.body && typeof normalized.body !== 'string' && normalized.method !== 'GET' && normalized.method !== 'HEAD') {
+          if (!hasJsonContentType) headers['Content-Type'] = 'application/json';
+          normalized.body = JSON.stringify(normalized.body);
+        }
+        if (normalized.timeoutMs === undefined) normalized.timeoutMs = this.DEFAULT_TIMEOUT;
+        return normalized;
+      },
+      async fetchViaProxy(request) {
+        if (!this.isProxyEnabled()) {
+          const err = new Error('proxyDisabled');
+          err.code = 'proxyDisabled';
+          throw err;
+        }
+        const baseUrl = this.getProxyBaseUrl();
+        if (!baseUrl) {
+          const err = new Error('proxyMissingBaseUrl');
+          err.code = 'proxyMissingBaseUrl';
+          throw err;
+        }
+        const endpoint = `${baseUrl}/fetch`;
+        const payload = { request };
+        const headers = Object.assign({ 'Content-Type': 'application/json' }, this.getProxyHeaders());
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), request.timeoutMs || this.DEFAULT_TIMEOUT);
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+            credentials: 'omit'
+          });
+          const json = await response.json().catch(() => null);
+          if (!response.ok) {
+            const err = new Error(json?.error || `${response.status} ${response.statusText}`);
+            err.code = 'proxyFetchFailed';
+            throw err;
+          }
+          return json;
+        } catch (error) {
+          if (error.name === 'AbortError') {
+            const err = new Error('proxyTimeout');
+            err.code = 'proxyTimeout';
+            throw err;
+          }
+          throw error;
+        } finally {
+          clearTimeout(timeout);
+        }
+      },
+      hasExtensionTransport() {
+        return !!(window.MyBookmarksExtension && typeof window.MyBookmarksExtension.proxyFetch === 'function');
+      },
+      async performRequest(config) {
+        const normalized = this.normalizeRequestConfig(config);
+        if (this.isProxyEnabled()) {
+          return await this.fetchViaProxy(normalized);
+        }
+        if (this.hasExtensionTransport()) {
+          return await MB.Extension.proxyFetch(normalized);
+        }
+        const err = new Error('noTransport');
+        err.code = 'noTransport';
+        throw err;
+      }
+    };
+
+    function resolveDomain(labelValue, baseUrl, fallback) {
+      const trimmed = (labelValue || '').trim();
+      if (trimmed) return trimmed;
+      if (baseUrl) {
+        try {
+          return new URL(baseUrl).hostname;
+        } catch {}
+      }
+      return fallback || '';
+    }
+
+    function parseJsonResponse(response, provider) {
+      let data = null;
+      try {
+        data = response?.bodyText ? JSON.parse(response.bodyText) : {};
+      } catch (err) {
+        throw new Error(`${provider} returned invalid JSON`);
+      }
+      if (!response?.ok) {
+        const message = data?.message || data?.error || data?.description || data?.errors?.[0]?.message || response?.statusText || `HTTP ${response?.status}`;
+        throw new Error(message);
+      }
+      return data || {};
+    }
+
+    const initialData = {
+      groups: [],
+      savedSearches: [],
+      snapshots: [],
+      schemaVersion: 1,
+      identity: { uuid: '', name: '', pubKey: '', privKey: '' },
+      contacts: [],
+      inbox: [],
+      pendingNcDeletes: [],
+      options: { // Default options structure
+        common: {
+          language: 'en',
+          pageTitle: 'My Bookmarks',
+          searchAsYouType: false,
+          confirmDeleteGroup: true,
+        confirmDeleteLink: true,
+        },
+        groups: {
+          collapseGroupsOnStart: false,
+          hoverExpandDelayMs: CONSTS.HOVER_EXPAND_DELAY_MS,
+          hoverExpandEnabled: true,
+          defaultGroupFormatting: '',
+          defaultGroupTitleFormatting: '',
+          defaultGroupLinkFormatting: '',
+          defaultGroupBadgeFormatting: '',
+          defaultGroupPillFormatting: '',
+          defaultLinkFormatting: '',
+          clearClosesAllGroups: false,
+          keywordClickExpandsAll: false,
+          searchAutoExpandFound: false,
+        },
+        links: {
+          openInNewTab: true,
+          addViaDialog: false,
+          autoFetchTitle: false,
+          autoFetchFavicon: false,
+          showLinkBadges: false,
+          showLinkPopover: true,
+          progressiveLoadingThreshold: CONSTS.PROGRESSIVE_LOADING_THRESHOLD,
+          copyUrlFormat: '{title}: {url}', // Customizable format for copying links
+          defaultUrlPrefix: CONSTS.DEFAULT_URL_PREFIX,
+          faviconRules: getDefaultFaviconRules()
+        },
+        linkShorteners: {
+          enabledServices: [],
+          accounts: {}
+        },
+        proxy: {
+          enabled: false,
+          baseUrl: '',
+          apiKey: '',
+          extraHeaders: ''
+        },
+        buttons: {
+          // Group quick-action buttons
+          showAddLink: true,      // Show "Add link" button in group header
+          showDeleteGroup: true,  // Show "Delete group" button in group header
+          // Link quick-action buttons
+          showCopyUrl: true,      // Show "Copy URL" button for links
+          showQrCode: true,       // Show "QR Code" button for links
+          showDeleteLink: true    // Show "Delete link" button for links
+        },
+        sharing: {
+          ntfyServerUrl: 'https://ntfy.sh',
+          ntfyAuthToken: '',
+          defaultTtl: 0,
+          quickCodeTtlSec: CONSTS.QUICK_CODE_TTL_SEC,
+          contactOnlineTimeoutSeconds: CONSTS.CONTACT_ONLINE_TIMEOUT_SEC,
+        },
+        groupSharing: {
+          topicPrefix: 'mb-g-',
+        },
+        colors: {
+          background: '',  // Changed from websiteBackground to match optionPath
+          toolbarBackground: '',
+          titleBarBackground: '',
+          titleTextColor: '',
+          keywordContainer: '',
+          keywordBackground: ''  // Default keyword formatting (container and badges background)
+        },
+        customCss: '',
+        eventlog: {
+          snapshotInterval: CONSTS.EVENT_LOG_SNAPSHOT_INTERVAL,
+          maxEvents: CONSTS.EVENT_LOG_MAX_EVENTS * 2, // Double for main setting
+          syncStrategy: 'owner-leads'
+        },
+        // CardDAV configuration defaults
+        carddav: {
+          serverUrl: '',
+          username: '',
+          password: '',
+          addressbookPath: '',
+          createAddressbookIfMissing: true,
+          syncIntervalSec: 0, // 0 = manual only
+          lastSyncAt: 0,
+          addressbookUrl: '',
+          syncToken: ''
+        },
+        // Nextcloud Bookmarks settings
+        bookmarks: {
+          serverUrl: '',
+          username: '',
+          password: '',
+          rootFolderId: 0, // 0 = all folders
+          syncIntervalSec: 0,
+          folderHashes: {}
+        },
+        performance: {
+          virtualizeLinks: false,
+          initialLimit: 200,
+          pageSize: 200
+        }
+      },
+    };
+
+    let linksDb = null;
+    let sharing = null;
+
+    
+
+    // Small debounce helper
+    function debounce(fn, wait) {
+      let t = null;
+      function debounced(...args) {
+        const ctx = this;
+        if (t) clearTimeout(t);
+        t = setTimeout(() => fn.apply(ctx, args), wait);
+      }
+      debounced.cancel = () => { if (t) { clearTimeout(t); t = null; } };
+      return debounced;
+    }
+
+    // Custom directive for focusing elements
+    Vue.directive('focus', {
+      inserted: function (el, binding) {
+        if (binding.value) {
+          el.focus();
+        }
+      },
+      update: function (el, binding) {
+        if (binding.value && binding.oldValue !== binding.value) {
+          // Need $nextTick to ensure the element is visible/rendered before focusing
+          Vue.nextTick(() => {
+            el.focus();
+          });
+        }
+      }
+    });
+
+
+    // Main Vue instance
+    let app = new Vue({
+      el: '#app',
+      directives: {
+        focus: {
+          inserted: function(el, binding) {
+            // Store element reference for later use
+            el._focusHandler = () => {
+              const focusElement = () => {
+                el.focus();
+                el.select();
+                // Keep trying if focus was stolen
+                if (document.activeElement !== el) {
+                  setTimeout(() => {
+                    el.focus();
+                    el.select();
+                  }, 100);
+                }
+              };
+              
+              // Try multiple times to ensure focus stays
+              setTimeout(focusElement, CONSTS.FOCUS_DELAY_SHORT_MS);
+              setTimeout(focusElement, CONSTS.FOCUS_DELAY_MEDIUM_MS);
+              setTimeout(focusElement, CONSTS.FOCUS_DELAY_LONG_MS);
+            };
+            
+            // Focus on initial insert if value is true
+            if (binding.value) {
+              el._focusHandler();
+            }
+          },
+          update: function(el, binding) {
+            // When value changes from false/null to true, focus the element
+            if (binding.value && !binding.oldValue) {
+              if (el._focusHandler) {
+                el._focusHandler();
+              }
+            }
+          },
+          unbind: function(el) {
+            // Clean up
+            delete el._focusHandler;
+          }
+        }
+      },
+      data: {
+        title: 'My Bookmarks', // Will be updated from options
+        filterText: '',
+        data: JSON.parse(JSON.stringify(initialData)), // Deep clone initial data
+        dataId: -1, // ID for the IndexedDB record
+        isDarkMode: false, // Dark mode state
+        // Sync progress UI
+        syncInProgress: false,
+        syncProgress: 0,
+        syncProgressText: '' ,
+        storageUsed: 0, // Current storage usage in bytes
+        customColors: {
+          background: '#fafbfc',
+          toolbar: '#ffffff',
+          titleBar: '#f8f9fa',
+          titleText: '#1a1a1a',
+          keywordContainer: '#f0f0f0'
+        },
+        // UI State
+        contextMenuTarget: null, // { type: 'link'/'group', item: object }
+        isLinkMenuVisible: false,
+        // Conflict Resolution UI
+        showConflictNotification: false,
+        conflictNotificationText: '',
+        conflictNotificationTimeout: null,
+        // Visual CSS Editor
+        cssSidebarVisible: false,
+        visualCssRules: [],
+        visualCssAvailableSelectors: [],
+        showMigrationNotice: false,
+        customCssDraft: '', // Keep for computed properties compatibility
+        cssSidebarWidth: 400,
+        isCssSidebarWidthResizing: false,
+        selectedVisualTemplate: null,
+        editingRuleId: null,
+        editingRuleName: '',
+        collapsedRules: [],
+        designTokensCollapsed: false,
+        // Feature Overview Sidebar
+        featureSidebarVisible: false,
+        helpLanguageTab: 'de', // Default to German
+        selectedColor: '#000000',
+        // Browser Extension
+        extensionAvailable: false,
+        extensionVersion: null,
+        autoFetchTimeout: null, // Timeout for debounced auto-fetch
+        // CSS Templates
+        cssTemplates: [],
+        selectedTemplateId: null,
+        showSaveTemplateDialog: false,
+        newTemplateName: '',
+        // Custom Rule Sets
+        customRuleSets: {},
+        selectedRuleSetName: null,
+        showSaveRuleSetDialog: false,
+        linkShortenerServices: LINK_SHORTENER_SERVICES,
+
+        // Visual CSS Rules search
+        rulesFilterQuery: '',
+        newRuleSetName: '',
+        // Toast Notifications
+        toastMessage: '',
+        toastType: 'success', // success, error, info
+        toastVisible: false,
+        // CSS Sidebar resize
+        isCssSidebarResizing: false,
+        cssSidebarTopHeight: 300, // Default height in pixels
+        cssSidebarStartY: 0,
+        cssSidebarStartHeight: 0,
+        // CSS Sidebar width resize
+        isCssSidebarWidthResizing: false,
+        cssSidebarWidth: 400, // Default width in pixels
+        cssSidebarStartX: 0,
+        cssSidebarStartWidth: 0,
+        // Element Picker & Pseudo States
+        elementPickerActive: false,
+        currentPickerRule: null,
+        lastHighlightedEl: null,
+        lastHighlightedOutline: null,
+        // Design Tokens
+        designTokens: [],
+        // CSS Presets
+        cssPresets: [
+          { id: 'card-shadow', name: 'Card Shadow', properties: {
+            'box-shadow': '0 2px 8px rgba(0,0,0,0.12)',
+            'border-radius': '12px',
+            'background-color': '#ffffff'
+          }},
+          { id: 'subtle-border', name: 'Subtle Border', properties: {
+            'border': '1px solid rgba(0,0,0,0.08)',
+            'border-radius': '8px',
+            'background-color': '#ffffff'
+          }},
+          { id: 'button-primary', name: 'Button Primary', properties: {
+            'background-color': '#0d6efd',
+            'color': '#ffffff',
+            'border': '1px solid #0d6efd',
+            'padding': '0.375rem 0.75rem',
+            'border-radius': '0.375rem'
+          }}
+        ],
+        cssHookClasses: [
+          'body',
+          '#app.container-fluid.mb-app',
+          '.mb-titlebar',
+          '.mb-titlebar h1',
+          '.mb-toolbar',
+          '.btn-toolbar',
+          '.mb-tools',
+          '.mb-toolbar__search',
+          '.mb-toolbar__search .input-group-text',
+          '.mb-toolbar__storage',
+          '.mb-footer',
+          '.groupContainer',
+          '.mb-group',
+          '.groupContainerHeader',
+          '.mb-group__header',
+          '.groupTitle',
+          '.mb-group__title',
+          '.groupLinkCount',
+          '.mb-linkcount-badge',
+          '.mb-group__badges',
+          '.group-info-section',
+          '.mb-group-info-section',
+          '.mb-group-info-header',
+          '.mb-group-info-label',
+          '.mb-group-info-content',
+          '.linkContainer',
+          '.mb-link',
+          '.mb-links',
+          '.linkText',
+          '.linkText a',
+          '.mb-link__anchor',
+          '.linkTextCategory',
+          '.mb-link__badges',
+          '.badge',
+          '.keyword-badge',
+          '.mb-keyword',
+          '.mb-group__keyword-badge',
+          '.mb-link__keyword-badge',
+          '.mb-keywords-cloud',
+          '.mb-keyword-label',
+          '.keyword-container',
+          '.mb-keyword-bar',
+          '.btn',
+          '.mb-btn',
+          '.btn-primary',
+          '.btn-success',
+          '.btn-danger',
+          '.btn-secondary',
+          '.btn-outline-secondary',
+          '.form-control',
+          '.form-select',
+          '.modal',
+          '.mb-modal',
+          '.modal-content',
+          '.modal-header',
+          '.modal-body',
+          '.modal-footer',
+          '.mb-context-menu',
+          '.mb-css-sidebar',
+          '.mb-css-sidebar-header',
+          '.mb-css-sidebar-title',
+          '.mb-css-sidebar-close',
+          '.mb-css-sidebar-container',
+          '.mb-css-sidebar-help',
+          '.mb-css-sidebar-help-content',
+          '.mb-css-help-hint',
+          '.mb-css-help-code',
+          '.mb-css-sidebar-divider',
+          '.mb-css-sidebar-editor-section',
+          '.mb-css-editor',
+          '.mb-css-editor-wrapper',
+          '.mb-css-editor-toolbar',
+          '.mb-css-editor-title',
+          '.mb-css-editor-buttons',
+          '.mb-css-editor-textarea',
+          '.mb-css-highlighted-container',
+          '.mb-css-highlighted-pre',
+          '.mb-css-highlighted-code',
+          '.mb-css-save-btn',
+          '.mb-css-cancel-btn',
+          '.mb-css-reset-btn',
+          '.mb-css-colorpicker-btn',
+          '.mb-css-template-select',
+          '.mb-css-template-buttons',
+          '.mb-css-hook-insert-btn',
+          '.mb-css-hook-selector',
+          '.css-sidebar-resize-handle',
+          '.sidebar-split-container',
+          '.sidebar-top-section',
+          '.sidebar-bottom-section',
+          '.sidebar-divider',
+          '.editor-header',
+          '.editor-content',
+          '.sidebar-content',
+          '.mb-feature-sidebar',
+          '.mb-feature-sidebar-header',
+          '.mb-feature-sidebar-title',
+          '.mb-feature-sidebar-close',
+          '.mb-feature-sidebar-content',
+          '.feature-sidebar',
+          '.feature-section',
+          '.feature-card',
+          '.context-menu',
+          '.context-menu-visible',
+          '.context-menu ul',
+          '.context-menu ul li',
+          '.context-menu .separator',
+          '.context-menu .submenu',
+          '.context-menu .submenu::after',
+          '.context-submenu',
+          '.context-submenu li',
+          '.mb-context-menu',
+          '.mb-context-menu-visible',
+          '.mb-context-menu ul',
+          '.mb-context-menu ul li',
+          '.mb-context-menu-separator',
+          '.mb-context-submenu',
+          '.mb-context-submenu-item',
+          '.mb-context-submenu::after',
+          '.mb-group-menu-btn',
+          '.mb-link-menu-btn',
+          '.mb-snapshots-dropdown',
+          '.mb-snapshots-btn',
+          '.mb-snapshots-menu',
+          '.mb-edit-modal-title',
+          '.mb-edit-modal-body',
+          '.mb-edit-modal-footer',
+          '.mb-edit-form',
+          '.mb-edit-filter-container',
+          '.mb-edit-filter-group',
+          '.mb-edit-filter-input',
+          '.mb-edit-section',
+          '.mb-edit-section-header',
+          '.mb-edit-section-body',
+          '.mb-edit-field-row',
+          '.mb-edit-field-label',
+          '.mb-edit-field-help',
+          '.mb-edit-text-input',
+          '.mb-edit-url-input',
+          '.mb-edit-number-input',
+          '.mb-edit-checkbox',
+          '.mb-edit-select',
+          '.mb-edit-save-btn',
+          '.mb-edit-cancel-btn',
+          '.mb-edit-reset-btn',
+          '.mb-toast',
+          '.mb-toast-success',
+          '.mb-toast-error',
+          '.mb-toast-warning',
+          '.mb-toast-info',
+          '.mb-toast-content',
+          '.mb-toast-title',
+          '.mb-toast-body',
+          '.mb-toast-close',
+          '.mb-toast-progress',
+          '.mb-toast-progress-fill',
+          '.group-uuid-<uuid>',
+          '.link-uuid-<uuid>'
+        ],
+        // Sync All state
+        syncAllCooldown: 0,
+        isSyncingAll: false,
+        lastSyncAllTime: 0,
+        isGroupMenuVisible: false,
+        contextMenuStyle: { top: '0px', left: '0px' },
+        editLink: null, // Link being edited in modal
+        editLinkOriginalValues: null, // Original values before editing (for event-log)
+        linkModalVisible: false, // Track when link edit modal is visible
+        // Metadata fetch UI state (for edit/add dialog)
+        titleFetchState: 'idle', // idle|loading|ok|fail
+        faviconFetchState: 'idle', // idle|loading|ok|fail
+        metadataMessage: '',
+        editGroup: null, // Group being edited in modal
+        editGroupEnableStyling: true, // UI switch for per-group styling
+        qrCodeUrl: '',
+        bookmarkletHref: '',
+        // Duplicates dialog
+        duplicatesFound: {},
+        showDuplicatesDialog: false,
+        pasteContent: '',
+        pasteHint: '',
+        parsedLinks: null,
+        detectedFormat: '',
+        importGroupTitle: '',
+        isFullExport: false,
+        fullExportData: null,
+        importUrl: '',
+        fetchingUrl: false,
+        urlFetchError: '',
+        fetchingBrowserBookmarks: false,
+        browserBookmarksInfo: '',
+        importCollapsedGroups: {}, // Track which groups are collapsed in import preview
+        exportSelection: [],
+        exportFormat: 'json',
+        
+        prevIdentityName: '',
+        // NC Folder Picker state
+        ncFolders: [],
+        ncFoldersLoading: false,
+        ncFolderSelected: 0,
+        // Drag & Drop
+        dropManager: null, // Will be initialized in mounted()
+        dragState: null, // Reactive state for drag & drop
+        expandHoverTimers: {}, // timers for auto-expanding collapsed groups while dragging links
+
+        // Saved searches
+        savedSearches: [],
+        
+        // Info popup
+        infoPopupContent: '',
+        infoPopupTimer: null,
+        linkPopover: {
+          visible: false,
+          link: null,
+          style: { top: '0px', left: '0px' },
+          titleHtml: '',
+          displayUrl: '',
+          url: '',
+          rawUrlInput: '',
+          favicon: '',
+          keywords: [],
+          emoji: '',
+          uuid: '',
+          createdAt: { full: '—', relative: '', raw: null },
+          updatedAt: { full: '—', relative: '', raw: null }
+        },
+        linkPopoverHideTimer: null,
+        selectedSavedSearch: '',
+        
+        // JSON Inspector
+        inspectedGroup: null,
+        inspectedGroupJSON: '',
+
+        // History (Undo/Redo)
+        appInitialized: false,
+        historyPast: [],
+        historyFuture: [],
+        historyLock: false,
+        lastSavedJson: '',
+        carddavTimer: null,
+
+        // Quick-Connect dialog state
+        qcDialog: { visible: false, mode: 'receive', code: '', status: [], progress: 'idle' },
+        contactsDialog: { visible: false, tab: 'contacts' },
+        shareDialog: { visible: false, mode: 'link', payload: null, selectedContacts: {} },
+        // Contact online status tracking
+        contactOnlineStatus: {}, // { contactUuid: { online: boolean, lastCheck: timestamp } }
+        pendingPings: {}, // { pingId: { resolve: function, reject: function, timeout: timeoutId } }
+        // Removed from group notification
+        removedGroupInfo: {
+          groupName: '',
+          ownerName: '',
+          removedAt: null,
+          groupId: null
+        },
+        // Invitation dialog for immediate acceptance/rejection
+        invitationDialog: { 
+          visible: false, 
+          type: '', // 'group' or 'link'
+          env: null, 
+          groupName: '', 
+          linkCount: 0,
+          fromName: '',
+          preview: [] // Preview of links to be added
+        },
+        processedMsgIds: new Set(),
+
+        // --- Generic Edit Dialog Data ---
+        genericEditConfig: {
+          title: '',
+          type: '', // 'options', 'group', or 'link'
+          design: {}, // The design structure
+          saveCallback: null
+        },
+        genericEditData: null, // The data being edited
+        genericFilterText: '', // Filter text for generic dialog
+        genericExpandedSections: {}, // Track which sections are expanded
+        // Legacy properties for old dialogs - kept for compatibility
+        expandedLinkSections: {},
+        expandedGroupSections: {},
+        expandedSections: {},
+        settingsFilterText: '',
+        optionsDesign: { // Struktur für generischen Dialog
+          common: {
+            translateKey: 'options.common',
+            fields: {
+              language: { id: 'CommonLanguage', type: 'select', translateKey: 'options.common.language', values: { 'en': 'options.common.language.english', 'de': 'options.common.language.german' }, optionPath: 'common.language', helpText: 'options.common.language.help' },
+              pageTitle: { id: 'CommonPageTitle', type: 'text', translateKey: 'options.common.pageTitle', optionPath: 'common.pageTitle', helpText: 'options.common.pageTitle.help' },
+              
+              searchAsYouType: { id: 'SearchAsYouType', type: 'checkbox', translateKey: 'options.common.searchAsYouType', optionPath: 'common.searchAsYouType', helpText: 'options.common.searchAsYouType.help' },
+              confirmDeleteGroup: { id: 'CommonConfirmDeleteGroup', type: 'checkbox', translateKey: 'options.common.confirmDeleteGroup', optionPath: 'common.confirmDeleteGroup', helpText: 'options.common.confirmDeleteGroup.help' },
+              confirmDeleteLink: { id: 'CommonConfirmDeleteLink', type: 'checkbox', translateKey: 'options.common.confirmDeleteLink', optionPath: 'common.confirmDeleteLink', helpText: 'options.common.confirmDeleteLink.help' }
+            }
+          },
+          groups: {
+            translateKey: 'options.groups',
+            fields: {
+              collapseGroupsOnStart: {
+                id: 'GroupsCollapseGroupsOnStart',
+                type: 'checkbox',
+                translateKey: 'options.groups.collapseGroupsOnStart',
+                optionPath: 'groups.collapseGroupsOnStart',
+                helpText: 'options.groups.collapseGroupsOnStart.help'
+              },
+              hoverExpandEnabled: {
+                id: 'GroupsHoverExpandEnabled',
+                type: 'checkbox',
+                translateKey: 'options.groups.hoverExpandEnabled',
+                optionPath: 'groups.hoverExpandEnabled',
+                helpText: 'options.groups.hoverExpandEnabled.help'
+              },
+              hoverExpandDelay: {
+                id: 'GroupsHoverExpandDelay',
+                type: 'number',
+                translateKey: 'options.groups.hoverExpandDelay',
+                optionPath: 'groups.hoverExpandDelayMs',
+                helpText: 'options.groups.hoverExpandDelay.help'
+              },
+              clearClosesAllGroups: {
+                id: 'GroupsClearClosesAll',
+                type: 'checkbox',
+                translateKey: 'options.groups.clearClosesAllGroups',
+                optionPath: 'groups.clearClosesAllGroups',
+                helpText: 'options.groups.clearClosesAllGroups.help'
+              },
+              keywordClickExpandsAll: {
+                id: 'GroupsKeywordClickExpandsAll',
+                type: 'checkbox',
+                translateKey: 'options.groups.keywordClickExpandsAll',
+                optionPath: 'groups.keywordClickExpandsAll',
+                helpText: 'options.groups.keywordClickExpandsAll.help'
+              },
+              searchAutoExpandFound: {
+                id: 'GroupsSearchAutoExpandFound',
+                type: 'checkbox',
+                translateKey: 'options.groups.searchAutoExpandFound',
+                optionPath: 'groups.searchAutoExpandFound',
+                helpText: 'options.groups.searchAutoExpandFound.help'
+              }
+            }
+          },
+          links: {
+            translateKey: 'options.links',
+            fields: {
+              openInNewTab: {
+              id: 'LinksOpenInNewTab',
+              type: 'checkbox',
+              translateKey: 'options.links.openInNewTab',
+              optionPath: 'links.openInNewTab',
+              helpText: 'options.links.openInNewTab.help'
+              },
+              progressiveLoadingThreshold: {
+              id: 'LinksProgressiveLoadingThreshold',
+              type: 'number',
+              translateKey: 'options.links.progressiveLoadingThreshold',
+              optionPath: 'links.progressiveLoadingThreshold',
+              helpText: 'options.links.progressiveLoadingThreshold.help',
+              defaultValue: 100
+              },
+              addViaDialog: {
+              id: 'LinksAddViaDialog',
+              type: 'checkbox',
+              translateKey: 'options.links.addViaDialog',
+              optionPath: 'links.addViaDialog',
+              helpText: 'options.links.addViaDialog.help'
+              },
+              defaultUrlPrefix: {
+              id: 'LinksDefaultUrlPrefix',
+              type: 'text',
+              translateKey: 'options.links.defaultUrlPrefix',
+              optionPath: 'links.defaultUrlPrefix',
+              helpText: 'options.links.defaultUrlPrefix.help',
+              placeholder: 'https://'
+              },
+              autoFetchTitle: {
+              id: 'LinksAutoFetchTitle',
+              type: 'checkbox',
+              translateKey: 'options.links.autoFetchTitle',
+              optionPath: 'links.autoFetchTitle',
+              helpText: 'options.links.autoFetchTitle.help'
+              },
+              autoFetchFavicon: {
+              id: 'LinksAutoFetchFavicon',
+              type: 'checkbox',
+              translateKey: 'options.links.autoFetchFavicon',
+              optionPath: 'links.autoFetchFavicon',
+              helpText: 'options.links.autoFetchFavicon.help'
+              },
+              showLinkBadges: {
+              id: 'LinksShowLinkBadges',
+              type: 'checkbox',
+              translateKey: 'options.links.showLinkBadges',
+              optionPath: 'links.showLinkBadges',
+              helpText: 'options.links.showLinkBadges.help'
+              },
+              showLinkPopover: {
+              id: 'LinksShowLinkPopover',
+              type: 'checkbox',
+              translateKey: 'options.links.showLinkPopover',
+              optionPath: 'links.showLinkPopover',
+              helpText: 'options.links.showLinkPopover.help',
+              defaultValue: true
+              },
+              copyUrlFormat: {
+                id: 'LinksCopyUrlFormat',
+                type: 'text',
+                translateKey: 'options.links.copyUrlFormat',
+                optionPath: 'links.copyUrlFormat',
+                helpText: 'options.links.copyUrlFormat.help',
+                defaultValue: '{title}: {url}',
+                placeholder: '{title}: {url}'
+              },
+              
+            }
+          },
+          linkShorteners: {
+            translateKey: 'options.linkShorteners.title',
+            fields: {
+              services: {
+                id: 'LinkShortenersServices',
+                type: 'linkShorteners',
+                translateKey: 'options.linkShorteners.services',
+                optionPath: 'linkShorteners',
+                helpText: 'options.linkShorteners.services.help'
+              }
+            }
+          },
+          proxy: {
+            translateKey: 'options.proxy.title',
+            fields: {
+              enabled: {
+                id: 'ProxyEnabled',
+                type: 'checkbox',
+                translateKey: 'options.proxy.enabled',
+                optionPath: 'proxy.enabled',
+                helpText: 'options.proxy.enabled.help'
+              },
+              baseUrl: {
+                id: 'ProxyBaseUrl',
+                type: 'text',
+                translateKey: 'options.proxy.baseUrl',
+                optionPath: 'proxy.baseUrl',
+                helpText: 'options.proxy.baseUrl.help',
+                placeholder: 'https://proxy.example.com'
+              },
+              apiKey: {
+                id: 'ProxyApiKey',
+                type: 'text',
+                translateKey: 'options.proxy.apiKey',
+                optionPath: 'proxy.apiKey',
+                helpText: 'options.proxy.apiKey.help',
+                placeholder: 'Optional API token'
+              },
+              extraHeaders: {
+                id: 'ProxyExtraHeaders',
+                type: 'textarea',
+                translateKey: 'options.proxy.extraHeaders',
+                optionPath: 'proxy.extraHeaders',
+                helpText: 'options.proxy.extraHeaders.help',
+                rows: 3,
+                placeholder: 'Header-Name: Wert'
+              }
+            }
+          },
+          buttons: {
+            translateKey: 'options.buttons',
+            fields: {
+              showAddLink: {
+                id: 'ButtonsShowAddLink',
+                type: 'checkbox',
+                translateKey: 'options.buttons.showAddLink',
+                optionPath: 'buttons.showAddLink',
+                helpText: 'options.buttons.showAddLink.help',
+                defaultValue: true
+              },
+              showDeleteGroup: {
+                id: 'ButtonsShowDeleteGroup',
+                type: 'checkbox',
+                translateKey: 'options.buttons.showDeleteGroup',
+                optionPath: 'buttons.showDeleteGroup',
+                helpText: 'options.buttons.showDeleteGroup.help',
+                defaultValue: true
+              },
+              showCopyUrl: {
+                id: 'ButtonsShowCopyUrl',
+                type: 'checkbox',
+                translateKey: 'options.buttons.showCopyUrl',
+                optionPath: 'buttons.showCopyUrl',
+                helpText: 'options.buttons.showCopyUrl.help',
+                defaultValue: true
+              },
+              showQrCode: {
+                id: 'ButtonsShowQrCode',
+                type: 'checkbox',
+                translateKey: 'options.buttons.showQrCode',
+                optionPath: 'buttons.showQrCode',
+                helpText: 'options.buttons.showQrCode.help',
+                defaultValue: true
+              },
+              showDeleteLink: {
+                id: 'ButtonsShowDeleteLink',
+                type: 'checkbox',
+                translateKey: 'options.buttons.showDeleteLink',
+                optionPath: 'buttons.showDeleteLink',
+                helpText: 'options.buttons.showDeleteLink.help',
+                defaultValue: true
+              }
+            }
+          },
+          sharing: {
+            translateKey: 'options.sharing',
+            fields: {
+              // Move display name here to show above ntfy server URL
+              identityName: { id: 'CommonIdentityName', type: 'text', translateKey: 'options.common.identityName', optionPath: 'common.identityName', helpText: 'options.common.identityName.help' },
+              ntfyServerUrl: { id: 'SharingNtfyServer', type: 'text', translateKey: 'options.sharing.ntfyServerUrl', optionPath: 'sharing.ntfyServerUrl', helpText: 'options.sharing.ntfyServerUrl.help' },
+              ntfyAuthToken: { id: 'SharingNtfyToken', type: 'text', translateKey: 'options.sharing.ntfyAuthToken', optionPath: 'sharing.ntfyAuthToken', helpText: 'options.sharing.ntfyAuthToken.help' },
+              defaultTtl: { id: 'SharingDefaultTtl', type: 'number', translateKey: 'options.sharing.defaultTtl', optionPath: 'sharing.defaultTtl', helpText: 'options.sharing.defaultTtl.help' },
+              quickCodeTtlSec: { id: 'SharingQuickCodeTtl', type: 'number', translateKey: 'options.sharing.quickCodeTtl', optionPath: 'sharing.quickCodeTtlSec', helpText: 'options.sharing.quickCodeTtl.help' },
+              contactOnlineTimeoutSeconds: { id: 'SharingContactOnlineTimeout', type: 'number', translateKey: 'options.sharing.contactOnlineTimeout', optionPath: 'sharing.contactOnlineTimeoutSeconds', helpText: 'options.sharing.contactOnlineTimeout.help' }
+            }
+          },
+          sync: {
+            translateKey: 'options.sync',
+            fields: {
+              // Settings for all users (Owner & Member)
+              conflictNotificationLevel: { 
+                id: 'SyncConflictNotifications', 
+                type: 'select', 
+                translateKey: 'options.sync.conflictNotificationLevel', 
+                optionPath: 'sync.conflictNotificationLevel',
+                helpText: 'options.sync.conflictNotificationLevel.help',
+                roleScope: 'all', // For everyone
+                values: {
+                  'silent': 'options.sync.conflictNotificationLevel.silent',
+                  'minimal': 'options.sync.conflictNotificationLevel.minimal',
+                  'verbose': 'options.sync.conflictNotificationLevel.verbose'
+                }
+              },
+              autoSyncInterval: {
+                id: 'SyncAutoInterval',
+                type: 'select',
+                translateKey: 'options.sync.autoSyncInterval',
+                optionPath: 'sync.autoSyncInterval',
+                helpText: 'options.sync.autoSyncInterval.help',
+                roleScope: 'all',
+                values: {
+                  '300': 'options.sync.autoSyncInterval.5min',
+                  '600': 'options.sync.autoSyncInterval.10min',
+                  '1800': 'options.sync.autoSyncInterval.30min',
+                  '3600': 'options.sync.autoSyncInterval.1hour',
+                  '0': 'options.sync.autoSyncInterval.manual'
+                }
+              },
+              offlineMode: {
+                id: 'SyncOfflineMode',
+                type: 'select',
+                translateKey: 'options.sync.offlineMode',
+                optionPath: 'sync.offlineMode',
+                helpText: 'options.sync.offlineMode.help',
+                roleScope: 'all',
+                values: {
+                  'optimistic': 'options.sync.offlineMode.optimistic',
+                  'conservative': 'options.sync.offlineMode.conservative'
+                }
+              },
+              // Settings only for Owners
+              conflictResolution: {
+                id: 'SyncConflictResolution',
+                type: 'select',
+                translateKey: 'options.sync.conflictResolution',
+                optionPath: 'sync.conflictResolution',
+                helpText: 'options.sync.conflictResolution.help',
+                roleScope: 'owner', // Only for group owners
+                values: {
+                  'owner-wins': 'options.sync.conflictResolution.ownerWins',
+                  'last-write-wins': 'options.sync.conflictResolution.lastWriteWins',
+                  'manual': 'options.sync.conflictResolution.manual'
+                }
+              },
+              memberRateLimit: {
+                id: 'SyncMemberRateLimit',
+                type: 'number',
+                translateKey: 'options.sync.memberRateLimit',
+                optionPath: 'sync.memberRateLimit',
+                helpText: 'options.sync.memberRateLimit.help',
+                roleScope: 'owner',
+                min: 0,
+                max: 100,
+                suffix: 'options.sync.memberRateLimit.suffix'
+              },
+              validationLevel: {
+                id: 'SyncValidationLevel',
+                type: 'select',
+                translateKey: 'options.sync.validationLevel',
+                optionPath: 'sync.validationLevel',
+                helpText: 'options.sync.validationLevel.help',
+                roleScope: 'owner',
+                values: {
+                  'strict': 'options.sync.validationLevel.strict',
+                  'moderate': 'options.sync.validationLevel.moderate',
+                  'permissive': 'options.sync.validationLevel.permissive'
+                }
+              },
+              // Settings only for Members
+              localCacheStrategy: {
+                id: 'SyncLocalCache',
+                type: 'select',
+                translateKey: 'options.sync.localCacheStrategy',
+                optionPath: 'sync.localCacheStrategy',
+                helpText: 'options.sync.localCacheStrategy.help',
+                roleScope: 'member', // Only for members
+                values: {
+                  'full': 'options.sync.localCacheStrategy.full',
+                  'minimal': 'options.sync.localCacheStrategy.minimal'
+                }
+              },
+              errorHandling: {
+                id: 'SyncErrorHandling',
+                type: 'select',
+                translateKey: 'options.sync.errorHandling',
+                optionPath: 'sync.errorHandling',
+                helpText: 'options.sync.errorHandling.help',
+                roleScope: 'member',
+                values: {
+                  'retry': 'options.sync.errorHandling.retry',
+                  'queue': 'options.sync.errorHandling.queue',
+                  'discard': 'options.sync.errorHandling.discard'
+                }
+              }
+            }
+          },
+          syncEngine: {
+            translateKey: 'options.sync.engine',
+            fields: {
+              backend: {
+                id: 'SyncBackend', type: 'select', translateKey: 'options.sync.backend', optionPath: 'sync.backend', helpText: 'options.sync.backend.help',
+                values: { 'carddav': 'options.sync.backend.carddav', 'nc-bookmarks': 'options.sync.backend.nc' }
+              }
+            }
+          },
+          bookmarks: {
+            translateKey: 'bookmarks.title',
+            fields: {
+              serverUrl: { id: 'BkServerUrl', type: 'text', translateKey: 'bookmarks.serverUrl', optionPath: 'bookmarks.serverUrl', helpText: 'bookmarks.serverUrl.help' },
+              username:  { id: 'BkUsername',  type: 'text', translateKey: 'bookmarks.username',  optionPath: 'bookmarks.username',  helpText: 'bookmarks.username.help' },
+              password:  { id: 'BkPassword',  type: 'text', translateKey: 'bookmarks.password',  optionPath: 'bookmarks.password',  helpText: 'bookmarks.password.help' },
+              rootFolderId: { id: 'BkRootFolder', type: 'select', translateKey: 'bookmarks.rootFolderId', optionPath: 'bookmarks.rootFolderId', helpText: 'bookmarks.rootFolderId.help', values: { '0': 'All folders' } },
+              autoCreateFolders: { id: 'BkAutoCreate', type: 'checkbox', translateKey: 'bookmarks.autoCreate', optionPath: 'bookmarks.autoCreateFolders', helpText: 'bookmarks.autoCreate.help' },
+              autoRenameFolders: { id: 'BkAutoRename', type: 'checkbox', translateKey: 'bookmarks.autoRename', optionPath: 'bookmarks.autoRenameFolders', helpText: 'bookmarks.autoRename.help' },
+              syncIntervalSec: { id: 'BkSyncInterval', type: 'select', translateKey: 'carddav.syncInterval', optionPath: 'bookmarks.syncIntervalSec', helpText: 'carddav.syncInterval.help', values: { '0':'carddav.syncInterval.manual','300':'carddav.syncInterval.5min','600':'carddav.syncInterval.10min','1800':'carddav.syncInterval.30min','3600':'carddav.syncInterval.1hour' } },
+              // Actions at the end of the section: Test + Reset in one row
+              actionsRow: { type: 'actions', actions: [
+                { key: 'testConnection', translateKey: 'carddav.testConnection', buttonClass: 'btn-outline-primary' },
+                { key: 'resetBindings', translateKey: 'sync.resetBindings', buttonLabel: 'sync.resetBindings', buttonClass: 'btn-outline-danger' }
+              ]}
+            }
+          },
+          carddav: {
+            translateKey: 'carddav.title',
+            fields: {
+              serverUrl: { id: 'CardDAVServerUrl', type: 'text', translateKey: 'carddav.serverUrl', optionPath: 'carddav.serverUrl', helpText: 'carddav.serverUrl.help' },
+              username: { id: 'CardDAVUsername', type: 'text', translateKey: 'carddav.username', optionPath: 'carddav.username', helpText: 'carddav.username.help' },
+              password: { id: 'CardDAVPassword', type: 'text', translateKey: 'carddav.password', optionPath: 'carddav.password', helpText: 'carddav.password.help' },
+              addressbookPath: { id: 'CardDAVAddressbookPath', type: 'text', translateKey: 'carddav.addressbookPath', optionPath: 'carddav.addressbookPath', helpText: 'carddav.addressbookPath.help' },
+              createAddressbookIfMissing: { id: 'CardDAVCreateAB', type: 'checkbox', translateKey: 'carddav.createAddressbookIfMissing', optionPath: 'carddav.createAddressbookIfMissing', helpText: 'carddav.createAddressbookIfMissing.help' },
+              syncIntervalSec: {
+                id: 'CardDAVSyncInterval', type: 'select', translateKey: 'carddav.syncInterval', optionPath: 'carddav.syncIntervalSec', helpText: 'carddav.syncInterval.help',
+                values: { '0': 'carddav.syncInterval.manual', '300': 'carddav.syncInterval.5min', '600': 'carddav.syncInterval.10min', '1800': 'carddav.syncInterval.30min', '3600': 'carddav.syncInterval.1hour' }
+              }
+            }
+          },
+          eventlog: {
+            translateKey: 'options.eventlog.title',
+            fields: {
+              snapshotInterval: {
+                id: 'eventLogSnapshotInterval',
+                type: 'number',
+                translateKey: 'options.eventlog.snapshotInterval',
+                optionPath: 'eventlog.snapshotInterval',
+                helpText: 'options.eventlog.snapshotInterval.help',
+                min: 10,
+                max: 1000,
+                suffix: 'Events'
+              },
+              maxEvents: {
+                id: 'eventLogMaxEvents',
+                type: 'number',
+                translateKey: 'options.eventlog.maxEvents',
+                optionPath: 'eventlog.maxEvents',
+                helpText: 'options.eventlog.maxEvents.help',
+                min: 100,
+                max: 10000,
+                suffix: 'Events'
+              },
+              syncStrategy: {
+                id: 'syncStrategy',
+                type: 'select',
+                translateKey: 'options.eventlog.syncStrategy',
+                optionPath: 'eventlog.syncStrategy',
+                helpText: 'options.eventlog.syncStrategy.help',
+                values: {
+                  'owner-leads': 'options.eventlog.syncStrategy.ownerLeads',
+                  'all-equal': 'options.eventlog.syncStrategy.allEqual',
+                  'smart-merge': 'options.eventlog.syncStrategy.smartMerge'
+                }
+              }
+            }
+          }
+        },
+        // Group Edit Dialog Configuration
+        groupEditDesign: {
+          basic: {
+            translateKey: 'group.basic',
+            fields: {
+              name: {
+                type: 'text',
+                translateKey: 'group.name',
+                placeholder: 'Enter group name',
+                helpText: 'group.name.help'
+              },
+              emoji: {
+                type: 'emoji',
+                translateKey: 'group.emoji',
+                placeholder: 'group.emoji.placeholder',
+                helpText: 'group.emoji.help'
+              },
+              keywords: {
+                type: 'text',
+                translateKey: 'group.keywords',
+                placeholder: 'e.g. work, personal, docs',
+                helpText: 'group.keywords.help'
+              }
+            }
+          },
+          advanced: {
+            translateKey: 'group.advanced',
+            fields: {
+              infoHtml: {
+                type: 'textarea',
+                translateKey: 'group.infoHtml',
+                placeholder: 'group.infoHtml.placeholder',
+                helpText: 'group.infoHtml.help',
+                rows: 4
+              }
+            }
+          }
+        },
+        // Link Edit Dialog Configuration
+        linkEditDesign: {
+          basic: {
+            translateKey: 'link.basic',
+            fields: {
+              text: {
+                type: 'text',
+                translateKey: 'link.text',
+                placeholder: 'Enter link text',
+                helpText: 'link.text.help'
+              },
+              url: {
+                type: 'url',
+                translateKey: 'link.url',
+                placeholder: 'https://example.com',
+                helpText: 'link.url.info',
+                validation: 'url',
+                autofocus: true
+              },
+              emoji: {
+                type: 'emoji',
+                translateKey: 'link.emoji',
+                placeholder: 'link.emoji.placeholder',
+                helpText: 'link.emoji.help'
+              },
+              keywords: {
+                type: 'text',
+                translateKey: 'link.keywords',
+                placeholder: 'e.g. work, personal, docs',
+                helpText: 'link.keywords.help'
+              }
+            }
+          },
+          advanced: {
+            translateKey: 'link.advanced',
+            fields: {
+              infoHtml: {
+                type: 'textarea',
+                translateKey: 'link.infoHtml',
+                placeholder: 'link.infoHtml.placeholder',
+                helpText: 'link.infoHtml.help',
+                rows: 4
+              }
+            }
+          }
+        },
+        // Favicon Rules working state (Options modal)
+        faviconRulesWorking: [],
+        faviconRulesTestUrl: '',
       },
       watch: {
         // Focus template name input when dialog opens
@@ -19518,6 +19562,131 @@ function getDefaultFaviconRules() {
                   'box-shadow': '0 3px 8px rgba(15, 23, 42, 0.45)'
                 }
               },
+              {
+                id: Date.now() + 10_4,
+                enabled: true,
+                selector: '.link-shorteners-list .link-shorteners-item',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': '#2a2a2a',
+                  'border': '1px solid #444',
+                  'box-shadow': '0 12px 24px rgba(0, 0, 0, 0.45)',
+                  'border-radius': '12px',
+                  'color': '#e0e0e0'
+                }
+              },
+              {
+                id: Date.now() + 10_5,
+                enabled: true,
+                selector: '.link-shorteners-list .link-shorteners-item .form-control',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': '#2a2a2a',
+                  'color': '#e0e0e0',
+                  'border-color': '#444',
+                  'box-shadow': 'inset 0 1px 2px rgba(0, 0, 0, 0.35)'
+                }
+              },
+              {
+                id: Date.now() + 10_6,
+                enabled: true,
+                selector: '.link-shorteners-list .link-shorteners-item .form-control:disabled',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': 'rgba(42, 42, 42, 0.6)',
+                  'color': 'rgba(224, 224, 224, 0.55)',
+                  'border-color': '#3a3a3a'
+                }
+              },
+              {
+                id: Date.now() + 10_7,
+                enabled: true,
+                selector: '.link-shorteners-list .link-shorteners-item .form-text',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'color': '#b0b0b0'
+                }
+              },
+              {
+                id: Date.now() + 10_8,
+                enabled: true,
+                selector: '.modal-content .form-label',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'color': '#e0e0e0'
+                }
+              },
+              {
+                id: Date.now() + 10_9,
+                enabled: true,
+                selector: '.modal-content .form-check-label',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'color': '#e0e0e0'
+                }
+              },
+              {
+                id: Date.now() + 10_10,
+                enabled: true,
+                selector: '.modal-content .text-muted',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'color': '#9ca3af'
+                }
+              },
+              {
+                id: Date.now() + 10_11,
+                enabled: true,
+                selector: '.modal-content .table',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'color': '#e0e0e0',
+                  'background-color': 'transparent',
+                  'border-color': '#3a3a3a'
+                }
+              },
+              {
+                id: Date.now() + 10_12,
+                enabled: true,
+                selector: '.modal-content .table thead th',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'color': '#f0f0f0',
+                  'border-color': '#3a3a3a',
+                  'background-color': 'rgba(42, 42, 42, 0.8)'
+                }
+              },
+              {
+                id: Date.now() + 10_13,
+                enabled: true,
+                selector: '.modal-content .table tbody td',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'color': '#d4d4d4',
+                  'border-color': '#3a3a3a',
+                  'background-color': 'rgba(35, 35, 35, 0.6)'
+                }
+              },
+              {
+                id: Date.now() + 10_14,
+                enabled: true,
+                selector: '.modal-content .table tbody tr:hover',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': 'rgba(58, 58, 58, 0.7)'
+                }
+              },
               // Keywords
               {
                 id: Date.now() + 11,
@@ -21448,6 +21617,55 @@ footer a:hover {
                   'box-shadow': '0 2px 6px rgba(0, 0, 0, 0.08)'
                 }
               },
+              {
+                id: Date.now() + 3_4,
+                enabled: true,
+                selector: '.link-shorteners-list .link-shorteners-item',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': '#ffffff',
+                  'border': '1px solid #d3d9df',
+                  'border-radius': '8px',
+                  'box-shadow': '0 6px 14px rgba(0, 0, 0, 0.08)',
+                  'color': '#212529'
+                }
+              },
+              {
+                id: Date.now() + 3_5,
+                enabled: true,
+                selector: '.link-shorteners-list .link-shorteners-item .form-control',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': '#f8f9fa',
+                  'color': '#212529',
+                  'border-color': '#c8ced4',
+                  'box-shadow': 'inset 0 1px 2px rgba(0, 0, 0, 0.05)'
+                }
+              },
+              {
+                id: Date.now() + 3_6,
+                enabled: true,
+                selector: '.link-shorteners-list .link-shorteners-item .form-control:disabled',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': '#f1f3f5',
+                  'color': 'rgba(33, 37, 41, 0.55)',
+                  'border-color': '#d9dfe5'
+                }
+              },
+              {
+                id: Date.now() + 3_7,
+                enabled: true,
+                selector: '.link-shorteners-list .link-shorteners-item .form-text',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'color': '#6c757d'
+                }
+              },
               // Toolbar kompakt
               {
                 id: Date.now() + 4,
@@ -21711,6 +21929,55 @@ footer a:hover {
                 linkId: null,
                 properties: {
                   'box-shadow': '0 4px 12px rgba(95, 111, 255, 0.35)'
+                }
+              },
+              {
+                id: Date.now() + 9_4,
+                enabled: true,
+                selector: '.link-shorteners-list .link-shorteners-item',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background': 'rgba(255, 255, 255, 0.95)',
+                  'border': '1px solid rgba(255, 255, 255, 0.75)',
+                  'box-shadow': '0 18px 44px rgba(102, 126, 234, 0.2)',
+                  'border-radius': '16px',
+                  'color': '#2d3561'
+                }
+              },
+              {
+                id: Date.now() + 9_5,
+                enabled: true,
+                selector: '.link-shorteners-list .link-shorteners-item .form-control',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background': 'rgba(255, 255, 255, 0.92)',
+                  'color': '#2d3561',
+                  'border': '1px solid rgba(102, 126, 234, 0.3)',
+                  'box-shadow': 'inset 0 1px 2px rgba(102, 126, 234, 0.15)'
+                }
+              },
+              {
+                id: Date.now() + 9_6,
+                enabled: true,
+                selector: '.link-shorteners-list .link-shorteners-item .form-control:disabled',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background': 'rgba(255, 255, 255, 0.7)',
+                  'color': 'rgba(45, 53, 97, 0.55)',
+                  'border': '1px solid rgba(102, 126, 234, 0.25)'
+                }
+              },
+              {
+                id: Date.now() + 9_7,
+                enabled: true,
+                selector: '.link-shorteners-list .link-shorteners-item .form-text',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'color': 'rgba(45, 53, 97, 0.7)'
                 }
               },
               // Keywords mit Gradient
@@ -28378,17 +28645,12 @@ footer a:hover {
         
         // --- Translation ---
         getTranslation(key, values) {
-          const lang = this.data.options?.common?.language || 'en';
-          // Use i18n translations
-          let text = (this.i18n?.[lang]?.[key]) || (this.i18n?.['en']?.[key]) || '';
-          
-          // Fallback: show key if no translation found
+          const lang = this.data.options?.common?.language || MB.I18n?.defaultLocale || 'en';
+          let text = MB.I18n?.get(lang, key) || '';
           if (!text) text = key;
-          
-          // Replace placeholders with values
           if (values && Array.isArray(values)) {
-            values.forEach(val => { 
-              text = text.replace('%s', (val !== undefined && val !== null) ? val : ''); 
+            values.forEach(val => {
+              text = text.replace('%s', (val !== undefined && val !== null) ? val : '');
             });
           }
           return text;
