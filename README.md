@@ -16,6 +16,8 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
   - **Encrypted ntfy delivery** – Each client derives its own public/private key pair; messages are encrypted end-to-end when sharing entire groups, individual links, or broadcast snapshots.
 - **Sync integrations (optional)** – Hook into Nextcloud Bookmarks REST endpoints or CardDAV servers, complete with hash caching, rate limits, conflict handling, and diagnostics.
 - **Deep customization** – Toggle dark mode, apply per-element styling through the visual CSS editor, manage custom design tokens, and expose advanced developer routing with extensive logging utilities.
+- **Link safety insights** – Analyse URLs in real time, flag suspicious patterns (dangerous protocols, token leakage, punycode, shorteners) and surface actionable hints directly in the UI.
+- **Flexible networking** – Route outbound requests via the browser companion extension **or** a self-hosted proxy, configurable per workspace, complete with custom headers and API token support.
 
 ## Technology Stack
 
