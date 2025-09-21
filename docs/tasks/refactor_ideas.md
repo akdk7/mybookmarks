@@ -25,6 +25,8 @@
 
 - Security Analysis Utility (src/index_dev.html:15876) – Move evaluateLinkSecurity, translateSecurityIssue, linkSecurityBadgeClass into a pure utility/service. Provide functions like analyze(url) and format(issue, translate) so you can test them independently and apply the same verdicts wherever links appear.
 
+  - DONE
+
 - Options Editing Manager (spread around src/index_dev.html:13900+ & watchers at src/index_dev.html:15227) – Create a feature service that encapsulates draft vs persisted options, debounced metadata fetching, and “search expands groups” logic. The component would just bind to reactive state exposed by this manager.
 
 - Drag & Drop / UI State (src/index_dev.html:15262) – Move drag state handling, class toggling, and drop-zone diagnostics into a lightweight service/composable that exposes dragState, startDrag, endDrag. That keeps DOM access out of watchers and makes the behavior reusable.

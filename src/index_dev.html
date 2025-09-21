@@ -14278,6 +14278,7 @@ function getDefaultFaviconRules() {
       },
     };
 
+
     MB.LinkShorteners = (function() {
       const DEFAULTS = initialData.options?.linkShorteners || { enabledServices: [], accounts: {} };
 
@@ -14565,7 +14566,144 @@ function getDefaultFaviconRules() {
       };
     })();
 
-    let linksDb = null;
+
+    MB.Security = (function() {
+      function normalizeResult(result) {
+        const issues = Array.isArray(result?.issues) ? result.issues : [];
+        const severity = typeof result?.severity === 'number'
+          ? result.severity
+          : issues.reduce((max, issue) => Math.max(max, issue.severity || 0), 0);
+        return { severity, issues };
+      }
+
+      function analyze(url) {
+        const issues = [];
+        const addIssue = (severity, code, meta = {}) => issues.push({ severity, code, meta });
+
+        if (!url || typeof url !== 'string') {
+          addIssue(3, 'malformed');
+          return normalizeResult({ severity: 3, issues });
+        }
+
+        let parsed;
+        try {
+          parsed = new URL(url);
+        } catch (error) {
+          addIssue(3, 'malformed');
+          return normalizeResult({ severity: 3, issues });
+        }
+
+        const protocol = parsed.protocol.toLowerCase();
+        if (!/^https?:$/.test(protocol)) {
+          if (LINK_DANGEROUS_PROTOCOLS.includes(protocol)) {
+            addIssue(3, 'dangerProtocol', { protocol });
+          } else {
+            addIssue(2, 'unusualProtocol', { protocol });
+          }
+        }
+
+        const hostname = parsed.hostname.toLowerCase();
+        if (hostname.startsWith('xn--') || hostname.includes('---') || hostname.includes('--')) {
+          addIssue(2, 'punycode', { host: hostname });
+        }
+
+        if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+          addIssue(1, 'ipAddress', { host: hostname });
+        }
+
+        if (typeof LINK_SHORTENER_DOMAINS !== 'undefined' && LINK_SHORTENER_DOMAINS.has(hostname)) {
+          addIssue(1, 'shortener', { host: hostname });
+        }
+
+        try {
+          const query = new URLSearchParams(parsed.search);
+          for (const key of query.keys()) {
+            const lowered = key.toLowerCase();
+            if (LINK_SUSPICIOUS_QUERY_KEYS.includes(lowered)) {
+              addIssue(2, 'sensitiveQuery', { key: lowered });
+            }
+          }
+        } catch (error) {
+        }
+
+        const fullUrlLower = url.toLowerCase();
+        for (const pattern of LINK_SUSPICIOUS_PATTERNS) {
+          if (fullUrlLower.includes(pattern)) {
+            addIssue(3, 'suspiciousPattern', { pattern });
+            break;
+          }
+        }
+
+        return normalizeResult({ issues });
+      }
+
+      function formatIssue(issue, translator) {
+        const code = issue?.code || 'generic';
+        const meta = issue?.meta || {};
+
+        const t = (key, fallback) => {
+          if (typeof translator === 'function') {
+            const result = translator(key);
+            if (result && result !== key) return result;
+          }
+          return fallback;
+        };
+
+        switch (code) {
+          case 'malformed':
+            return t('link.security.danger.malformed', 'Malformed URL');
+          case 'dangerProtocol':
+            return (t('link.security.danger.protocol', 'Disallowed protocol: {protocol}') || '').replace('{protocol}', meta.protocol || '');
+          case 'unusualProtocol':
+            return (t('link.security.warning.protocol', 'Unusual protocol: {protocol}') || '').replace('{protocol}', meta.protocol || '');
+          case 'punycode':
+            return (t('link.security.warning.punycode', 'Hostname uses punycode: {host}') || '').replace('{host}', meta.host || '');
+          case 'ipAddress':
+            return (t('link.security.info.ip', 'Hostname is an IP address: {host}') || '').replace('{host}', meta.host || '');
+          case 'shortener':
+            return (t('link.security.info.shortener', 'URL uses a shortener service: {host}') || '').replace('{host}', meta.host || '');
+          case 'sensitiveQuery':
+            return (t('link.security.warning.query', 'Sensitive parameter detected: {key}') || '').replace('{key}', meta.key || '');
+          case 'suspiciousPattern':
+            return t('link.security.danger.suspicious', 'Suspicious pattern detected in URL');
+          default:
+            return t('link.security.warning.generic', 'Potential issue detected');
+        }
+      }
+
+      function badgeClass(data, opts = {}) {
+        const severity = data?.severity ?? 0;
+        const classes = [];
+        if (opts.asPill) classes.push('rounded-pill');
+        if (severity >= 3) classes.push('bg-danger');
+        else if (severity === 2) classes.push('bg-warning', 'text-dark');
+        else if (severity === 1) classes.push('bg-info', 'text-dark');
+        else classes.push('bg-success');
+        return classes.join(' ');
+      }
+
+      function summaryText(data, translator) {
+        const result = normalizeResult(data);
+        if (!result?.issues || result.issues.length === 0 || result.severity === 0) {
+          return typeof translator === 'function'
+            ? translator('link.security.safe') || 'No issues detected.'
+            : 'No issues detected.';
+        }
+        const sorted = [...result.issues].sort((a, b) => (b.severity || 0) - (a.severity || 0));
+        return formatIssue(sorted[0], translator);
+      }
+
+      return {
+        analyze,
+        formatIssue,
+        badgeClass,
+        summaryText,
+        normalizeResult,
+      };
+    })();
+
+
+        let linksDb = null;
     let sharing = null;
 
     
@@ -16144,122 +16282,22 @@ function getDefaultFaviconRules() {
           }
         },
         evaluateLinkSecurity(url) {
-          const issues = [];
-          const addIssue = (severity, code, meta = {}) => {
-            issues.push({ severity, code, meta });
-          };
-
-          if (!url || typeof url !== 'string') {
-            addIssue(3, 'malformed');
-            return { severity: 3, issues };
-          }
-
-          let parsed;
-          try {
-            parsed = new URL(url);
-          } catch (e) {
-            addIssue(3, 'malformed');
-            return { severity: 3, issues };
-          }
-
-          const protocol = parsed.protocol.toLowerCase();
-          if (!/^https?:$/.test(protocol)) {
-            if (LINK_DANGEROUS_PROTOCOLS.includes(protocol)) {
-              addIssue(3, 'dangerProtocol', { protocol });
-            } else {
-              addIssue(2, 'unusualProtocol', { protocol });
-            }
-          }
-
-          const hostname = parsed.hostname.toLowerCase();
-          if (hostname.startsWith('xn--') || hostname.includes('---') || hostname.includes('--')) {
-            addIssue(2, 'punycode', { host: hostname });
-          }
-
-          if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
-            addIssue(1, 'ipAddress', { host: hostname });
-          }
-
-          if (LINK_SHORTENER_DOMAINS.has(hostname)) {
-            addIssue(1, 'shortener', { host: hostname });
-          }
-
-          const query = new URLSearchParams(parsed.search);
-          for (const key of query.keys()) {
-            const lowered = key.toLowerCase();
-            if (LINK_SUSPICIOUS_QUERY_KEYS.includes(lowered)) {
-              addIssue(2, 'sensitiveQuery', { key: lowered });
-            }
-          }
-
-          const fullUrlLower = url.toLowerCase();
-          for (const pattern of LINK_SUSPICIOUS_PATTERNS) {
-            if (fullUrlLower.includes(pattern)) {
-              addIssue(3, 'suspiciousPattern', { pattern });
-              break;
-            }
-          }
-
-          const severity = issues.reduce((max, issue) => Math.max(max, issue.severity), 0);
-          return { severity, issues };
+          return MB.Security.analyze(url);
         },
         translateSecurityIssue(issue) {
-          const code = issue?.code || 'generic';
-          const meta = issue?.meta || {};
-          const t = this.getTranslation.bind(this);
-          switch (code) {
-            case 'malformed':
-              return t('link.security.danger.malformed') || 'Malformed URL';
-            case 'dangerProtocol':
-              return (t('link.security.danger.protocol') || 'Disallowed protocol: {protocol}').replace('{protocol}', meta.protocol || '');
-            case 'unusualProtocol':
-              return (t('link.security.warning.protocol') || 'Unusual protocol: {protocol}').replace('{protocol}', meta.protocol || '');
-            case 'punycode':
-              return (t('link.security.warning.punycode') || 'Hostname uses punycode: {host}').replace('{host}', meta.host || '');
-            case 'ipAddress':
-              return (t('link.security.info.ip') || 'Hostname is an IP address: {host}').replace('{host}', meta.host || '');
-            case 'shortener':
-              return (t('link.security.info.shortener') || 'URL uses a shortener service: {host}').replace('{host}', meta.host || '');
-            case 'sensitiveQuery':
-              return (t('link.security.warning.query') || 'Sensitive parameter detected: {key}').replace('{key}', meta.key || '');
-            case 'suspiciousPattern':
-              return (t('link.security.danger.suspicious') || 'Suspicious pattern detected in URL').replace('{pattern}', meta.pattern || '');
-            default:
-              return t('link.security.warning.generic') || 'Potential issue detected';
-          }
+          return MB.Security.formatIssue(issue, this.getTranslation.bind(this));
         },
         getLinkSecurity(link) {
-          if (!link || !link.url) {
-            return {
-              severity: 3,
-              issues: [{ severity: 3, code: 'malformed', meta: {} }]
-            };
-          }
-          return this.evaluateLinkSecurity(link.url);
+          const url = link?.url || '';
+          return MB.Security.analyze(url);
         },
         linkSecurityBadgeClass(link, opts = {}) {
-          const data = typeof link === 'object' ? this.getLinkSecurity(link) : link;
-          const severity = data?.severity ?? 0;
-          const base = [];
-          if (opts.asPill) base.push('rounded-pill');
-          if (severity >= 3) base.push('bg-danger');
-          else if (severity === 2) base.push('bg-warning', 'text-dark');
-          else if (severity === 1) base.push('bg-info', 'text-dark');
-          else base.push('bg-success');
-          return base.join(' ');
+          const data = typeof link === 'object' ? this.getLinkSecurity(link) : MB.Security.normalizeResult(link);
+          return MB.Security.badgeClass(data, opts);
         },
         linkSecuritySummary(link) {
           const data = this.getLinkSecurity(link);
-          if (!data || !Array.isArray(data.issues) || data.issues.length === 0) {
-            return this.getTranslation('link.security.safe') || 'No issues detected.';
-          }
-          const severity = data.severity || 0;
-          if (severity === 0) {
-            return this.getTranslation('link.security.safe') || 'No issues detected.';
-          }
-          const sortedIssues = [...data.issues].sort((a, b) => b.severity - a.severity);
-          const topIssue = sortedIssues[0];
-          return this.translateSecurityIssue(topIssue);
+          return MB.Security.summaryText(data, this.getTranslation.bind(this));
         },
         linkSecurityScore(link) {
           const data = this.getLinkSecurity(link);
