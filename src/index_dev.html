@@ -14278,6 +14278,293 @@ function getDefaultFaviconRules() {
       },
     };
 
+    MB.LinkShorteners = (function() {
+      const DEFAULTS = initialData.options?.linkShorteners || { enabledServices: [], accounts: {} };
+
+      const cloneDefaults = () => JSON.parse(JSON.stringify(DEFAULTS || { enabledServices: [], accounts: {} }));
+
+      function ensureStructure(vm, target) {
+        if (!target) return target;
+        if (!Array.isArray(target.enabledServices)) {
+          vm?.$set ? vm.$set(target, 'enabledServices', []) : (target.enabledServices = []);
+        }
+        if (!target.accounts || typeof target.accounts !== 'object') {
+          vm?.$set ? vm.$set(target, 'accounts', {}) : (target.accounts = {});
+        }
+        return target;
+      }
+
+      function getOptions(vm, { preferDraft = false, createIfMissing = false } = {}) {
+        if (!vm) return null;
+        let container = null;
+
+        if (preferDraft && vm.genericEditConfig?.type === 'options' && vm.genericEditData) {
+          if (!vm.genericEditData.linkShorteners || typeof vm.genericEditData.linkShorteners !== 'object') {
+            if (!createIfMissing) return null;
+            const defaults = cloneDefaults();
+            vm.$set ? vm.$set(vm.genericEditData, 'linkShorteners', defaults) : (vm.genericEditData.linkShorteners = defaults);
+          }
+          container = vm.genericEditData.linkShorteners;
+        } else {
+          vm?.fixOptions?.();
+          if (!vm.data) return null;
+          if (!vm.data.options) {
+            if (!createIfMissing) return vm.data.options?.linkShorteners || null;
+            vm.$set ? vm.$set(vm.data, 'options', {}) : (vm.data.options = {});
+          }
+          if (!vm.data.options.linkShorteners || typeof vm.data.options.linkShorteners !== 'object') {
+            if (!createIfMissing) return vm.data.options.linkShorteners || null;
+            const defaults = cloneDefaults();
+            vm.$set ? vm.$set(vm.data.options, 'linkShorteners', defaults) : (vm.data.options.linkShorteners = defaults);
+          }
+          container = vm.data.options.linkShorteners;
+        }
+
+        return ensureStructure(vm, container);
+      }
+
+      function isServiceEnabled(vm, serviceId, { preferDraft = true } = {}) {
+        const options = getOptions(vm, { preferDraft });
+        const enabled = options?.enabledServices;
+        return Array.isArray(enabled) && enabled.includes(serviceId);
+      }
+
+      function toggleService(vm, serviceId, enabled, { preferDraft = true } = {}) {
+        const options = getOptions(vm, { preferDraft, createIfMissing: true });
+        if (!options) return;
+        const current = Array.isArray(options.enabledServices) ? [...options.enabledServices] : [];
+        const index = current.indexOf(serviceId);
+        if (enabled && index === -1) {
+          current.push(serviceId);
+        } else if (!enabled && index !== -1) {
+          current.splice(index, 1);
+        }
+        vm?.$set ? vm.$set(options, 'enabledServices', current) : (options.enabledServices = current);
+      }
+
+      function ensureAccount(vm, serviceId, { preferDraft = true } = {}) {
+        const options = getOptions(vm, { preferDraft, createIfMissing: true });
+        if (!options) return null;
+        if (!options.accounts[serviceId]) {
+          const placeholder = { label: '', apiKey: '' };
+          vm?.$set ? vm.$set(options.accounts, serviceId, placeholder) : (options.accounts[serviceId] = placeholder);
+        }
+        return options.accounts[serviceId];
+      }
+
+      function getAccount(vm, serviceId, { preferDraft = true } = {}) {
+        const options = getOptions(vm, { preferDraft });
+        const account = options?.accounts?.[serviceId];
+        if (account) return account;
+        return { label: '', apiKey: '' };
+      }
+
+      function updateAccount(vm, serviceId, field, value, opts) {
+        const account = ensureAccount(vm, serviceId, opts);
+        if (!account) return;
+        vm?.$set ? vm.$set(account, field, value) : (account[field] = value);
+      }
+
+      function clearAccount(vm, serviceId, { preferDraft = true } = {}) {
+        const options = getOptions(vm, { preferDraft });
+        if (!options?.accounts || !options.accounts[serviceId]) return;
+        if (vm?.$delete) vm.$delete(options.accounts, serviceId);
+        else delete options.accounts[serviceId];
+      }
+
+      function getServiceText(service, key, { vm, lang } = {}) {
+        if (!service) return '';
+        const translationKey = service[`${key}Key`];
+        if (translationKey && vm) {
+          const translated = vm.getTranslation?.(translationKey);
+          if (translated && translated !== translationKey) {
+            return translated;
+          }
+        }
+        const directValue = service[key];
+        if (!directValue) return '';
+        if (typeof directValue === 'string') return directValue;
+        const language = (lang || vm?.data?.options?.common?.language || 'en').toLowerCase();
+        if (directValue[language]) return directValue[language];
+        return directValue.en || directValue.de || '';
+      }
+
+      function normalizeBase(service) {
+        const base = (service?.demoDomain || service?.baseUrl || `https://${service?.id || 'short'}.example`).trim();
+        if (!base) return 'https://short.example';
+        return base.replace(/\/+$/, '');
+      }
+
+      function generateSlug(input, length = 7) {
+        const text = String(input || '');
+        let hash = 0;
+        for (let i = 0; i < text.length; i += 1) {
+          hash = (hash << 5) - hash + text.charCodeAt(i);
+          hash |= 0;
+        }
+        let slug = Math.abs(hash).toString(36);
+        while (slug.length < length) {
+          slug += Math.random().toString(36).slice(2);
+        }
+        return slug.slice(0, length).toLowerCase();
+      }
+
+      async function runAdapter({
+        vm,
+        service,
+        contextLink,
+        contextGroup,
+        extensionAvailable = true,
+        getTranslation,
+        hasNetworkTransport,
+        performNetworkRequest,
+        copyToClipboard
+      } = {}) {
+        const t = (key) => {
+          if (typeof getTranslation === 'function') return getTranslation(key);
+          if (vm?.getTranslation) return vm.getTranslation(key);
+          return key;
+        };
+
+        const makeResult = (ok, type, message, extra = {}) => Object.assign({ ok, type, message }, extra);
+
+        if (!service) {
+          return makeResult(false, 'error', t('shorteners.toast.error') || 'Could not create a short link.');
+        }
+
+        const linkUrl = contextLink?.url || '';
+        if (!linkUrl) {
+          return makeResult(false, 'warning', t('menu.link.shorten.noUrl') || 'No URL available');
+        }
+
+        if (!extensionAvailable) {
+          return makeResult(false, 'warning', t('shorteners.toast.extensionMissing') || 'Browser extension required.');
+        }
+
+        if (typeof hasNetworkTransport === 'function' && !hasNetworkTransport.call(vm)) {
+          return makeResult(false, 'warning', t('shorteners.toast.noTransport') || 'No network transport configured.');
+        }
+
+        if (!isServiceEnabled(vm, service.id, { preferDraft: false })) {
+          const msg = (t('shorteners.toast.disabled') || '{service} is not enabled.').replace('{service}', service.name);
+          return makeResult(false, 'info', msg);
+        }
+
+        const account = getAccount(vm, service.id, { preferDraft: false }) || { label: '', apiKey: '' };
+        const hasAccount = !!(account.apiKey || account.label);
+        if (service.accountRequired && !hasAccount) {
+          const msg = (t('shorteners.toast.missingAccount') || 'Please add account details for {service}.')
+            .replace('{service}', service.name);
+          return makeResult(false, 'warning', msg);
+        }
+
+        const adapter = LINK_SHORTENER_ADAPTERS[service.id];
+        if (typeof adapter !== 'function') {
+          const msg = (t('shorteners.toast.notSupported') || '{service} is not yet supported.')
+            .replace('{service}', service.name);
+          return makeResult(false, 'info', msg);
+        }
+
+        const normalizedUrl = MB.Utils.ensureProtocol(linkUrl);
+        if (!MB.Utils.isValidHttpUrl(normalizedUrl)) {
+          return makeResult(false, 'warning', t('menu.link.shorten.noUrl') || 'No URL available');
+        }
+
+        try {
+          const adapterOptions = {
+            baseUrl: normalizeBase(service),
+            suggestedSlug: generateSlug(`${service?.id || 'short'}-${normalizedUrl}`),
+            linkId: contextLink?.uuid || null,
+            groupId: contextGroup?.uuid || null,
+            context: {
+              serviceName: service.name,
+              linkText: contextLink?.text || '',
+              keywords: contextLink?.keywords || ''
+            },
+            timeoutMs: DEFAULT_PROXY_TIMEOUT_MS
+          };
+
+          const adapterResult = await adapter({ url: normalizedUrl, account, options: adapterOptions });
+          if (!adapterResult || !adapterResult.request) {
+            throw new Error('Shortener adapter did not return a request configuration');
+          }
+
+          const requestConfig = Object.assign({}, adapterResult.request);
+          if (!requestConfig.url) {
+            throw new Error('Adapter request missing URL');
+          }
+          requestConfig.method = (requestConfig.method || 'POST').toUpperCase();
+          requestConfig.timeoutMs = requestConfig.timeoutMs || adapterOptions.timeoutMs;
+
+          const normalizedHeaders = {};
+          if (requestConfig.headers && typeof requestConfig.headers === 'object') {
+            Object.entries(requestConfig.headers).forEach(([key, value]) => {
+              if (key) normalizedHeaders[key] = value;
+            });
+          }
+          requestConfig.headers = normalizedHeaders;
+
+          const hasJsonContentType = Object.keys(normalizedHeaders).some(h => h.toLowerCase() === 'content-type' && /json/i.test(String(normalizedHeaders[h])));
+          if (requestConfig.body && typeof requestConfig.body !== 'string') {
+            if (!hasJsonContentType) {
+              normalizedHeaders['Content-Type'] = 'application/json';
+            }
+            requestConfig.body = JSON.stringify(requestConfig.body);
+          }
+
+          const response = typeof performNetworkRequest === 'function'
+            ? await performNetworkRequest(requestConfig)
+            : await MB.Network.performRequest(requestConfig);
+
+          if (!response) {
+            throw new Error('No response from proxy fetch');
+          }
+          if (response.error) {
+            throw new Error(response.error);
+          }
+
+          const parseFn = typeof adapterResult.parse === 'function'
+            ? adapterResult.parse
+            : (resp) => ({ shortUrl: (resp.bodyText || '').trim() });
+
+          const parsedResult = await parseFn(response, { service, account, options: adapterOptions });
+          const shortUrl = parsedResult?.shortUrl || (typeof parsedResult === 'string' ? parsedResult : '');
+          if (!shortUrl) {
+            throw new Error('No short URL returned');
+          }
+
+          if (typeof copyToClipboard === 'function') {
+            await copyToClipboard(shortUrl);
+          }
+
+          const successTemplate = (t('shorteners.toast.success') || 'Short link copied: {shortUrl}')
+            .replace('{service}', service.name)
+            .replace('{shortUrl}', shortUrl);
+
+          return makeResult(true, 'success', successTemplate, { shortUrl });
+        } catch (error) {
+          debugLog('warn', '[SHORTENER] Failed to create short link', { service: service?.id, error });
+          const detail = error?.message ? ` (${error.message})` : '';
+          const template = t('shorteners.toast.error') || 'Could not create a short link. {message}';
+          return makeResult(false, 'error', template.replace('{message}', detail).trim(), { error });
+        }
+      }
+
+      return {
+        getOptions,
+        isServiceEnabled,
+        toggleService,
+        ensureAccount,
+        getAccount,
+        updateAccount,
+        clearAccount,
+        getServiceText,
+        normalizeBase,
+        generateSlug,
+        runAdapter
+      };
+    })();
+
     let linksDb = null;
     let sharing = null;
 
@@ -15781,90 +16068,29 @@ function getDefaultFaviconRules() {
       },
         methods: {
         // ===== LINK SHORTENER SUPPORT =====
-        getMutableLinkShortenerOptions() {
-          if (this.genericEditConfig?.type === 'options' && this.genericEditData) {
-            if (!this.genericEditData.linkShorteners || typeof this.genericEditData.linkShorteners !== 'object') {
-              this.$set(this.genericEditData, 'linkShorteners', JSON.parse(JSON.stringify(initialData.options.linkShorteners)));
-            }
-            const options = this.genericEditData.linkShorteners;
-            if (!Array.isArray(options.enabledServices)) {
-              this.$set(options, 'enabledServices', []);
-            }
-            if (!options.accounts || typeof options.accounts !== 'object') {
-              this.$set(options, 'accounts', {});
-            }
-            return options;
-          }
-          this.fixOptions();
-          return this.data.options.linkShorteners;
+        getMutableLinkShortenerOptions(preferDraft = true) {
+          return MB.LinkShorteners.getOptions(this, { preferDraft, createIfMissing: true });
         },
         isShortenerEnabled(serviceId, preferDraft = true) {
-          const source = (preferDraft && this.genericEditConfig?.type === 'options' && this.genericEditData?.linkShorteners)
-            ? this.genericEditData.linkShorteners
-            : this.data.options?.linkShorteners;
-          const enabled = source?.enabledServices;
-          return Array.isArray(enabled) ? enabled.includes(serviceId) : false;
+          return MB.LinkShorteners.isServiceEnabled(this, serviceId, { preferDraft });
         },
         toggleShortenerService(serviceId, enabled) {
-          const options = this.getMutableLinkShortenerOptions();
-          if (!options) return;
-          const list = Array.isArray(options.enabledServices) ? [...options.enabledServices] : [];
-          const index = list.indexOf(serviceId);
-          if (enabled && index === -1) {
-            list.push(serviceId);
-          } else if (!enabled && index !== -1) {
-            list.splice(index, 1);
-          }
-          this.$set(options, 'enabledServices', list);
+          MB.LinkShorteners.toggleService(this, serviceId, enabled, { preferDraft: true });
         },
         ensureShortenerAccount(serviceId) {
-          const options = this.getMutableLinkShortenerOptions();
-          if (!options) return null;
-          if (!options.accounts) {
-            this.$set(options, 'accounts', {});
-          }
-          if (!options.accounts[serviceId]) {
-            this.$set(options.accounts, serviceId, { label: '', apiKey: '' });
-          }
-          return options.accounts[serviceId];
+          return MB.LinkShorteners.ensureAccount(this, serviceId, { preferDraft: true });
         },
         getShortenerAccount(serviceId, preferDraft = true) {
-          const source = (preferDraft && this.genericEditConfig?.type === 'options' && this.genericEditData?.linkShorteners)
-            ? this.genericEditData.linkShorteners
-            : this.data.options?.linkShorteners;
-          const account = source?.accounts?.[serviceId];
-          if (account) return account;
-          return { label: '', apiKey: '' };
+          return MB.LinkShorteners.getAccount(this, serviceId, { preferDraft });
         },
         updateShortenerAccount(serviceId, field, value) {
-          const account = this.ensureShortenerAccount(serviceId);
-          if (!account) return;
-          this.$set(account, field, value);
+          MB.LinkShorteners.updateAccount(this, serviceId, field, value, { preferDraft: true });
         },
         clearShortenerAccount(serviceId) {
-          const options = this.getMutableLinkShortenerOptions();
-          if (!options || !options.accounts) return;
-          if (options.accounts[serviceId]) {
-            this.$delete(options.accounts, serviceId);
-          }
+          MB.LinkShorteners.clearAccount(this, serviceId, { preferDraft: true });
         },
         getServiceText(service, key) {
-          if (!service) return '';
-          const translationKey = service[`${key}Key`];
-          if (translationKey) {
-            const translated = this.getTranslation(translationKey);
-            if (translated && translated !== translationKey) {
-              return translated;
-            }
-          }
-          const directValue = service[key];
-          if (!directValue) return '';
-          if (typeof directValue === 'string') {
-            return directValue;
-          }
-          const lang = (this.data.options?.common?.language || 'en').toLowerCase();
-          if (directValue[lang]) return directValue[lang];
-          return directValue.en || directValue.de || '';
+          return MB.LinkShorteners.getServiceText(service, key, { vm: this });
         },
         formatIntegrationScore(score) {
           if (score === null || score === undefined) return '';
@@ -16051,150 +16277,32 @@ function getDefaultFaviconRules() {
           const score = this.linkSecurityScore(link);
           return (this.getTranslation('link.security.scoreLabel') || 'Security score: {score}/100').replace('{score}', score);
         },
-        normalizeShortenerBase(service) {
-          const base = (service?.demoDomain || service?.baseUrl || `https://${service?.id || 'short'}.example`).trim();
-          if (!base) return 'https://short.example';
-          return base.replace(/\/+$/, '');
-        },
-        generateShortLinkSlug(input, length = 7) {
-          const text = String(input || '');
-          let hash = 0;
-          for (let i = 0; i < text.length; i += 1) {
-            hash = (hash << 5) - hash + text.charCodeAt(i);
-            hash |= 0; // Convert to 32bit integer
-          }
-          let slug = Math.abs(hash).toString(36);
-          while (slug.length < length) {
-            slug += Math.random().toString(36).slice(2);
-          }
-          return slug.slice(0, length).toLowerCase();
-        },
         async shortenLinkWithService(service) {
-          if (!service || !this.contextLink || !this.contextLink.url) {
-            this.showToast(this.getTranslation('menu.link.shorten.noUrl') || 'No URL available', 'warning');
-            this.hideMenus();
-            return;
-          }
-          if (!this.extensionAvailable || !MB.Extension.isAvailable()) {
-            this.showToast(this.getTranslation('shorteners.toast.extensionMissing') || 'Browser extension required.', 'warning');
-            this.hideMenus();
-            return;
-          }
-            if (!this.hasNetworkTransport()) {
-              this.showToast(this.getTranslation('shorteners.toast.noTransport') || 'No network transport configured.', 'warning');
-              this.hideMenus();
-              return;
+          const extensionReady = this.extensionAvailable && (typeof MB.Extension?.isAvailable === 'function' ? MB.Extension.isAvailable() : true);
+          const result = await MB.LinkShorteners.runAdapter({
+            vm: this,
+            service,
+            contextLink: this.contextLink,
+            contextGroup: this.contextGroup,
+            extensionAvailable: extensionReady,
+            getTranslation: this.getTranslation.bind(this),
+            hasNetworkTransport: this.hasNetworkTransport.bind(this),
+            performNetworkRequest: this.performNetworkRequest.bind(this),
+            copyToClipboard: this.copyToClipboard.bind(this)
+          });
+
+          this.hideMenus();
+
+          if (!result) return;
+          if (result.ok) {
+            if (result.message) {
+              this.showToast(result.message, result.type || 'success');
             }
-          const enabled = this.linkShortenerEnabledSet.has(service.id);
-          if (!enabled) {
-            const msg = (this.getTranslation('shorteners.toast.disabled') || '{service} is not enabled.')
-              .replace('{service}', service.name);
-            this.showToast(msg, 'info');
-            this.hideMenus();
-            return;
-          }
-          const rawAccount = this.data.options?.linkShorteners?.accounts?.[service.id] || {};
-          const accountInfo = {
-            label: String(rawAccount.label || '').trim(),
-            apiKey: String(rawAccount.apiKey || '').trim()
-          };
-          const hasAccount = !!(accountInfo.apiKey || accountInfo.label);
-          if (service.accountRequired && !hasAccount) {
-            const msg = (this.getTranslation('shorteners.toast.missingAccount') || 'Please add account details for {service}.')
-              .replace('{service}', service.name);
-            this.showToast(msg, 'warning');
-            this.hideMenus();
-            return;
-          }
-
-          const adapter = LINK_SHORTENER_ADAPTERS[service.id];
-          if (typeof adapter !== 'function') {
-            const msg = (this.getTranslation('shorteners.toast.notSupported') || '{service} is not yet supported.')
-              .replace('{service}', service.name);
-            this.showToast(msg, 'info');
-            this.hideMenus();
-            return;
-          }
-
-          const normalizedUrl = MB.Utils.ensureProtocol(this.contextLink.url);
-          if (!MB.Utils.isValidHttpUrl(normalizedUrl)) {
-            this.showToast(this.getTranslation('menu.link.shorten.noUrl') || 'No URL available', 'warning');
-            this.hideMenus();
-            return;
-          }
-
-          try {
-            const adapterOptions = {
-              baseUrl: this.normalizeShortenerBase(service),
-              suggestedSlug: this.generateShortLinkSlug(`${service?.id || 'short'}-${normalizedUrl}`),
-              linkId: this.contextLink.uuid || null,
-              groupId: this.contextGroup?.uuid || null,
-              context: {
-                serviceName: service.name,
-                linkText: this.contextLink.text || '',
-                keywords: this.contextLink.keywords || ''
-              },
-              timeoutMs: DEFAULT_PROXY_TIMEOUT_MS
-            };
-
-            const adapterResult = await adapter({ url: normalizedUrl, account: accountInfo, options: adapterOptions });
-            if (!adapterResult || !adapterResult.request) {
-              throw new Error('Shortener adapter did not return a request configuration');
+          } else {
+            const fallbackMessage = result.message || result.error?.message;
+            if (fallbackMessage) {
+              this.showToast(fallbackMessage, result.type || 'error');
             }
-
-            const requestConfig = Object.assign({}, adapterResult.request);
-            if (!requestConfig.url) {
-              throw new Error('Adapter request missing URL');
-            }
-            requestConfig.method = (requestConfig.method || 'POST').toUpperCase();
-            requestConfig.timeoutMs = requestConfig.timeoutMs || adapterOptions.timeoutMs;
-
-            const normalizedHeaders = {};
-            if (requestConfig.headers && typeof requestConfig.headers === 'object') {
-              Object.entries(requestConfig.headers).forEach(([key, value]) => {
-                if (key) normalizedHeaders[key] = value;
-              });
-            }
-            requestConfig.headers = normalizedHeaders;
-
-            const hasJsonContentType = Object.keys(normalizedHeaders).some(h => h.toLowerCase() === 'content-type' && /json/i.test(String(normalizedHeaders[h])));
-            if (requestConfig.body && typeof requestConfig.body !== 'string') {
-              if (!hasJsonContentType) {
-                normalizedHeaders['Content-Type'] = 'application/json';
-              }
-              requestConfig.body = JSON.stringify(requestConfig.body);
-            }
-
-            const proxyResponse = await this.performNetworkRequest(requestConfig);
-            if (!proxyResponse) {
-              throw new Error('No response from proxy fetch');
-            }
-            if (proxyResponse.error) {
-              throw new Error(proxyResponse.error);
-            }
-
-            const parseFn = typeof adapterResult.parse === 'function'
-              ? adapterResult.parse
-              : (resp) => ({ shortUrl: (resp.bodyText || '').trim() });
-
-            const parsedResult = await parseFn(proxyResponse, { service, account: accountInfo, options: adapterOptions });
-            const shortUrl = parsedResult?.shortUrl || (typeof parsedResult === 'string' ? parsedResult : '') || '';
-            if (!shortUrl) {
-              throw new Error('No short URL returned');
-            }
-            await this.copyToClipboard(shortUrl);
-            const successTemplate = (this.getTranslation('shorteners.toast.success') || 'Short link copied: {shortUrl}')
-              .replace('{service}', service.name)
-              .replace('{shortUrl}', shortUrl);
-            this.showToast(successTemplate, 'success');
-          } catch (error) {
-            debugLog('warn', '[SHORTENER] Failed to create short link', { service: service?.id, error });
-            const errorDetail = (error && error.message) ? error.message : '';
-            const template = this.getTranslation('shorteners.toast.error') || 'Could not create a short link. {message}';
-            const errMsg = template.replace('{message}', errorDetail ? ` (${errorDetail})` : '');
-            this.showToast(errMsg.trim(), 'error');
-          } finally {
-            this.hideMenus();
           }
         },
 
