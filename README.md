@@ -1,6 +1,6 @@
 # MyBookmarks
 
-A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js powers the reactive UI layer, while Bootstrap provides layout components and utility styling. The main UI lives in [`src/index_dev.html`](src/index_dev.html) and runs entirely inside the browser, storing its data in `localStorage`. No build tooling is required—open the file in any modern browser to explore the full experience.
+A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js powers the reactive UI layer, while Bootstrap provides layout components and utility styling. The main app runs entirely inside the browser, storing its data in `localStorage`. No build tooling is required—open the file in any modern browser to explore the full experience.
 
 ## Screenshot
 
