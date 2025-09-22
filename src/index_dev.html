@@ -31246,17 +31246,18 @@ footer a:hover {
             const rect = target.getBoundingClientRect();
             const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
             const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-            const margin = 16;
+            const viewportMargin = 16;
+            const targetGap = 8;
             const widthHint = 320;
 
-            let left = rect.right + margin;
+            let left = rect.right + targetGap;
             let top = rect.top;
 
-            if (left + widthHint > viewportWidth - margin) {
-              left = rect.left - widthHint - margin;
+            if (left + widthHint > viewportWidth - viewportMargin) {
+              left = rect.left - widthHint - targetGap;
             }
-            if (left < margin) left = Math.max(margin, rect.left);
-            if (top < margin) top = margin;
+            if (left < viewportMargin) left = Math.max(viewportMargin, rect.left);
+            if (top < viewportMargin) top = viewportMargin;
 
             popover.style = {
               top: `${top}px`,
@@ -31271,17 +31272,17 @@ footer a:hover {
               let adjustedLeft = popRect.left;
               let adjustedTop = popRect.top;
 
-              if (popRect.right > viewportWidth - margin) {
-                adjustedLeft = Math.max(margin, viewportWidth - popRect.width - margin);
+              if (popRect.right > viewportWidth - viewportMargin) {
+                adjustedLeft = Math.max(viewportMargin, viewportWidth - popRect.width - viewportMargin);
               }
-              if (popRect.left < margin) {
-                adjustedLeft = margin;
+              if (popRect.left < viewportMargin) {
+                adjustedLeft = viewportMargin;
               }
-              if (popRect.bottom > viewportHeight - margin) {
-                adjustedTop = Math.max(margin, viewportHeight - popRect.height - margin);
+              if (popRect.bottom > viewportHeight - viewportMargin) {
+                adjustedTop = Math.max(viewportMargin, viewportHeight - popRect.height - viewportMargin);
               }
-              if (popRect.top < margin) {
-                adjustedTop = margin;
+              if (popRect.top < viewportMargin) {
+                adjustedTop = viewportMargin;
               }
 
               if (adjustedLeft !== popRect.left || adjustedTop !== popRect.top) {
