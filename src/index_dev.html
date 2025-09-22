@@ -5732,12 +5732,13 @@
                   <th>{{ getTranslation('favicon.rules.pattern') || 'Pattern' }}</th>
                   <th style="width: 110px;">{{ getTranslation('favicon.rules.icon') || 'Icon' }}</th>
                   <th style="width: 220px;">{{ getTranslation('favicon.rules.comment') || 'Comment' }}</th>
+                  <th style="width: 90px;">{{ getTranslation('favicon.rules.fallback') || 'Fallback' }}</th>
                   <th style="width: 200px;"></th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="!faviconRulesWorking.length">
-                  <td colspan="6" class="text-center text-muted py-3">{{ getTranslation('favicon.rules.none') || 'No favicon rules yet.' }}</td>
+                  <td colspan="7" class="text-center text-muted py-3">{{ getTranslation('favicon.rules.none') || 'No favicon rules yet.' }}</td>
                 </tr>
                 <tr v-for="(r, ri) in faviconRulesWorking" :key="r.id || ri">
                   <td>
@@ -5758,6 +5759,9 @@
                   </td>
                   <td>
                     <input class="form-control form-control-sm" v-model="r.comment" :placeholder="getTranslation('favicon.rules.commentPlaceholder') || 'Optional comment'">
+                  </td>
+                  <td class="text-center">
+                    <input type="checkbox" class="form-check-input" v-model="r.fallbackOnly">
                   </td>
                   <td>
                     <div class="d-flex gap-1 justify-content-end favicon-rule-actions">
@@ -6110,8 +6114,9 @@ const DEFAULT_FAVICON_RULES = Object.freeze([
     enabled: true,
     patternType: 'regex',
     pattern: '^http(s).*',
-    iconDataUrl: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-link-45deg" viewBox="0 0 16 16"><path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1 1 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4 4 0 0 1-.128-1.287z"/><path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243z"/></svg>',
-    comment: 'Standard-Favicon Amazon'
+    iconDataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY3VycmVudENvbG9yIiBjbGFzcz0iYmkgYmktbGluay00NWRlZyIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNNC43MTUgNi41NDIgMy4zNDMgNy45MTRhMyAzIDAgMSAwIDQuMjQzIDQuMjQzbDEuODI4LTEuODI5QTMgMyAwIDAgMCA4LjU4NiA1LjVMOCA2LjA4NmExIDEgMCAwIDAtLjE1NC4xOTkgMiAyIDAgMCAxIC44NjEgMy4zMzdMNi44OCAxMS40NWEyIDIgMCAxIDEtMi44My0yLjgzbC43OTMtLjc5MmE0IDQgMCAwIDEtLjEyOC0xLjI4N3oiLz48cGF0aCBkPSJNNi41ODYgNC42NzJBMyAzIDAgMCAwIDcuNDE0IDkuNWwuNzc1LS43NzZhMiAyIDAgMCAxLS44OTYtMy4zNDZMOS4xMiAzLjU1YTIgMiAwIDEgMSAyLjgzIDIuODNsLS43OTMuNzkyYy4xMTIuNDIuMTU1Ljg1NS4xMjggMS4yODdsMS4zNzItMS4zNzJhMyAzIDAgMSAwLTQuMjQzLTQuMjQzeiIvPjwvc3ZnPg==',
+    fallbackOnly: true,
+    comment: 'Standard-Favicon HTTP'
   }
 ]);
 
@@ -12286,6 +12291,7 @@ function getDefaultFaviconRules() {
             'favicon.rules.icon': 'Icon',
             'favicon.rules.comment': 'Comment',
             'favicon.rules.commentPlaceholder': 'Optional comment',
+            'favicon.rules.fallback': 'Fallback',
             'favicon.rules.enabled': 'Enabled',
             'favicon.rules.domain': 'Domain',
             'favicon.rules.prefix': 'URL prefix',
@@ -13216,6 +13222,7 @@ function getDefaultFaviconRules() {
             'favicon.rules.icon': 'Icon',
             'favicon.rules.comment': 'Kommentar',
             'favicon.rules.commentPlaceholder': 'Optionaler Kommentar',
+            'favicon.rules.fallback': 'Fallback',
             'favicon.rules.enabled': 'Aktiv',
             'favicon.rules.domain': 'Domain',
             'favicon.rules.prefix': 'URL-Präfix',
@@ -28468,9 +28475,12 @@ footer a:hover {
           if (!this.data.options.links) this.$set(this.data.options, 'links', {});
           if (!Array.isArray(this.data.options.links.faviconRules)) this.$set(this.data.options.links, 'faviconRules', []);
           this.faviconRulesWorking = JSON.parse(JSON.stringify(this.data.options.links.faviconRules));
-          this.faviconRulesWorking.forEach((rule, idx) => {
+        this.faviconRulesWorking.forEach((rule, idx) => {
             if (rule.comment === undefined) {
               this.$set(this.faviconRulesWorking[idx], 'comment', '');
+            }
+            if (rule.fallbackOnly === undefined) {
+              this.$set(this.faviconRulesWorking[idx], 'fallbackOnly', false);
             }
           });
           this.faviconRulesTestUrl = '';
@@ -28496,6 +28506,7 @@ footer a:hover {
             pattern: '',
             iconDataUrl: '',
             comment: '',
+            fallbackOnly: false,
             createdAt: Date.now()
           };
           this.faviconRulesWorking.push(rule);
@@ -28513,6 +28524,7 @@ footer a:hover {
             const key = `${rule.patternType || 'domain'}__${(rule.pattern || '').trim().toLowerCase()}`;
             if (!existingKeys.has(key)) {
               const newRule = Object.assign({}, rule, { createdAt: Date.now() + idx });
+              if (newRule.fallbackOnly === undefined) newRule.fallbackOnly = false;
               this.faviconRulesWorking.push(newRule);
               existingKeys.add(key);
               added++;
@@ -28580,6 +28592,7 @@ footer a:hover {
                   pattern,
                   iconDataUrl: typeof rule.iconDataUrl === 'string' ? rule.iconDataUrl : '',
                   comment: typeof rule.comment === 'string' ? rule.comment : '',
+                  fallbackOnly: !!rule.fallbackOnly,
                   createdAt: Number(rule.createdAt) || Date.now() + idx
                 };
 
@@ -28830,10 +28843,12 @@ footer a:hover {
         getEnabledFaviconRules() {
           const rules = this.data?.options?.links?.faviconRules;
           if (!Array.isArray(rules)) return [];
-          return rules.filter(r => r && r.enabled && r.iconDataUrl);
+          return rules
+            .filter(r => r && r.enabled && r.iconDataUrl)
+            .map(r => Object.assign({}, r, { fallbackOnly: !!r.fallbackOnly }));
         },
 
-        applyFaviconRulesToLink(link, rulesOverride = null, rawInput = null) {
+        applyFaviconRulesToLink(link, rulesOverride = null, rawInput = null, allowFallback = true) {
           try {
             if (!link || !link.url) return false;
             const enabledRules = Array.isArray(rulesOverride) ? rulesOverride : this.getEnabledFaviconRules();
@@ -28850,8 +28865,12 @@ footer a:hover {
 
             const incomingRaw = rawInput != null ? rawInput : (link.rawUrlInput ?? null);
             const normalizedRaw = incomingRaw != null ? String(incomingRaw).trim() : null;
-            const rule = this.findRuleForUrl(link.url, enabledRules, normalizedRaw);
-            if (rule && rule.iconDataUrl) {
+            const fallbackRuleSet = enabledRules.filter(r => r?.fallbackOnly);
+            const primaryRules = enabledRules.filter(r => !r?.fallbackOnly);
+            const fallbackRules = allowFallback ? fallbackRuleSet : [];
+
+            const applyRuleIcon = (rule) => {
+              if (!rule || !rule.iconDataUrl) return false;
               const ruleIcon = rule.iconDataUrl;
               const ruleId = rule.id ?? null;
               if (link.favicon !== ruleIcon || link.faviconSource !== 'rule' || link.faviconRuleId !== ruleId) {
@@ -28865,17 +28884,40 @@ footer a:hover {
                 return true;
               }
               return false;
+            };
+
+            let changed = false;
+
+            if (primaryRules.length) {
+              const rule = this.findRuleForUrl(link.url, primaryRules, normalizedRaw);
+              if (rule) {
+                changed = applyRuleIcon(rule);
+                if (!changed) return false;
+                return true;
+              }
+            }
+
+            const shouldTryFallback = fallbackRules.length && (!link.favicon || (link.faviconSource === 'rule' && fallbackRules.some(r => (r?.id ?? null) === (link.faviconRuleId ?? null))));
+            if (shouldTryFallback) {
+              const fallbackRule = this.findRuleForUrl(link.url, fallbackRules, normalizedRaw);
+              if (fallbackRule) {
+                const applied = applyRuleIcon(fallbackRule);
+                if (applied) return true;
+              }
             }
 
             if (link.faviconSource === 'rule' && (link.favicon || link.faviconRuleId)) {
-              this.$set(link, 'favicon', null);
-              this.$set(link, 'faviconError', false);
-              this.$set(link, 'faviconSource', null);
-              this.$set(link, 'faviconRuleId', null);
-              if (normalizedRaw !== null && link.rawUrlInput !== normalizedRaw) {
-                this.$set(link, 'rawUrlInput', normalizedRaw || '');
+              const isFallbackRule = fallbackRuleSet.some(r => (r?.id ?? null) === (link.faviconRuleId ?? null));
+              if (!isFallbackRule || (allowFallback && !shouldTryFallback)) {
+                this.$set(link, 'favicon', null);
+                this.$set(link, 'faviconError', false);
+                this.$set(link, 'faviconSource', null);
+                this.$set(link, 'faviconRuleId', null);
+                if (normalizedRaw !== null && link.rawUrlInput !== normalizedRaw) {
+                  this.$set(link, 'rawUrlInput', normalizedRaw || '');
+                }
+                return true;
               }
-              return true;
             }
             return false;
           } catch (err) {
@@ -28894,6 +28936,8 @@ footer a:hover {
             if (!groups.length) return;
 
             const enabledRules = this.getEnabledFaviconRules();
+            const primaryRules = enabledRules.filter(r => !r?.fallbackOnly);
+            const fallbackRules = enabledRules.filter(r => r?.fallbackOnly);
 
             let changed = false;
 
@@ -28902,7 +28946,17 @@ footer a:hover {
               const links = Array.isArray(group.links) ? group.links : [];
               links.forEach(link => {
                 if (!link || link.deleted || !link.url) return;
-                if (this.applyFaviconRulesToLink(link, enabledRules)) changed = true;
+                let localChanged = false;
+                if (primaryRules.length) {
+                  if (this.applyFaviconRulesToLink(link, primaryRules, null, false)) localChanged = true;
+                } else {
+                  // If no primary rules, ensure stale rule icons are cleared
+                  if (this.applyFaviconRulesToLink(link, [], null, false)) localChanged = true;
+                }
+                if ((!link.favicon || link.faviconSource === 'rule') && fallbackRules.length) {
+                  if (this.applyFaviconRulesToLink(link, fallbackRules, null, true)) localChanged = true;
+                }
+                if (localChanged) changed = true;
               });
             });
 
@@ -29649,7 +29703,7 @@ footer a:hover {
 
           if (newLink.url) {
             try {
-              if (!this.applyFaviconRulesToLink(newLink, null, rawInputTrimmed)) {
+              if (!this.applyFaviconRulesToLink(newLink, null, rawInputTrimmed, false)) {
                 await this.tryFetchAndSetFavicon(newLink, newLink.url, rawInputTrimmed);
               }
             } catch (err) {
@@ -31231,7 +31285,7 @@ footer a:hover {
           // 0) Apply favicon rules first (no network if match exists)
           const rawCandidate = rawInput != null ? rawInput : (link?.rawUrlInput ?? null);
           const normalizedRaw = rawCandidate != null ? String(rawCandidate).trim() : null;
-          if (this.applyFaviconRulesToLink(link, null, normalizedRaw)) return;
+          if (this.applyFaviconRulesToLink(link, null, normalizedRaw, false)) return;
 
           // 1) Use extension for all web requests
           if (this.extensionAvailable) {
@@ -31257,6 +31311,10 @@ footer a:hover {
             // 2) Extension not available but option is enabled - mark as error
             debugLog('warn', 'Favicon fetch requested but extension not available');
             this.$set(link, 'faviconError', true);
+          }
+
+          if (!link.favicon) {
+            this.applyFaviconRulesToLink(link, null, normalizedRaw, true);
           }
         },
         
