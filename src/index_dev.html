@@ -1363,7 +1363,7 @@
       position: relative;
       vertical-align: top;
       pointer-events: none;
-      transition: all 0.2s ease;
+      transition: width 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
       height: 100%;
     }
 
@@ -1371,8 +1371,8 @@
       position: absolute;
       top: 0;
       bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
+      left: 0;
+      transform: none;
       width: 0px;
       background: transparent;
       transition: all 0.2s ease;
@@ -1385,20 +1385,21 @@
 
     /* Expanded hit area for easier dropping */
     #app.dragging-group .verticalDropZone::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: -24px;
-      right: -24px;
-      background: transparent;
-      pointer-events: auto;
-      z-index: 1;
+      content: none;
+    }
+
+    #app.dragging-group .verticalDropZone:hover,
+    #app.dragging-group .verticalDropZone.drag-over-active {
+      width: 36px !important;
+      min-width: 36px !important;
+      max-width: 36px !important;
     }
 
     #app.dragging-group .verticalDropZone.drag-over-active .verticalDropZoneIndicator {
-      width: 36px;
-      transform: translateX(-50%);
+      width: 100%;
+      left: 0;
+      right: 0;
+      transform: none;
       background: rgba(255, 255, 255, 0.5);
       border-radius: 16px;
       backdrop-filter: blur(10px);
@@ -1419,6 +1420,7 @@
       vertical-align: top;
       pointer-events: none;
       min-height: 50px;
+      transition: width 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
     }
 
     .linkVerticalDropZoneIndicator {
@@ -1433,33 +1435,37 @@
       pointer-events: none;
     }
 
+
     #app.dragging-link .linkVerticalDropZone {
       pointer-events: auto;
     }
 
+    #app.dragging-link .linkVerticalDropZone:hover,
+    #app.dragging-link .linkVerticalDropZone.drag-over-active {
+      width: 24px;
+      min-width: 24px;
+      max-width: 24px;
+    }
+
     /* Expanded hit area for easier dropping */
     #app.dragging-link .linkVerticalDropZone::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: -10px;
-      right: -10px;
-      background: transparent;
-      pointer-events: auto;
-      z-index: 1;
+      content: none;
     }
 
     #app.dragging-link .linkVerticalDropZone.drag-over-active .linkVerticalDropZoneIndicator {
       width: 100%;
-      background: linear-gradient(to right,
-        transparent 0%,
-        rgba(0, 204, 153, 0.25) 20%,
-        rgba(0, 204, 153, 0.25) 80%,
-        transparent 100%);
+      left: 0;
+      right: 0;
+      transform: none;
+      background: rgba(255, 255, 255, 0.75);
+      border-radius: 12px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       box-shadow:
-        inset 1px 0 0 #00cc99,
-        inset -1px 0 0 #00cc99;
+        0 0.5px 2px rgba(0, 0, 0, 0.05),
+        0 2px 8px rgba(0, 0, 0, 0.08),
+        0 10px 18px -6px rgba(0, 0, 0, 0.12);
+      opacity: 0.5;
     }
 
     /* Drag and Drop Styles: permanent spacers that replace normal margins */
@@ -1517,16 +1523,46 @@
       opacity: 0.5;
     }
 
-    /* Visual feedback for link drop zones when dragging over - no height change */
     #app.dragging-link .linkContainerDragAndDrop.drag-over-active {
-      background: linear-gradient(to bottom, 
-        transparent, 
-        rgba(0, 204, 153, 0.25) 30%, 
-        rgba(0, 204, 153, 0.25) 70%, 
-        transparent);
-      box-shadow: 
-        inset 0 1px 0 #00cc99,
-        inset 0 -1px 0 #00cc99;
+      height: var(--mb-dragged-link-height, 44px) !important;
+      min-height: var(--mb-dragged-link-height, 44px) !important;
+      max-height: var(--mb-dragged-link-height, 44px) !important;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 10px;
+      box-shadow:
+        0 0.5px 2px rgba(0, 0, 0, 0.05),
+        0 2px 6px rgba(0, 0, 0, 0.08),
+        0 10px 18px -6px rgba(0, 0, 0, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 0.35rem;
+      padding: 0 0.75rem !important;
+      font-size: 0.85rem !important;
+      line-height: 1.2 !important;
+      color: rgba(60, 60, 60, 0.85);
+      opacity: 0.5;
+      margin-top: 4px !important;
+      margin-bottom: 4px !important;
+    }
+
+    #app.dragging-link .linkContainerDragAndDrop.drag-over-active::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      padding: 1px;
+      background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.35) 0%,
+        rgba(255, 255, 255, 0.08) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
     }
 
     /* Expanded hit area for easier dropping - only active when dragging */
@@ -8533,6 +8569,7 @@ function getDefaultFaviconRules() {
         this.oldItem = null;
         this.draggedElement = null; // Referenz auf das gezogene DOM-Element
         this.draggedGroupContainer = null;
+        this.draggedLinkContainer = null;
         this.dragStartTime = null; // Track when drag started to prevent premature dragend
         this.dragTimeout = null; // Timeout to prevent stuck drag states
         this.delayedResetTimeout = null; // Timeout for delayed resets that can be cancelled
@@ -8571,6 +8608,11 @@ function getDefaultFaviconRules() {
         if (this.app && this.app.resetAllMouseOverStates) {
           this.app.resetAllMouseOverStates();
         }
+        try {
+          if (typeof this.app?.hideLinkPopover === 'function') this.app.hideLinkPopover();
+        } catch (err) {
+          debugLog('warn', '[DND] Failed to hide popover during reset', err);
+        }
 
         // Stelle sicher, dass die 'grabbing'-Klasse vom Body entfernt wird
         document.body.classList.remove('grabbing');
@@ -8584,10 +8626,17 @@ function getDefaultFaviconRules() {
         if (this.draggedGroupContainer) {
           this.draggedGroupContainer = null;
         }
+        if (this.draggedLinkContainer) {
+          this.draggedLinkContainer = null;
+        }
         if (this.app?.$el?.style) {
           this.app.$el.style.removeProperty('--mb-dragged-group-height');
+          this.app.$el.style.removeProperty('--mb-dragged-link-height');
         }
-        try { document.documentElement.style.removeProperty('--mb-dragged-group-height'); } catch {}
+        try {
+          document.documentElement.style.removeProperty('--mb-dragged-group-height');
+          document.documentElement.style.removeProperty('--mb-dragged-link-height');
+        } catch {}
         // Reset Edge-specific flags
         this.edgeDragAttempt = false;
         this.edgeDragPending = false;
@@ -8658,7 +8707,21 @@ function getDefaultFaviconRules() {
           // Mark this as an Edge drag attempt
           this.edgeDragAttempt = true;
         }
-        
+
+        try {
+          if (typeof this.app?.cancelHideLinkPopover === 'function') {
+            this.app.cancelHideLinkPopover();
+          }
+          if (typeof this.app?.hideLinkPopover === 'function') {
+            this.app.hideLinkPopover();
+          }
+          if (this.app?.linkPopover) {
+            this.app.linkPopover.visible = false;
+          }
+        } catch (err) {
+          debugLog('warn', '[DND] Failed to hide popover on drag start', err);
+        }
+
         // Stop propagation AFTER logging to ensure we see the call
         evt.stopPropagation();
         
@@ -8712,6 +8775,17 @@ function getDefaultFaviconRules() {
               this.app.$el.style.setProperty('--mb-dragged-group-height', `${measuredHeight}px`);
             }
             try { document.documentElement.style.setProperty('--mb-dragged-group-height', `${measuredHeight}px`); } catch {}
+          }
+        } else if (type === 'link') {
+          const container = evt.currentTarget ? evt.currentTarget.closest('.linkContainerListItem') : null;
+          if (container) {
+            const rect = container.getBoundingClientRect();
+            const measuredHeight = Math.max(Math.round(rect.height), 36);
+            this.draggedLinkContainer = container;
+            if (this.app?.$el?.style) {
+              this.app.$el.style.setProperty('--mb-dragged-link-height', `${measuredHeight}px`);
+            }
+            try { document.documentElement.style.setProperty('--mb-dragged-link-height', `${measuredHeight}px`); } catch {}
           }
         }
 
@@ -26973,6 +27047,8 @@ footer a:hover {
             evt.target.style.cursor = 'grab';
           }
 
+          try { this.hideLinkPopover(); } catch (e) { debugLog('warn', '[DND] Failed to hide popover on drag end', e); }
+
           // Always reset mouseover states when drag ends
           this.resetAllMouseOverStates();
 
@@ -31152,6 +31228,7 @@ footer a:hover {
         
         // Link detail popover helpers
         shouldShowLinkPopover() {
+          if (this.dragState || (this.dropManager && this.dropManager.draggedState)) return false;
           const linksOptions = this.data?.options?.links;
           return linksOptions?.showLinkPopover !== false;
         },
