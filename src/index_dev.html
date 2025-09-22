@@ -1389,23 +1389,25 @@
       position: absolute;
       top: 0;
       bottom: 0;
-      left: -15px;
-      right: -15px;
+      left: -24px;
+      right: -24px;
       background: transparent;
       pointer-events: auto;
       z-index: 1;
     }
 
     #app.dragging-group .verticalDropZone.drag-over-active .verticalDropZoneIndicator {
-      width: 10px;
-      background: linear-gradient(to right,
-        transparent 0%,
-        rgba(51, 153, 255, 0.25) 20%,
-        rgba(51, 153, 255, 0.25) 80%,
-        transparent 100%);
+      width: 36px;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       box-shadow:
-        inset 2px 0 0 #3399ff,
-        inset -2px 0 0 #3399ff;
+        0 0.5px 2px rgba(0, 0, 0, 0.05),
+        0 2px 8px rgba(0, 0, 0, 0.08),
+        0 10px 20px -5px rgba(0, 0, 0, 0.1);
+      opacity: 0.5;
     }
 
     /* Vertical dropzones for link columns */
@@ -1508,14 +1510,11 @@
     /* Visual feedback only when actively dragging over the zone - no height change */
     #app.dragging-group .groupContainerDragAndDrop.drag-over-active,
     #app.dragging-group .group-drop-zone.drag-over-active {
-      background: linear-gradient(to bottom, 
-        transparent, 
-        rgba(51, 153, 255, 0.25) 30%, 
-        rgba(51, 153, 255, 0.25) 70%, 
-        transparent);
-      box-shadow: 
-        inset 0 2px 0 #3399ff,
-        inset 0 -2px 0 #3399ff;
+      background: rgba(51, 153, 255, 0.125);
+      box-shadow:
+        inset 0 2px 0 rgba(51, 153, 255, 0.5),
+        inset 0 -2px 0 rgba(51, 153, 255, 0.5);
+      opacity: 0.5;
     }
 
     /* Visual feedback for link drop zones when dragging over - no height change */
@@ -1535,14 +1534,56 @@
     #app.dragging-link .linkContainerDragAndDrop::before {
       content: '';
       position: absolute;
-      left: 0;
-      right: 0;
-      top: -10px;
-      height: calc(100% + 20px);
-      /* use height instead of bottom to avoid layout issues */
+      left: -20px;
+      right: -20px;
+      top: -20px;
+      bottom: -20px;
       background: transparent;
       pointer-events: auto;
       z-index: 2;
+    }
+
+    #app.dragging-group .group-drop-zone.drag-over-active {
+      height: var(--mb-dragged-group-height, 120px) !important;
+      min-height: var(--mb-dragged-group-height, 120px) !important;
+      max-height: var(--mb-dragged-group-height, 120px) !important;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow:
+        0 0.5px 2px rgba(0, 0, 0, 0.05),
+        0 2px 8px rgba(0, 0, 0, 0.08),
+        0 10px 20px -5px rgba(0, 0, 0, 0.1);
+      color: var(--text-secondary, #555);
+      font-size: 0.95rem !important;
+      font-weight: 600;
+      line-height: 1.4 !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 0.5rem;
+      padding: 0 1rem !important;
+      opacity: 0.5;
+      margin-top: 8px !important;
+      margin-bottom: 8px !important;
+    }
+
+    #app.dragging-group .group-drop-zone.drag-over-active::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      padding: 1px;
+      background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.3) 0%,
+        rgba(255, 255, 255, 0.05) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
     }
 
     /* Deprecated - these classes are no longer used */
@@ -8491,6 +8532,7 @@ function getDefaultFaviconRules() {
         this.oldArr = null;
         this.oldItem = null;
         this.draggedElement = null; // Referenz auf das gezogene DOM-Element
+        this.draggedGroupContainer = null;
         this.dragStartTime = null; // Track when drag started to prevent premature dragend
         this.dragTimeout = null; // Timeout to prevent stuck drag states
         this.delayedResetTimeout = null; // Timeout for delayed resets that can be cancelled
@@ -8539,6 +8581,13 @@ function getDefaultFaviconRules() {
           debugLog('log', "Reset dragged element reference:", this.draggedElement); // DEBUG
           this.draggedElement = null; // Referenz zurücksetzen
         }
+        if (this.draggedGroupContainer) {
+          this.draggedGroupContainer = null;
+        }
+        if (this.app?.$el?.style) {
+          this.app.$el.style.removeProperty('--mb-dragged-group-height');
+        }
+        try { document.documentElement.style.removeProperty('--mb-dragged-group-height'); } catch {}
         // Reset Edge-specific flags
         this.edgeDragAttempt = false;
         this.edgeDragPending = false;
@@ -8652,6 +8701,19 @@ function getDefaultFaviconRules() {
         // Speichere das gezogene Element
         this.draggedElement = evt.target;
         debugLog('log', "startDrag - Type:", type, "Item UUID:", item.uuid, "Element:", this.draggedElement); // DEBUG
+
+        if (type === 'group') {
+          const container = evt.currentTarget ? evt.currentTarget.closest('.groupContainer') : null;
+          if (container) {
+            const rect = container.getBoundingClientRect();
+            const measuredHeight = Math.max(Math.round(rect.height), 96);
+            this.draggedGroupContainer = container;
+            if (this.app?.$el?.style) {
+              this.app.$el.style.setProperty('--mb-dragged-group-height', `${measuredHeight}px`);
+            }
+            try { document.documentElement.style.setProperty('--mb-dragged-group-height', `${measuredHeight}px`); } catch {}
+          }
+        }
 
         this.draggedState = type;
 
