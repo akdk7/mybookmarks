@@ -3338,10 +3338,11 @@
                                     <span 
                                       :class="[{'linkTextCategory': !link.url}, 'text-truncate']" style="min-width: 0; overflow: hidden;">
                                       <a v-if="link.url" :href="link.url" :title="link.url"
-                                        :target="data.options?.links?.openInNewTab ? '_blank' : null"
-                                        :rel="data.options?.links?.openInNewTab ? 'noopener noreferrer' : null"
+                                            :target="data.options?.links?.openInNewTab ? '_blank' : null"
+                                            :rel="data.options?.links?.openInNewTab ? 'noopener noreferrer' : null"
                                         class="text-decoration-none linkanchor mb-link__anchor" draggable="false"
-                                        @click.stop>
+                                        @click.stop="onLinkAnchorClick($event, link)"
+                                        @auxclick.stop="onLinkAnchorAuxClick($event, link)">
                                         <img
                                           v-if="data.options?.links?.autoFetchFavicon && link.favicon"
                                           :src="link.favicon" alt="" class="link-favicon" />
@@ -5946,6 +5947,10 @@
           <span>{{ linkPopover.updatedAt.full }}</span>
           <span v-if="linkPopover.updatedAt.relative" class="link-detail-popover__value--muted">({{ linkPopover.updatedAt.relative }})</span>
         </span>
+      </div>
+      <div class="link-detail-popover__row">
+        <span class="link-detail-popover__label">{{ getTranslation('link.popover.clicks') || 'Clicks' }}</span>
+        <span class="link-detail-popover__value">{{ linkPopover.clickCount }}</span>
       </div>
       <div v-if="linkPopover.rawUrlInput" class="link-detail-popover__row">
         <span class="link-detail-popover__label">{{ getTranslation('link.popover.originalUrl') || 'Original Input' }}</span>
@@ -12827,6 +12832,7 @@ function getDefaultFaviconRules() {
             'link.popover.noUrl': 'No URL available',
             'link.popover.created': 'Created',
             'link.popover.updated': 'Updated',
+            'link.popover.clicks': 'Clicks',
             'link.popover.originalUrl': 'Original Input',
             'link.popover.untitled': 'Untitled link',
             'link.popover.notAvailable': 'Not recorded',
@@ -13715,6 +13721,7 @@ function getDefaultFaviconRules() {
             'link.popover.noUrl': 'Keine URL vorhanden',
             'link.popover.created': 'Erstellt',
             'link.popover.updated': 'Aktualisiert',
+            'link.popover.clicks': 'Klicks',
             'link.popover.originalUrl': 'Originaleingabe',
             'link.popover.untitled': 'Unbenannter Link',
             'link.popover.notAvailable': 'Nicht erfasst',
@@ -15252,6 +15259,7 @@ function getDefaultFaviconRules() {
           keywords: [],
           emoji: '',
           uuid: '',
+          clickCount: 0,
           createdAt: { full: '—', relative: '', raw: null },
           updatedAt: { full: '—', relative: '', raw: null }
         },
@@ -17671,6 +17679,24 @@ function getDefaultFaviconRules() {
             }
             debugLog('log', '[CSS] Copied to clipboard:', text);
           } catch (e) { debugLog('warn', '[CSS] Copy failed', e); }
+        },
+        onLinkAnchorClick(event, link) {
+          try {
+            if (!link) return;
+            const current = Number(link.clickCount) || 0;
+            this.$set(link, 'clickCount', current + 1);
+            if (this.linkPopover.visible && this.linkPopover.link === link) {
+              this.linkPopover.clickCount = current + 1;
+            }
+            this.saveData();
+          } catch (e) {
+            debugLog('warn', '[LINK] Failed to increment click counter', e);
+          }
+          // Allow default navigation behaviour
+        },
+        onLinkAnchorAuxClick(event, link) {
+          if (event && event.button !== 1) return;
+          this.onLinkAnchorClick(event, link);
         },
         async copyGroupCssClass(group) {
           if (!group) return;
@@ -31414,6 +31440,7 @@ footer a:hover {
             popover.keywords = this.parseKeywords(link.keywords);
             popover.emoji = (link.emoji || '').trim();
             popover.uuid = link.uuid || '';
+            popover.clickCount = Number(link.clickCount) || 0;
 
             const rect = target.getBoundingClientRect();
             const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
@@ -31487,6 +31514,7 @@ footer a:hover {
           if (this.linkPopover.visible) {
             this.linkPopover.visible = false;
             this.linkPopover.link = null;
+            this.linkPopover.clickCount = 0;
           }
         },
         touchGroup(group, timestamp = Date.now()) {
