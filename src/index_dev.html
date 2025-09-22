@@ -18859,17 +18859,50 @@ function getDefaultFaviconRules() {
           this.saveVisualCss();
         },
 
-        getValidHexColor(value) {
+        getValidHexColor(value, visitedTokens = new Set()) {
           // Return a safe hex color for the color picker without mutating rule state
-          const v = (value || '').trim();
+          const v = (value || '').toString().trim();
+          if (!v) return '#000000';
+
           const hex6 = /^#([0-9a-fA-F]{6})$/;
-          if (hex6.test(v)) return v;
-          // Accept 3-digit hex by expanding
+          if (hex6.test(v)) return v.toLowerCase();
+
           const hex3 = /^#([0-9a-fA-F]{3})$/;
           if (hex3.test(v)) {
             const m = v.substring(1);
-            return '#' + m[0]+m[0] + m[1]+m[1] + m[2]+m[2];
+            return ('#' + m[0] + m[0] + m[1] + m[1] + m[2] + m[2]).toLowerCase();
           }
+
+          if (/var\(\s*--[a-z0-9_-]+/i.test(v)) {
+            const re = /var\(\s*--([a-z0-9_-]+)/ig;
+            let match;
+            while ((match = re.exec(v)) !== null) {
+              const name = (match[1] || '').toLowerCase();
+              if (!name || visitedTokens.has(name)) continue;
+              visitedTokens.add(name);
+              const token = (this.designTokens || []).find(t => (t?.name || '').toLowerCase() === name);
+              if (token) {
+                const resolved = this.getValidHexColor(token.value, visitedTokens);
+                if (resolved) return resolved.toLowerCase();
+              }
+            }
+
+            const trimmedLower = v.trim().toLowerCase();
+            if (trimmedLower.startsWith('var(')) {
+              const commaIndex = v.indexOf(',');
+              if (commaIndex !== -1) {
+                const closingIndex = v.lastIndexOf(')');
+                if (closingIndex > commaIndex) {
+                  const fallbackRaw = v.slice(commaIndex + 1, closingIndex).trim();
+                  if (fallbackRaw) {
+                    const resolvedFallback = this.getValidHexColor(fallbackRaw, visitedTokens);
+                    if (resolvedFallback) return resolvedFallback.toLowerCase();
+                  }
+                }
+              }
+            }
+          }
+
           // Fallback swatch color; does not change actual property value
           return '#000000';
         },
