@@ -3538,6 +3538,7 @@
             <div class="input-group input-group-sm mb-2" v-for="(t, ti) in designTokens" :key="'tok-'+ti">
               <span class="input-group-text">{{ getTranslation('css.visual.tokenName') || 'Name' }}</span>
               <input class="form-control"
+                     :class="{ 'is-invalid': !isTokenNameValid(t.name) }"
                      :value="t.name"
                      @input="onTokenNameInput(t, $event)"
                      placeholder="token-name"
@@ -3559,6 +3560,11 @@
                        style="width: 2rem; padding: 0;">
               </span>
               <button class="btn btn-outline-danger" @click="removeDesignToken(ti)">×</button>
+            </div>
+            <div v-for="(t, ti) in designTokens" :key="'toknamehint-'+ti"
+                 v-if="!isTokenNameValid(t.name)"
+                 class="invalid-feedback d-block small mt-1">
+              {{ getTokenNameValidationHint(t.name) }}
             </div>
             <div v-for="(t, ti) in designTokens" :key="'tokhint-'+ti"
                  v-if="!isTokenValueValid(t.value)"
@@ -12342,6 +12348,7 @@ function getDefaultFaviconRules() {
             'css.visual.valuePlaceholder': 'Enter value (e.g., #ff0000, rgb(), var(--...))',
             'css.visual.tokenName': 'Token name',
             'css.visual.tokenValue': 'Token value',
+            'css.visual.tokenNameRequired': 'Token name is required',
             'css.visual.invalidCssValue': 'Invalid CSS value',
             'css.visual.missingTokens': 'Missing tokens',
             'css.visual.invalidTokenValue': 'Invalid token value (e.g., #rrggbb, rgb(), linear-gradient(), var(--name))',
@@ -13863,6 +13870,7 @@ function getDefaultFaviconRules() {
             , 'css.visual.valuePlaceholder': 'Wert eingeben (z. B. #ff0000, rgb(), var(--...))'
             , 'css.visual.tokenName': 'Token-Name'
             , 'css.visual.tokenValue': 'Token-Wert'
+            , 'css.visual.tokenNameRequired': 'Token-Name darf nicht leer sein'
             , 'css.visual.invalidCssValue': 'Ungültiger CSS-Wert'
             , 'css.visual.missingTokens': 'Fehlende Tokens'
             , 'css.visual.invalidTokenValue': 'Ungültiger Token-Wert (z. B. #rrggbb, rgb(), linear-gradient(), var(--name))'
@@ -18747,7 +18755,7 @@ function getDefaultFaviconRules() {
 
         // Tokens
         addDesignToken() {
-          this.designTokens.push({ name: 'token', value: '#3b82f6' });
+          this.designTokens.push({ name: '', value: '#3b82f6' });
           this.saveDesignTokens();
         },
         removeDesignToken(idx) {
@@ -18771,7 +18779,6 @@ function getDefaultFaviconRules() {
           const noPrefix = s.replace(/^[-]+/, '');
           // Allow only a-z, 0-9, '-', '_'
           const cleaned = noPrefix.replace(/[^a-z0-9_-]/g, '');
-          if (!cleaned) return 'token';
           return cleaned;
         },
         onTokenNameInput(token, event) {
@@ -18934,6 +18941,12 @@ function getDefaultFaviconRules() {
             }
             return this.cssSupports(prop, v);
           } catch { return true; }
+        },
+        isTokenNameValid(name) {
+          return !!this.normalizeTokenName(name);
+        },
+        getTokenNameValidationHint(_name) {
+          return this.getTranslation('css.visual.tokenNameRequired') || 'Token-Name darf nicht leer sein';
         },
         isTokenValueValid(value) {
           const v = (value || '').toString().trim();
