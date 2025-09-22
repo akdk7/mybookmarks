@@ -1690,31 +1690,30 @@
 
     /* Actions and Visibility */
     .groupActions {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: flex-end;
       gap: 4px;
-      opacity: 0;
-      transition: opacity 0.3s ease-in-out;
       margin-left: auto;
-      pointer-events: all; /* Ensure mouse events work even when invisible */
+      opacity: 0;
+      max-width: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transition: opacity 0.2s ease-in-out, max-width 0.2s ease-in-out;
     }
-    
+
     .groupActions:hover {
       opacity: 1;
+      max-width: 240px;
+      pointer-events: all;
     }
-    
-    .groupActionsVisibleOnMouseOver {
-      opacity: 1 !important;
-    }
-    
-    .linkContainerListItem:hover .groupActions {
-      opacity: 1;
-    }
-    
-    /* Show group actions when hovering over the group header */
+
+    .groupActionsVisibleOnMouseOver,
+    .linkContainerListItem:hover .groupActions,
     .groupContainer .card-header:hover .groupActions {
-      opacity: 1;
+      opacity: 1 !important;
+      max-width: 240px;
+      pointer-events: all;
     }
 
     /* Dark Mode Toggle Button */
@@ -3279,8 +3278,7 @@
                                       </span>
                                     </span>
                                     <!-- URL preview on hover - moved before badges -->
-                                    <span v-if="link.url" class="link-url-preview">{{ link.url }}</span>
-                                    <!-- Link keyword badges - moved outside text-truncate to stay visible -->
+                                                                        <!-- Link keyword badges - moved outside text-truncate to stay visible -->
                                     <span v-if="data.options?.links?.showLinkBadges && link.keywords" 
                                       class="margin-left ms-3 mb-link__badges">
                                       <span v-for="kw in parseKeywords(link.keywords)" 
@@ -3817,54 +3815,53 @@
                      :key="prop"
                      class="property-item mb-2"
                      :class="{ 'opacity-50': isPropertyDisabled(rule, prop) }">
-                  <!-- Color property: text + color picker + token + important + remove in one input-group -->
-                  <div v-if="isColorProperty(prop)" class="input-group input-group-sm">
-                    <span class="input-group-text">{{ formatPropertyName(prop) }}</span>
-                    <input
-                      :id="'prop-' + rule.id + '-' + prop"
-                      type="text"
-                      v-model="rule.properties[prop]"
-                      @input="saveVisualCss"
-                      @blur="validateProperty(rule, prop)"
-                      class="form-control"
-                      :class="{ 'is-invalid': !isPropertyValid(rule, prop) }"
-                      :placeholder="getTranslation('css.visual.valuePlaceholder') || 'Wert eingeben (z. B. #ff0000, rgb(), var(--...))'">
-                    <span class="input-group-text p-0">
-                      <input type="color"
-                             :value="getValidHexColor(rule.properties[prop])"
-                             @input="onColorPickerChange(rule, prop, $event)"
-                             class="form-control form-control-color border-0"
-                             style="width: 2rem; padding: 0;">
-                    </span>
-                    <select class="form-select" style="max-width: 170px;"
-                            @change="applyTokenToProperty(rule, prop, $event.target.value)">
-                      <option value="">{{ getTranslation('css.visual.tokensSelect') || '-- Token wählen --' }}</option>
-                      <option v-for="t in designTokens" :value="t.name">{{ t.name }}</option>
-                    </select>
-                    <span class="input-group-text" v-if="prop !== 'custom'">
-                      <input type="checkbox"
-                             :id="'important-' + rule.id + '-' + prop"
-                             class="form-check-input mt-0"
-                             :checked="getPropertyImportant(rule, prop)"
-                             @change="togglePropertyImportant(rule, prop)"
-                             :title="getTranslation('css.visual.importantHint') || 'Override other styles with !important'">
-                    </span>
-                    <button v-if="prop !== 'custom'"
-                            @click="togglePropertyDisabled(rule, prop)"
-                            class="btn btn-outline-secondary"
-                            :title="isPropertyDisabled(rule, prop) ? (getTranslation('css.visual.activateProperty') || 'Aktivieren') : (getTranslation('css.visual.deactivateProperty') || 'Deaktivieren')">
-                      {{ isPropertyDisabled(rule, prop) ? '👁️‍🗨️' : '👁️' }}
-                    </button>
-                    <button @click="removeProperty(rule, prop)"
-                            class="btn btn-outline-danger">×</button>
-                  </div>
-                  <div v-if="isColorProperty(prop) && !isPropertyValid(rule, prop)"
-                       class="invalid-feedback d-block small mt-1">
-                    {{ getPropertyValidationHint(rule, prop) }}
-                  </div>
-
-                  <!-- Custom CSS (multiline) with delete button -->
-                  <div v-else-if="prop === 'custom'">
+                  <template v-if="isColorProperty(prop)">
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">{{ formatPropertyName(prop) }}</span>
+                      <input
+                        :id="'prop-' + rule.id + '-' + prop"
+                        type="text"
+                        v-model="rule.properties[prop]"
+                        @input="saveVisualCss"
+                        @blur="validateProperty(rule, prop)"
+                        class="form-control"
+                        :class="{ 'is-invalid': !isPropertyValid(rule, prop) }"
+                        :placeholder="getTranslation('css.visual.valuePlaceholder') || 'Wert eingeben (z. B. #ff0000, rgb(), var(--...))'">
+                      <span class="input-group-text p-0">
+                        <input type="color"
+                               :value="getValidHexColor(rule.properties[prop])"
+                               @input="onColorPickerChange(rule, prop, $event)"
+                               class="form-control form-control-color border-0"
+                               style="width: 2rem; padding: 0;">
+                      </span>
+                      <select class="form-select" style="max-width: 170px;"
+                              @change="applyTokenToProperty(rule, prop, $event.target.value)">
+                        <option value="">{{ getTranslation('css.visual.tokensSelect') || '-- Token wählen --' }}</option>
+                        <option v-for="t in designTokens" :value="t.name">{{ t.name }}</option>
+                      </select>
+                      <span class="input-group-text" v-if="prop !== 'custom'">
+                        <input type="checkbox"
+                               :id="'important-' + rule.id + '-' + prop"
+                               class="form-check-input mt-0"
+                               :checked="getPropertyImportant(rule, prop)"
+                               @change="togglePropertyImportant(rule, prop)"
+                               :title="getTranslation('css.visual.importantHint') || 'Override other styles with !important'">
+                      </span>
+                      <button v-if="prop !== 'custom'"
+                              @click="togglePropertyDisabled(rule, prop)"
+                              class="btn btn-outline-secondary"
+                              :title="isPropertyDisabled(rule, prop) ? (getTranslation('css.visual.activateProperty') || 'Aktivieren') : (getTranslation('css.visual.deactivateProperty') || 'Deaktivieren')">
+                        {{ isPropertyDisabled(rule, prop) ? '👁️‍🗨️' : '👁️' }}
+                      </button>
+                      <button @click="removeProperty(rule, prop)"
+                              class="btn btn-outline-danger">×</button>
+                    </div>
+                    <div v-if="!isPropertyValid(rule, prop)"
+                         class="invalid-feedback d-block small mt-1">
+                      {{ getPropertyValidationHint(rule, prop) }}
+                    </div>
+                  </template>
+                  <template v-else-if="prop === 'custom'">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                       <label class="form-label small mb-0">{{ formatPropertyName(prop) }}</label>
                       <button type="button" @click="removeProperty(rule, 'custom')"
@@ -3878,45 +3875,45 @@
                       style="height: 84px; font-family: monospace; font-size: 12px;"
                       :placeholder="getTranslation('css.visual.customPropertiesHint') || 'z.B. display: flex;\njustify-content: center;'">
                     </textarea>
-                  </div>
-
-                  <!-- Default text property -->
-                  <div v-else class="input-group input-group-sm">
-                    <span class="input-group-text">{{ formatPropertyName(prop) }}</span>
-                    <input
-                      :id="'prop-' + rule.id + '-' + prop"
-                      type="text"
-                      v-model="rule.properties[prop]"
-                      @input="saveVisualCss"
-                      @blur="validateProperty(rule, prop)"
-                      class="form-control"
-                      :class="{ 'is-invalid': !isPropertyValid(rule, prop) }"
-                      :placeholder="getTranslation('css.visual.valuePlaceholder') || 'Wert eingeben'">
-                    <select class="form-select" style="max-width: 170px;"
-                            @change="applyTokenToProperty(rule, prop, $event.target.value)">
-                      <option value="">{{ getTranslation('css.visual.tokensSelect') || '-- Token wählen --' }}</option>
-                      <option v-for="t in designTokens" :value="t.name">{{ t.name }}</option>
-                    </select>
-                    <span class="input-group-text">
-                      <input type="checkbox"
-                             :id="'important-' + rule.id + '-' + prop"
-                             class="form-check-input mt-0"
-                             :checked="getPropertyImportant(rule, prop)"
-                             @change="togglePropertyImportant(rule, prop)"
-                             :title="getTranslation('css.visual.importantHint') || 'Override other styles with !important'">
-                    </span>
-                    <button @click="togglePropertyDisabled(rule, prop)"
-                            class="btn btn-outline-secondary"
-                            :title="isPropertyDisabled(rule, prop) ? (getTranslation('css.visual.activateProperty') || 'Aktivieren') : (getTranslation('css.visual.deactivateProperty') || 'Deaktivieren')">
-                      {{ isPropertyDisabled(rule, prop) ? '👁️‍🗨️' : '👁️' }}
-                    </button>
-                    <button @click="removeProperty(rule, prop)"
-                            class="btn btn-outline-danger">×</button>
-                  </div>
-                  <div v-if="!isColorProperty(prop) && prop !== 'custom' && !isPropertyValid(rule, prop)"
-                       class="invalid-feedback d-block small mt-1">
-                    {{ getPropertyValidationHint(rule, prop) }}
-                  </div>
+                  </template>
+                  <template v-else>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">{{ formatPropertyName(prop) }}</span>
+                      <input
+                        :id="'prop-' + rule.id + '-' + prop"
+                        type="text"
+                        v-model="rule.properties[prop]"
+                        @input="saveVisualCss"
+                        @blur="validateProperty(rule, prop)"
+                        class="form-control"
+                        :class="{ 'is-invalid': !isPropertyValid(rule, prop) }"
+                        :placeholder="getTranslation('css.visual.valuePlaceholder') || 'Wert eingeben'">
+                      <select class="form-select" style="max-width: 170px;"
+                              @change="applyTokenToProperty(rule, prop, $event.target.value)">
+                        <option value="">{{ getTranslation('css.visual.tokensSelect') || '-- Token wählen --' }}</option>
+                        <option v-for="t in designTokens" :value="t.name">{{ t.name }}</option>
+                      </select>
+                      <span class="input-group-text">
+                        <input type="checkbox"
+                               :id="'important-' + rule.id + '-' + prop"
+                               class="form-check-input mt-0"
+                               :checked="getPropertyImportant(rule, prop)"
+                               @change="togglePropertyImportant(rule, prop)"
+                               :title="getTranslation('css.visual.importantHint') || 'Override other styles with !important'">
+                      </span>
+                      <button @click="togglePropertyDisabled(rule, prop)"
+                              class="btn btn-outline-secondary"
+                              :title="isPropertyDisabled(rule, prop) ? (getTranslation('css.visual.activateProperty') || 'Aktivieren') : (getTranslation('css.visual.deactivateProperty') || 'Deaktivieren')">
+                        {{ isPropertyDisabled(rule, prop) ? '👁️‍🗨️' : '👁️' }}
+                      </button>
+                      <button @click="removeProperty(rule, prop)"
+                              class="btn btn-outline-danger">×</button>
+                    </div>
+                    <div v-if="!isPropertyValid(rule, prop)"
+                         class="invalid-feedback d-block small mt-1">
+                      {{ getPropertyValidationHint(rule, prop) }}
+                    </div>
+                  </template>
                 </div>
 
                 <!-- Add New Property -->
@@ -14839,6 +14836,7 @@ function getDefaultFaviconRules() {
         // Custom Rule Sets
         customRuleSets: {},
         selectedRuleSetName: null,
+        _debouncedVisualCssSave: null,
         showSaveRuleSetDialog: false,
         linkShortenerServices: LINK_SHORTENER_SERVICES,
 
@@ -18872,7 +18870,13 @@ function getDefaultFaviconRules() {
         onColorPickerChange(rule, property, event) {
           const val = event.target.value;
           this.$set(rule.properties, property, val);
-          this.saveVisualCss();
+          this.scheduleVisualCssSave();
+        },
+        scheduleVisualCssSave() {
+          if (!this._debouncedVisualCssSave) {
+            this._debouncedVisualCssSave = debounce(() => this.saveVisualCss(), 200).bind(this);
+          }
+          this._debouncedVisualCssSave();
         },
 
         getPropertyImportant(rule, property) {

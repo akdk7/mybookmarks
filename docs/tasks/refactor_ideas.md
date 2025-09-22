@@ -1,14 +1,9 @@
 ## Refactor Ideas
 
-- src/index_dev.html:13763 The monolithic i18n dictionary inflates the bundle and forces full reloads for language tweaks; moving each locale into a JSON/module and lazy-loading by common.language would trim parse time and let you ship partial updates.
-
-- src/index_dev.html:15738 The Vue instance holds dozens of unrelated concerns (options editing, sharing, networking, UI state); break this into feature services (e.g., linkShorteners, sharing, proxy) injected via composition/mixins to improve readability and unit-test coverage.
+[ ] src/index_dev.html:13763 The monolithic i18n dictionary inflates the bundle and forces full reloads for language tweaks; moving each locale into a JSON/module and lazy-loading by common.language would trim parse time and let you ship partial updates.
 
 - src/index_dev.html:15855 performNetworkRequest hardcodes error→message mappings; centralizing the code-to-translation lookup in MB.Network (or a small adapter table) would keep the component lean and ensure other callers reuse the same logic.
-
-- src/index_dev.html:15876 Security helpers (evaluateLinkSecurity, translateSecurityIssue, linkSecurityBadgeClass) are pure functions that don’t need Vue state—extract them into a utility module so they can be tested in isolation and reused in other views/tooling.
-
-- src/index_dev.html:16029 The link-shortening workflow intermixes validation, toast messaging, adapter invocation, and proxy calls; consider a pipeline-style helper that returns status objects so the UI layer just renders toasts and updates state.
+- Monitor whether other large concerns in the Vue instance (sharing, proxy, etc.) should follow the link shortener refactor into their own services for better separation of responsibilities.
 
 - src/index_dev.html:15227 Watchers like 'editLink.url' and dragState still manipulate DOM/query selectors directly; replace those with reactive flags/computed classes and prune the debug logging to keep watchers cheap and SSR-friendly.
 
