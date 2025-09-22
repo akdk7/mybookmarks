@@ -12603,19 +12603,6 @@ function getDefaultFaviconRules() {
             'options.sync.conflictNotificationLevel.silent': 'Silent',
             'options.sync.conflictNotificationLevel.minimal': 'Important only',
             'options.sync.conflictNotificationLevel.verbose': 'All conflicts',
-            // Auto sync interval
-            'options.sync.autoSyncInterval': 'Auto-Sync Interval',
-            'options.sync.autoSyncInterval.help': 'How often to check for updates (applies to everyone):\n• 5 minutes - For active collaboration, moderate battery usage\n• 10 minutes - Good balance between updates and resource usage\n• 30 minutes - Battery-friendly, suitable for less active groups\n• 1 hour - Minimal resource usage, for rarely changing content\n• Manual only - You control when to sync, no automatic updates',
-            'options.sync.autoSyncInterval.5min': '5 minutes',
-            'options.sync.autoSyncInterval.10min': '10 minutes',
-            'options.sync.autoSyncInterval.30min': '30 minutes',
-            'options.sync.autoSyncInterval.1hour': '1 hour',
-            'options.sync.autoSyncInterval.manual': 'Manual only',
-            // Offline mode
-            'options.sync.offlineMode': 'Offline Mode',
-            'options.sync.offlineMode.help': 'How to handle changes when offline (applies to everyone):\n• Show immediately - Changes appear instantly, may need correction later if conflicts occur\n• Wait for confirmation - Changes only appear after successful sync, more reliable but slower',
-            'options.sync.offlineMode.optimistic': 'Show immediately',
-            'options.sync.offlineMode.conservative': 'Wait for confirmation',
             // Owner-only settings
             'options.sync.conflictResolution': 'Conflict Resolution Strategy',
             'options.sync.conflictResolution.help': 'How to resolve editing conflicts (owner groups only):\n• Owner wins - Your changes as owner always take priority\n• Latest wins - Most recent change wins regardless of who made it\n• Ask me - Prompt for each conflict (may interrupt workflow)',
@@ -12625,21 +12612,6 @@ function getDefaultFaviconRules() {
             'options.sync.memberRateLimit': 'Member Rate Limit',
             'options.sync.memberRateLimit.help': 'Max changes per minute per member (0 = unlimited, owner groups only)',
             'options.sync.memberRateLimit.suffix': 'per min',
-            'options.sync.validationLevel': 'Validation Level',
-            'options.sync.validationLevel.help': 'How strictly to validate incoming changes (owner groups only):\n• Strict - Reject any suspicious or malformed data\n• Moderate - Allow minor issues but block major problems\n• Permissive - Accept most changes, only block critical errors',
-            'options.sync.validationLevel.strict': 'Strict',
-            'options.sync.validationLevel.moderate': 'Moderate',
-            'options.sync.validationLevel.permissive': 'Permissive',
-            // Member-only settings
-            'options.sync.localCacheStrategy': 'Local Cache',
-            'options.sync.localCacheStrategy.help': 'How much data to keep locally (member groups only):\n• Everything - Keep full history and all versions locally (uses more storage)\n• Current only - Keep only latest version (saves storage space)',
-            'options.sync.localCacheStrategy.full': 'Everything',
-            'options.sync.localCacheStrategy.minimal': 'Current only',
-            'options.sync.errorHandling': 'Error Handling',
-            'options.sync.errorHandling.help': 'How to handle sync errors (member groups only):\n• Auto-retry - Automatically retry failed operations (recommended)\n• Queue for later - Save failed changes to retry manually\n• Discard on error - Give up on failed changes (data may be lost)',
-            'options.sync.errorHandling.retry': 'Auto-retry',
-            'options.sync.errorHandling.queue': 'Queue for later',
-            'options.sync.errorHandling.discard': 'Discard on error',
             'options.sharing.ntfyServerUrl': 'ntfy Server URL',
             'options.sharing.ntfyServerUrl.help': 'URL of the ntfy push notification server, Default: https://ntfy.c5p.de (high limits)',
             'options.sharing.ntfyAuthToken': 'Auth Token',
@@ -13612,19 +13584,6 @@ function getDefaultFaviconRules() {
             'options.sync.conflictNotificationLevel.silent': 'Stumm',
             'options.sync.conflictNotificationLevel.minimal': 'Nur wichtige',
             'options.sync.conflictNotificationLevel.verbose': 'Alle Konflikte',
-            // Auto-Sync Intervall
-            'options.sync.autoSyncInterval': 'Auto-Sync Intervall',
-            'options.sync.autoSyncInterval.help': 'Wie oft nach Updates gesucht wird (gilt für alle):\n• 5 Minuten - Für aktive Zusammenarbeit, moderater Akkuverbrauch\n• 10 Minuten - Gute Balance zwischen Updates und Ressourcenverbrauch\n• 30 Minuten - Akkuschonend, geeignet für weniger aktive Gruppen\n• 1 Stunde - Minimaler Ressourcenverbrauch, für selten ändernde Inhalte\n• Nur manuell - Sie kontrollieren wann synchronisiert wird',
-            'options.sync.autoSyncInterval.5min': '5 Minuten',
-            'options.sync.autoSyncInterval.10min': '10 Minuten',
-            'options.sync.autoSyncInterval.30min': '30 Minuten',
-            'options.sync.autoSyncInterval.1hour': '1 Stunde',
-            'options.sync.autoSyncInterval.manual': 'Nur manuell',
-            // Offline-Modus
-            'options.sync.offlineMode': 'Offline-Modus',
-            'options.sync.offlineMode.help': 'Wie Änderungen offline behandelt werden (gilt für alle):\n• Sofort anzeigen - Änderungen erscheinen sofort, müssen evtl. später korrigiert werden\n• Auf Bestätigung warten - Änderungen erst nach erfolgreicher Sync, zuverlässiger aber langsamer',
-            'options.sync.offlineMode.optimistic': 'Sofort anzeigen',
-            'options.sync.offlineMode.conservative': 'Auf Bestätigung warten',
             // Nur für Besitzer
             'options.sync.conflictResolution': 'Konfliktauflösung',
             'options.sync.conflictResolution.help': 'Wie Bearbeitungskonflikte gelöst werden (nur Besitzer-Gruppen):\n• Besitzer gewinnt - Ihre Änderungen als Besitzer haben immer Vorrang\n• Neueste gewinnt - Die aktuellste Änderung gewinnt, egal von wem\n• Nachfragen - Bei jedem Konflikt nachfragen (kann Workflow unterbrechen)',
@@ -13634,21 +13593,6 @@ function getDefaultFaviconRules() {
             'options.sync.memberRateLimit': 'Mitglieder-Ratelimit',
             'options.sync.memberRateLimit.help': 'Max. Änderungen pro Minute pro Mitglied (0 = unbegrenzt, nur Besitzer-Gruppen)',
             'options.sync.memberRateLimit.suffix': 'pro Min',
-            'options.sync.validationLevel': 'Validierungsstufe',
-            'options.sync.validationLevel.help': 'Wie strikt eingehende Änderungen validiert werden (nur Besitzer-Gruppen):\n• Strikt - Verdächtige oder fehlerhafte Daten ablehnen\n• Moderat - Kleine Probleme erlauben, große blockieren\n• Nachsichtig - Die meisten Änderungen akzeptieren, nur kritische Fehler blockieren',
-            'options.sync.validationLevel.strict': 'Strikt',
-            'options.sync.validationLevel.moderate': 'Moderat',
-            'options.sync.validationLevel.permissive': 'Nachsichtig',
-            // Nur für Mitglieder
-            'options.sync.localCacheStrategy': 'Lokaler Cache',
-            'options.sync.localCacheStrategy.help': 'Wie viele Daten lokal gespeichert werden (nur Mitglieder-Gruppen):\n• Alles - Vollständige Historie und alle Versionen lokal (mehr Speicher)\n• Nur aktuell - Nur neueste Version behalten (spart Speicherplatz)',
-            'options.sync.localCacheStrategy.full': 'Alles',
-            'options.sync.localCacheStrategy.minimal': 'Nur aktuell',
-            'options.sync.errorHandling': 'Fehlerbehandlung',
-            'options.sync.errorHandling.help': 'Wie Sync-Fehler behandelt werden (nur Mitglieder-Gruppen):\n• Auto-Wiederholen - Fehlgeschlagene Operationen automatisch wiederholen (empfohlen)\n• Für später aufheben - Fehlgeschlagene Änderungen für manuellen Retry speichern\n• Bei Fehler verwerfen - Fehlgeschlagene Änderungen aufgeben (Datenverlust möglich)',
-            'options.sync.errorHandling.retry': 'Auto-Wiederholen',
-            'options.sync.errorHandling.queue': 'Für später aufheben',
-            'options.sync.errorHandling.discard': 'Bei Fehler verwerfen',
             'clipboard.importSuccess': 'Links erfolgreich importiert',
             'clipboard.readOk': 'Inhalt aus Zwischenablage gelesen',
             'clipboard.empty': 'Zwischenablage ist leer.',
@@ -15590,33 +15534,6 @@ function getDefaultFaviconRules() {
                   'verbose': 'options.sync.conflictNotificationLevel.verbose'
                 }
               },
-              autoSyncInterval: {
-                id: 'SyncAutoInterval',
-                type: 'select',
-                translateKey: 'options.sync.autoSyncInterval',
-                optionPath: 'sync.autoSyncInterval',
-                helpText: 'options.sync.autoSyncInterval.help',
-                roleScope: 'all',
-                values: {
-                  '300': 'options.sync.autoSyncInterval.5min',
-                  '600': 'options.sync.autoSyncInterval.10min',
-                  '1800': 'options.sync.autoSyncInterval.30min',
-                  '3600': 'options.sync.autoSyncInterval.1hour',
-                  '0': 'options.sync.autoSyncInterval.manual'
-                }
-              },
-              offlineMode: {
-                id: 'SyncOfflineMode',
-                type: 'select',
-                translateKey: 'options.sync.offlineMode',
-                optionPath: 'sync.offlineMode',
-                helpText: 'options.sync.offlineMode.help',
-                roleScope: 'all',
-                values: {
-                  'optimistic': 'options.sync.offlineMode.optimistic',
-                  'conservative': 'options.sync.offlineMode.conservative'
-                }
-              },
               // Settings only for Owners
               conflictResolution: {
                 id: 'SyncConflictResolution',
@@ -15641,45 +15558,6 @@ function getDefaultFaviconRules() {
                 min: 0,
                 max: 100,
                 suffix: 'options.sync.memberRateLimit.suffix'
-              },
-              validationLevel: {
-                id: 'SyncValidationLevel',
-                type: 'select',
-                translateKey: 'options.sync.validationLevel',
-                optionPath: 'sync.validationLevel',
-                helpText: 'options.sync.validationLevel.help',
-                roleScope: 'owner',
-                values: {
-                  'strict': 'options.sync.validationLevel.strict',
-                  'moderate': 'options.sync.validationLevel.moderate',
-                  'permissive': 'options.sync.validationLevel.permissive'
-                }
-              },
-              // Settings only for Members
-              localCacheStrategy: {
-                id: 'SyncLocalCache',
-                type: 'select',
-                translateKey: 'options.sync.localCacheStrategy',
-                optionPath: 'sync.localCacheStrategy',
-                helpText: 'options.sync.localCacheStrategy.help',
-                roleScope: 'member', // Only for members
-                values: {
-                  'full': 'options.sync.localCacheStrategy.full',
-                  'minimal': 'options.sync.localCacheStrategy.minimal'
-                }
-              },
-              errorHandling: {
-                id: 'SyncErrorHandling',
-                type: 'select',
-                translateKey: 'options.sync.errorHandling',
-                optionPath: 'sync.errorHandling',
-                helpText: 'options.sync.errorHandling.help',
-                roleScope: 'member',
-                values: {
-                  'retry': 'options.sync.errorHandling.retry',
-                  'queue': 'options.sync.errorHandling.queue',
-                  'discard': 'options.sync.errorHandling.discard'
-                }
               }
             }
           },
@@ -28015,15 +27893,9 @@ footer a:hover {
           this.data.options.sync = Object.assign({}, {
             // Good defaults for all users
             conflictNotificationLevel: 'minimal', // Show important conflicts only
-            autoSyncInterval: '600', // 10 minutes - good balance
-            offlineMode: 'optimistic', // Better UX for most users
             // Owner defaults
             conflictResolution: 'last-write-wins', // Fair default
-            memberRateLimit: 30, // 30 changes per minute is reasonable
-            validationLevel: 'moderate', // Balance between security and flexibility
-            // Member defaults
-            localCacheStrategy: 'full', // Keep everything for offline access
-            errorHandling: 'retry' // Auto-retry is user-friendly
+            memberRateLimit: 30 // 30 changes per minute is reasonable
           }, this.data.options.sync || {});
 
           // Performance defaults
