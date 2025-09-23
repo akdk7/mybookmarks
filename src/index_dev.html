@@ -83,12 +83,21 @@
       display: flex;
       flex-direction: column;
     }
+
+    #genericEditModal .modal-dialog {
+      max-width: min(1240px, 96vw);
+      width: min(1240px, 96vw);
+    }
     
     .modal-content {
       max-height: 90vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+    }
+
+    #genericEditModal .modal-content {
+      width: 100%;
     }
     
     .modal-header {
@@ -123,6 +132,28 @@
 
     .mb-edit-favicon-actions button {
       white-space: nowrap;
+    }
+
+    .font-family-select {
+      min-width: 180px;
+    }
+
+    .font-family-group {
+      column-gap: 0;
+      row-gap: 0.4rem;
+    }
+
+    .font-family-preview {
+      background-color: rgba(15, 23, 42, 0.04);
+      border-color: rgba(148, 163, 184, 0.35) !important;
+      font-size: 0.95rem;
+    }
+
+    body.dark-mode .font-family-preview,
+    body[data-theme='dark'] .font-family-preview {
+      background-color: rgba(148, 163, 184, 0.1);
+      border-color: rgba(148, 163, 184, 0.45) !important;
+      color: rgba(226, 232, 240, 0.92);
     }
 
     @media (max-width: 576px) {
@@ -1855,10 +1886,259 @@
       display: inline-flex;
       max-width: 600px;
     }
-    
+
     .optionsGroupSettingContainer input[type="color"] {
       min-width: 100px;
       width: 100px;
+    }
+
+    .options-sidebar {
+      position: sticky;
+      top: 0;
+      max-height: calc(100vh - 220px);
+      overflow-y: auto;
+      padding-right: 0.25rem;
+      flex: 0 0 var(--mb-options-sidebar-width);
+      max-width: var(--mb-options-sidebar-width);
+    }
+
+    .options-sidebar .list-group-item {
+      border: none;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      background-color: transparent;
+      color: var(--mb-options-sidebar-link-color, var(--bs-body-color, inherit));
+      transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .options-sidebar .list-group-item.active {
+      background-color: var(--mb-options-sidebar-active-bg, var(--bs-primary, #0d6efd));
+      color: var(--mb-options-sidebar-active-color, var(--bs-light, #fff));
+      box-shadow: var(--bs-box-shadow, 0 4px 18px rgba(13, 110, 253, 0.35));
+    }
+
+    .options-sidebar .list-group-item:not(.active):hover {
+      background-color: var(--mb-options-sidebar-hover-bg, var(--bs-primary-bg-subtle, rgba(13, 110, 253, 0.15)));
+      color: var(--mb-options-sidebar-hover-color, var(--bs-primary-text-emphasis, var(--bs-primary, #0d6efd)));
+    }
+
+    .options-nav-mobile {
+      overflow-x: auto;
+      white-space: nowrap;
+      padding-bottom: 0.25rem;
+    }
+
+    .options-shortcuts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+      padding: 0.75rem 0 0.25rem;
+    }
+
+    .options-shortcut-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      background: var(--mb-options-shortcut-bg, var(--mb-options-section-bg));
+      border: 1px solid var(--mb-options-shortcut-border, var(--mb-options-section-border));
+      border-radius: 12px;
+      box-shadow: var(--mb-options-shortcut-shadow, 0 6px 18px rgba(15, 23, 42, 0.08));
+    }
+
+    .options-shortcut-keys {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      min-width: 120px;
+    }
+
+    .options-shortcut-description {
+      font-size: 0.85rem;
+      color: var(--mb-options-shortcut-text-color, var(--mb-options-sidebar-link-color, var(--text-secondary, #475569)));
+      flex: 1;
+    }
+
+    .options-shortcut-item kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem 0.45rem;
+      min-width: 1.75rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--mb-options-shortcut-key-bg, rgba(15, 23, 42, 0.05));
+      color: var(--mb-options-shortcut-key-color, var(--text-primary, #1a1a1a));
+      border: 1px solid var(--mb-options-shortcut-key-border, rgba(15, 23, 42, 0.12));
+      box-shadow: inset 0 -2px 0 rgba(15, 23, 42, 0.06);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    body.dark-mode,
+    body[data-theme='dark'] {
+      --mb-options-section-bg: rgba(17, 24, 39, 0.88);
+      --mb-options-section-border: rgba(148, 163, 184, 0.35);
+      --mb-options-section-shadow: 0 22px 55px rgba(2, 6, 23, 0.6);
+      --mb-options-section-header-bg: rgba(30, 41, 59, 0.65);
+      --mb-options-section-header-hover-bg: rgba(59, 130, 246, 0.18);
+      --mb-options-filter-bg: #252525;
+      --mb-options-filter-border: rgba(148, 163, 184, 0.35);
+      --mb-options-sidebar-link-color: rgba(226, 232, 240, 0.92);
+      --mb-options-sidebar-hover-bg: rgba(148, 163, 184, 0.18);
+      --mb-options-sidebar-hover-color: #f8fafc;
+      --mb-options-sidebar-active-bg: rgba(59, 130, 246, 0.85);
+      --mb-options-sidebar-active-color: #ffffff;
+      --mb-options-shortcut-bg: rgba(15, 23, 42, 0.9);
+      --mb-options-shortcut-border: rgba(148, 163, 184, 0.35);
+      --mb-options-shortcut-shadow: 0 18px 45px rgba(2, 6, 23, 0.55);
+      --mb-options-shortcut-text-color: rgba(226, 232, 240, 0.92);
+      --mb-options-filter-container-bg: #232323;
+      --mb-options-shortcut-key-bg: rgba(148, 163, 184, 0.14);
+      --mb-options-shortcut-key-color: #e2e8f0;
+      --mb-options-shortcut-key-border: rgba(148, 163, 184, 0.4);
+      --mb-options-card-bg: #252525;
+      --mb-options-card-border: #3a3a3a;
+      --mb-options-card-shadow: 0 14px 36px rgba(2, 6, 23, 0.45);
+      --mb-options-card-body-bg: #1f1f1f;
+      --mb-options-card-body-border: #3a3a3a;
+      --mb-options-card-radius: 16px;
+      --mb-options-card-body-radius: 12px;
+    }
+
+    body.dark-mode .options-sidebar .list-group-item,
+    body[data-theme='dark'] .options-sidebar .list-group-item {
+      background-color: transparent;
+    }
+
+    body.dark-mode .options-nav-mobile button.btn-outline-secondary,
+    body[data-theme='dark'] .options-nav-mobile button.btn-outline-secondary {
+      color: var(--mb-options-sidebar-link-color, #f8f9fa);
+      border-color: rgba(248, 250, 252, 0.35);
+    }
+
+    body.dark-mode .options-nav-mobile button.btn-outline-secondary:hover,
+    body[data-theme='dark'] .options-nav-mobile button.btn-outline-secondary:hover {
+      background-color: rgba(248, 250, 252, 0.12);
+      color: #fff;
+    }
+
+    body.dark-mode .options-filter-sticky,
+    body[data-theme='dark'] .options-filter-sticky {
+      background-color: #252525;
+      border-bottom: 1px solid #444;
+    }
+
+    body.dark-mode .options-filter-sticky .input-group-text,
+    body[data-theme='dark'] .options-filter-sticky .input-group-text {
+      background-color: #2a2a2a;
+      color: #e2e8f0;
+      border-color: #444;
+    }
+
+    body.dark-mode .options-filter-sticky .form-control,
+    body[data-theme='dark'] .options-filter-sticky .form-control {
+      background-color: #1f1f1f;
+      color: #f8fafc;
+      border-color: #444;
+    }
+
+    body.dark-mode .options-filter-sticky .form-control::placeholder,
+    body[data-theme='dark'] .options-filter-sticky .form-control::placeholder {
+      color: rgba(148, 163, 184, 0.75);
+    }
+
+    body.dark-mode .options-filter-sticky .btn-outline-secondary,
+    body[data-theme='dark'] .options-filter-sticky .btn-outline-secondary {
+      color: #e2e8f0;
+      border-color: #444;
+      background-color: #2a2a2a;
+    }
+
+    body.dark-mode .options-filter-sticky .btn-outline-secondary:hover,
+    body[data-theme='dark'] .options-filter-sticky .btn-outline-secondary:hover {
+      color: #f8fafc;
+      border-color: rgba(59, 130, 246, 0.65);
+      background-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .options-settings-card {
+      background: var(--mb-options-card-bg, var(--mb-options-section-bg));
+      border: 1px solid var(--mb-options-card-border, var(--mb-options-section-border));
+      border-radius: var(--mb-options-card-radius, 16px);
+      box-shadow: var(--mb-options-card-shadow, var(--mb-options-section-shadow));
+      overflow: hidden;
+    }
+
+    .options-settings-card-body {
+      background: var(--mb-options-card-body-bg, var(--mb-options-card-bg));
+      border-radius: var(--mb-options-card-body-radius, 12px);
+      border: 1px solid var(--mb-options-card-body-border, transparent);
+      padding: 1.25rem;
+    }
+
+    body.dark-mode .options-settings-card-body,
+    body[data-theme='dark'] .options-settings-card-body {
+      color: rgba(226, 232, 240, 0.92);
+    }
+
+    body.dark-mode .options-settings-card-body .text-muted,
+    body[data-theme='dark'] .options-settings-card-body .text-muted {
+      color: rgba(148, 163, 184, 0.75) !important;
+    }
+
+    .options-nav-mobile button {
+      white-space: nowrap;
+    }
+
+    .options-content-wrapper {
+      display: block;
+      gap: 1.5rem;
+    }
+
+    .options-content-wrapper.has-nav {
+      display: flex;
+    }
+
+    .options-sections {
+      flex: 1;
+      min-width: 0;
+    }
+
+    @media (max-width: 991.98px) {
+      .options-content-wrapper.has-nav {
+        flex-direction: column;
+      }
+    }
+
+    .options-filter-sticky {
+      position: relative;
+      top: auto;
+      z-index: auto;
+      padding: 0.75rem 0;
+      margin-bottom: 0.75rem;
+      background: var(--mb-options-filter-bg, var(--mb-options-section-bg));
+      border-bottom: 1px solid var(--mb-options-filter-border, var(--mb-options-section-border));
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+
+    .options-filter-sticky .mb-edit-filter-container {
+      margin-bottom: 0.5rem;
+      background: var(--mb-options-filter-container-bg, transparent);
+      border-radius: 16px;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--mb-options-filter-border, rgba(15, 23, 42, 0.08));
+    }
+
+    .options-filter-sticky .input-group-text,
+    .options-filter-sticky .form-control,
+    .options-filter-sticky .btn {
+      border-radius: 999px;
     }
     
     /* Consistent color picker design across all dialogs */
@@ -2282,11 +2562,45 @@
     }
 
     
+    :root {
+      --mb-options-section-bg: var(--bs-card-bg, var(--bs-body-bg, #ffffff));
+      --mb-options-section-border: var(--bs-border-color, rgba(15, 23, 42, 0.12));
+      --mb-options-section-shadow: var(--bs-box-shadow-sm, 0 6px 24px rgba(15, 23, 42, 0.08));
+      --mb-options-section-header-bg: var(--bs-tertiary-bg, rgba(15, 23, 42, 0.05));
+      --mb-options-section-header-hover-bg: var(--bs-secondary-bg, rgba(15, 23, 42, 0.1));
+      --mb-options-sidebar-width: 220px;
+      --mb-options-filter-bg: rgba(255, 255, 255, 0.9);
+      --mb-options-filter-border: rgba(15, 23, 42, 0.08);
+      --mb-options-sidebar-link-color: var(--text-secondary, #334155);
+      --mb-options-sidebar-hover-bg: rgba(13, 110, 253, 0.12);
+      --mb-options-sidebar-hover-color: var(--btn-primary-bg, #0d6efd);
+      --mb-options-sidebar-active-bg: var(--btn-primary-bg, #0d6efd);
+      --mb-options-sidebar-active-color: #ffffff;
+      --mb-options-shortcut-bg: var(--mb-options-section-bg);
+      --mb-options-shortcut-border: var(--mb-options-section-border);
+      --mb-options-shortcut-shadow: var(--mb-options-section-shadow);
+      --mb-options-shortcut-text-color: var(--mb-options-sidebar-link-color, var(--text-secondary, #334155));
+      --mb-options-filter-container-bg: rgba(248, 249, 250, 0.6);
+      --mb-options-shortcut-key-bg: rgba(15, 23, 42, 0.05);
+      --mb-options-shortcut-key-color: var(--text-primary, #1a1a1a);
+      --mb-options-shortcut-key-border: rgba(15, 23, 42, 0.12);
+      --mb-options-card-bg: rgba(255, 255, 255, 0.92);
+      --mb-options-card-border: rgba(15, 23, 42, 0.08);
+      --mb-options-card-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      --mb-options-card-body-bg: rgba(255, 255, 255, 0.98);
+      --mb-options-card-body-border: rgba(15, 23, 42, 0.06);
+      --mb-options-card-radius: 16px;
+      --mb-options-card-body-radius: 12px;
+    }
+
     /* Generic Options Dialog Styles */
     .options-section {
-      margin-bottom: 1rem;
-      border: 1px solid #dee2e6;
-      border-radius: 0.375rem;
+      margin-bottom: 1.25rem;
+      border: 1px solid var(--mb-options-section-border);
+      border-radius: var(--bs-border-radius-lg, 0.75rem);
+      background-color: var(--mb-options-section-bg);
+      box-shadow: var(--mb-options-section-shadow);
+      overflow: hidden;
     }
     /* Sync progress (bottom-right) */
     .mb-sync-progress {
@@ -2306,22 +2620,23 @@
     .mb-sync-progress .progress-bar { background-color: #0d6efd; }
     
     .options-section-header {
-      background-color: #f8f9fa;
+      background-color: var(--mb-options-section-header-bg);
       padding: 0.75rem 1rem;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
       transition: background-color 0.2s;
+      color: var(--bs-secondary-color, inherit);
     }
     
     .options-section-header:hover {
-      background-color: #e9ecef;
+      background-color: var(--mb-options-section-header-hover-bg);
     }
     
     .options-section-body {
       padding: 1rem;
-      background-color: white;
+      background-color: var(--mb-options-section-bg);
     }
     
     .option-row {
@@ -4048,6 +4363,54 @@
                       {{ getPropertyValidationHint(rule, prop) }}
                     </div>
                   </template>
+                  <template v-else-if="prop === 'font-family'">
+                    <div class="input-group input-group-sm font-family-group">
+                      <span class="input-group-text flex-grow-1 flex-sm-grow-0" style="min-width: 110px;">{{ formatPropertyName(prop) }}</span>
+                      <input
+                        :id="'prop-' + rule.id + '-' + prop"
+                        type="text"
+                        v-model="rule.properties[prop]"
+                        @input="onFontFamilyInput(rule, prop)"
+                        @blur="onFontFamilyBlur(rule, prop)"
+                        class="form-control"
+                        :class="{ 'is-invalid': !isPropertyValid(rule, prop) }"
+                        :placeholder="'e.g. &quot;Roboto&quot;, sans-serif'">
+                      <select class="form-select font-family-select"
+                              style="min-width: 180px;"
+                              @change="onFontFamilySelect(rule, $event)">
+                        <option value="">{{ getTranslation('css.visual.selectFont') || '-- Schrift wählen --' }}</option>
+                        <option v-for="font in availableFontFamilies"
+                                :key="font.label"
+                                :value="font.value"
+                                :style="{ fontFamily: font.value }">
+                          {{ font.label }}
+                        </option>
+                      </select>
+                      <span class="input-group-text">
+                        <input type="checkbox"
+                               :id="'important-' + rule.id + '-' + prop"
+                               class="form-check-input mt-0"
+                               :checked="getPropertyImportant(rule, prop)"
+                               @change="togglePropertyImportant(rule, prop)"
+                               :title="getTranslation('css.visual.importantHint') || 'Override other styles with !important'">
+                      </span>
+                      <button @click="togglePropertyDisabled(rule, prop)"
+                              class="btn btn-outline-secondary"
+                              :title="isPropertyDisabled(rule, prop) ? (getTranslation('css.visual.activateProperty') || 'Aktivieren') : (getTranslation('css.visual.deactivateProperty') || 'Deaktivieren')">
+                        {{ isPropertyDisabled(rule, prop) ? '👁️‍🗨️' : '👁️' }}
+                      </button>
+                      <button @click="removeProperty(rule, prop)"
+                              class="btn btn-outline-danger">×</button>
+                    </div>
+                    <div class="font-family-preview mt-1 small px-2 py-1 border rounded"
+                         :style="{ fontFamily: rule.properties[prop] || 'inherit' }">
+                      {{ getTranslation('css.visual.fontPreviewText') || 'Schneller brauner Fuchs springt über den faulen Hund.' }}
+                    </div>
+                    <div v-if="!isPropertyValid(rule, prop)"
+                         class="invalid-feedback d-block small mt-1">
+                      {{ getPropertyValidationHint(rule, prop) }}
+                    </div>
+                  </template>
                   <template v-else-if="prop === 'custom'">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                       <label class="form-label small mb-0">{{ formatPropertyName(prop) }}</label>
@@ -4159,6 +4522,7 @@
                       <option value="opacity">{{ getTranslation('css.opacity') || 'Transparenz' }}</option>
                     </optgroup>
                     <optgroup :label="getTranslation('css.visual.typography') || 'Text'">
+                      <option value="font-family" :disabled="isPropertyInRule(rule, 'font-family')">{{ getTranslation('css.fontFamily') || 'Schriftfamilie' }}</option>
                       <option value="font-weight">{{ getTranslation('css.fontWeight') || 'Schriftstärke' }}</option>
                       <option value="text-decoration">{{ getTranslation('css.textDecoration') || 'Textdekoration' }}</option>
                       <option value="text-align">{{ getTranslation('css.textAlign') || 'Textausrichtung' }}</option>
@@ -4461,7 +4825,7 @@
   
   <!-- Invitation Dialog (replaces Inbox Modal) -->
   <div class="modal fade" id="invitationModal" tabindex="-1" aria-labelledby="invitationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
       <div class="modal-content mb-modal">
         <div class="modal-header">
           <h5 class="modal-title" id="invitationModalLabel">
@@ -5389,8 +5753,29 @@
             </div>
 
             <div class="mt-3">
+              <label class="form-label">{{ getTranslation('export.filename') || 'Filename:' }}</label>
+              <div class="input-group input-group-sm">
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="exportFilename"
+                  @input="onExportFilenameInput"
+                  @blur="onExportFilenameBlur"
+                  :placeholder="getDefaultExportFilename(exportFormat)"
+                >
+                <button class="btn btn-outline-secondary" type="button" @click="openExportSaveDialog">
+                  {{ getTranslation('export.chooseLocation') || 'Choose Location…' }}
+                </button>
+                <button class="btn btn-outline-secondary" type="button" @click="resetExportFilename">
+                  {{ getTranslation('reset') || 'Reset' }}
+                </button>
+              </div>
+              <div class="form-text">{{ getTranslation('export.filenameHelp') || 'The file extension is added automatically based on the selected format.' }}</div>
+            </div>
+
+            <div class="mt-3">
               <label class="form-label">{{ getTranslation('export.format') || 'Export Format:' }}</label>
-              <select class="form-select form-select-sm" v-model="exportFormat">
+              <select class="form-select form-select-sm" v-model="exportFormat" @change="onExportFormatChange">
                 <option value="json">JSON (Full)</option>
                 <option value="json-array">JSON Array (Links only)</option>
                 <option value="csv">CSV</option>
@@ -5470,12 +5855,47 @@
         </div>
         <div class="modal-body mb-edit-modal-body">
           <form @submit.prevent="saveGenericEditDialog" v-if="genericEditData" class="mb-edit-form">
-            <!-- Filter Input -->
-            <div class="mb-3 mb-edit-filter-container">
+            <!-- Filter + Shortcuts -->
+            <div v-if="genericEditConfig.type === 'options'" class="options-filter-sticky">
+              <div class="mb-edit-filter-container">
+                <div class="input-group mb-edit-filter-group">
+                  <span class="input-group-text">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    </svg>
+                  </span>
+                  <input 
+                    type="text" 
+                    class="form-control mb-edit-filter-input" 
+                    v-model="genericFilterText"
+                    placeholder="Filter settings..."
+                  >
+                  <button class="btn btn-outline-secondary" type="button" @click="genericFilterText = ''" 
+                    v-if="genericFilterText">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M2.5 2.5a.7.7 0 0 1 .99 0L8 7.01l4.51-4.51a.7.7 0 1 1 .99.99L8.99 8l4.51 4.51a.7.7 0 0 1-.99.99L8 8.99l-4.51 4.51a.7.7 0 1 1-.99-.99L7.01 8 2.5 3.49a.7.7 0 0 1 0-.99Z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div v-if="getGenericSectionKeys().length > 1" class="options-nav-mobile d-lg-none" ref="optionsNavMobile">
+                <button
+                  v-for="(section, sectionKey) in getFilteredGenericSettings()"
+                  :key="'nav-mobile-' + sectionKey"
+                  type="button"
+                  class="btn btn-sm me-2 mb-2"
+                  :class="activeOptionSection === sectionKey ? 'btn-primary text-white' : 'btn-outline-secondary'"
+                  @click.prevent="scrollToOptionSection(sectionKey)"
+                >
+                  {{ getTranslation(section.translateKey) || sectionKey }}
+                </button>
+              </div>
+            </div>
+            <div v-else class="mb-3 mb-edit-filter-container">
               <div class="input-group mb-edit-filter-group">
                 <span class="input-group-text">
                   <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a.5.5 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                   </svg>
                 </span>
                 <input 
@@ -5494,7 +5914,24 @@
             </div>
             
             <!-- Generic Edit Sections -->
-            <div v-for="(section, sectionKey) in getFilteredGenericSettings()" :key="sectionKey" class="options-section mb-edit-section">
+            <div :class="['options-content-wrapper', (genericEditConfig.type === 'options' && getGenericSectionKeys().length > 1) ? 'has-nav' : '']">
+              <aside v-if="genericEditConfig.type === 'options' && getGenericSectionKeys().length > 1" class="options-sidebar d-none d-lg-block">
+                <div class="list-group">
+                  <button
+                    v-for="(section, sectionKey) in getFilteredGenericSettings()"
+                    :key="'nav-' + sectionKey"
+                    type="button"
+                    class="list-group-item list-group-item-action"
+                    :class="{ active: activeOptionSection === sectionKey }"
+                    @click.prevent="scrollToOptionSection(sectionKey)"
+                  >
+                    {{ getTranslation(section.translateKey) || sectionKey }}
+                  </button>
+                </div>
+              </aside>
+              <div class="options-sections">
+            
+            <div v-for="(section, sectionKey) in getFilteredGenericSettings()" :key="sectionKey" :id="'options-section-' + sectionKey" :data-section-key="sectionKey" class="options-section mb-edit-section">
               <div 
                 class="options-section-header mb-edit-section-header"
                 :class="{ collapsed: !isGenericSectionExpanded(sectionKey) }"
@@ -5650,8 +6087,8 @@
                     </div>
                     <div v-if="field.helpText" class="form-text mb-edit-field-help">{{ getTranslation(field.helpText) }}</div>
 
-                    <div class="card border-0 shadow-sm">
-                      <div class="card-body" style="background: rgba(15, 23, 42, 0.03); border-radius: 12px;">
+                    <div class="card options-settings-card">
+                      <div class="card-body options-settings-card-body">
                         <template v-if="!encryption.active">
                           <p class="text-muted">{{ getTranslation('options.security.encryption.description') || 'Protect your bookmarks with a password. Data will be encrypted locally before it is stored.' }}</p>
 
@@ -5851,6 +6288,8 @@
                 </div>
               </div>
             </div>
+          </div><!-- .options-sections -->
+        </div><!-- .options-content-wrapper -->
           </form>
         </div>
         <div class="modal-footer mb-edit-modal-footer">
@@ -6348,8 +6787,23 @@ const DEFAULT_FAVICON_RULES = Object.freeze([
     enabled: true,
     patternType: 'regex',
     pattern: '(?:www\\.)?amazon\\.',
-    iconDataUrl: 'data:image/svg+xml;base64,AAABAAQAMDAAAAEAIACoJQAARgAAACAgAAABACAAqBAAAO4lAAAYGAAAAQAgAIgJAACWNgAAEBAAAAEAIABoBAAAHkAAACgAAAAwAAAAYAAAAAEAIAAAAAAAgCUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///0X///+Z////zP////P////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////w////zP///5P///8/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8k////wP//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////t////x4AAAAAAAAAAAAAAAAAAAAAAAAAAP///0L////z///////////////////////////////////////////////////////////////////////////X7///u+T//5DV//+R1f//csr//1C+//+Cz///kdX//5/Z///L6v//8vr//////////////////////////////////////////////////////////////////////////////////////+3///85AAAAAAAAAAAAAAAA////Lf////D///////////////////////////////////////////////////////////////+85f//csr//xOt//8AqP//AKj//wCn//8Ap///AKf+/wCn//8AqP//AKf//wCn//8Ap///AKj//z64//+Q1f//2PD////////////////////////////////////////////////////////////////////////////q////JAAAAAAAAAAA////zP/////////////////////////////////////////////////////y+v//kNX//xOs//8Ap///AKf//wCo//8Ap///AKf//wCo//8AqP//AKf//wCn/v8Ap///AKj//wCn//8AqP//AKf//wCn//8Ap///AKf//z64//+u4P//////////////////////////////////////////////////////////////////////vQAAAAD///9R////////////////////////////////////////////////8vr//5HV//8TrP//AKj//wCo//8AqP//AKj//wCo//8Ap///AKf//wCn//8AqP//AKf//wCo//8AqP//AKj//wCn//8Ap/7/AKf//wCo//8AqP//AKf//wCo//8Ap///KbL//67g////////////////////////5fT//////////////////////////////////////0L///+l//////////////////////////////////////////+75P//E63//wCn//8Ap///AKf//wCn/v8AqP//AKf//wCo//8psv//UL///4LQ//+R1f//kNX//5DV//+Q1f//kNX//5HV//9hw///UL7//wCo//8Ap/7/AKj//wCn//8Ap///AKj//wCn//9Qvv//5vX/////////////Ub///5DV/////////////////////////////////5b////q////////////////////////////////8vr//3LK//8AqP//AKf//wCn//8AqP//AKj//1C///+R1f//y+r////////////////////////////////////////////////////////////////////////Y7///rd///3LJ//8Trf//AKf+/wCn//8AqP//E63//7zl////////n9r//wCo///l9P///////////////////////////9v////////////////////////////////Y7///Prj//wCn//8Ap///AKf+/1C+//+t3///8vr/////////////////////////////////////////////////////////////////////////////////////////////////////////////vOX//3LK//8Ap///AKf//wCo//+t3///2O///wCn//9zyv////////////////////////////n//////////////////////////9jw//8Trf//AKf//wCn//9yyf//5fT////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////y+v//kNX//xOt//9hw////////xOt//8Trf//////////////////////////////////////////////////u+T//xOt//8AqP//csn//+X0/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////1G///8Ap///5vX////////////////////////////////////////Y7///AKj//1C+///l9f///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9jv//8Ap///Ub///2HD//+Q1f//csr//wCn//8Ap///y+r////////////////////////////////////////Y8P//ruD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////L6v//YsP//wCn//8Ap///AKj//wCo//8Ap///2PD///////////////////////////////////////////////////////////////////////////////////////////////////Pz8/+ioqL/VlZU/x0dG/8FBQT/BQUD/x0dHP9WVlX/hoaE/9jY2P////////////////////////////////++vr7/VlZV/6Kiov/////////////////////////////////K6f//yun//8rq///l9P//////////////////////////////////////////////////////////////////////////////////////////////////oqKi/x0dHP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP9WVlT/5ubm/////////////////7Cwr/8FBQT/BQUE/wUFBP92dnb///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+GhoX/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wQEA/8FBQT/BQUD/wUFA/8FBQT/HR0c/7Cwr///////2dnZ/wUFBP8FBQT/BQUE/wUFBP8FBQT/Z2dm//Ly8v///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////729vf8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQP/BQUD/wUFBP8FBQT/BQUE/wUFBP+ioqL/MjIw/wUFBP8FBQT/BQUD/wUFA/8FBQT/BQUE/0REQ//y8vL//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////zExMP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8dHRv/////////////////////////////////////////////////////////////////////////////////////////////////////////////////2dnZ/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8dHRz/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8yMjD/////////////////////////////////////////////////////////////////////////////////////////////////////////////////lJST/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/HR0c/8zMzP///////////8zMzP8xMTD/BQUE/wUFBP8FBQT/BQUD/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP/MzMz/////////////////////////////////////////////////////////////////////////////////////////////////////////////////hoaF/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/zMzM///////////////////////y8vL/HR0c/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/4aGhP//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VlZV/wUFBP8EBAP/BQUD/wUFA/8FBQT/BQUE/wUFBP9FRUT/////////////////////////////////sLCv/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/+Xl5f//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////ZmZl/wUFA/8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP9VVVT//////////////////////////////////////zExMP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////lJST/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP9WVlX//////////////////////////////////////3Z2dv8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////sbGw/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8dHRz//////////////////////////////////////5SUk/8FBQP/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/VlZU////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8vLy/wUFA/8FBQP/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQT/oqKi/////////////////////////////////5SUk/8FBQP/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQP/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////3Z2dv8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/HR0c/729vf///////////////////////////83Nzf8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+bm5v8dHRz/BQUD/wUFA/8FBQT/BQUE/wUFBP8EBAP/BQUE/wUFBP9WVlX/vb29//Pz8////////////83Nzf8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/VlZV//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////++vr7/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZU/0REQ/8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/VVVU////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////zMzM/x0dG/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQP/VVVU//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////Ly8v92dnb/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////5ubm/6Kiov9VVVT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9nZ2f/MzMz/lJST/5SUk/9WVlT/VlZV/zExMP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8zMzP8FBQP/BQUE/wUFA/8FBQT/BAQD/wUFBP8FBQT/VlZV////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8/Pz/8zMzP/MzMz/lJST/5SUk//Z2dn//////////////////////////////////////76+vv8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////5WVk/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP9nZ2b//////////////////////////////////////5SUk/8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/dnZ2/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////1ZWVP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFA/8dHRz/8/Pz/////////////////////////////////3Z2dv8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/lJST/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////6Ghof8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/dnZ2////////////////////////////2dnZ/x0dHP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/lJST/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+bm5v8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BAQD/zExMP+xsbD/zMzM/8zMzP+UlJP/HR0c/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/zMzM//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////92dnb/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8dHRv///////////////////////////////////////////////////////////////////////////n////t///////////////////////////////////////////////////////////m5ub/Hh4c/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wQEA/8FBQP/BQUD/wUFBP+UlJP//////////////////////////////////////////////////////////////////////////97///+o////////////////////////////////////////////////////////////////2dnZ/x0dG/8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/0VFRP/z8/P//////////////////////////////////////////////////////////////////////////5b///9U/////////////////////////////////////////////////////////////////////9nZ2f8xMTD/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VVVU//Ly8v///////////////////////////////////////////////////////////////////////////////0L///8D////z///////////////////////////////////////////////////////////////////////////lZWU/zExMP8FBQT/BQUD/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BQUD/zExMP+xsbD/////////////////////////////////////////////////////////////////////////////////////wwAAAAAAAAAA////MP////b////////////////////////////////////////////////////////////////////////////////Z2dn/lJST/1ZWVf9WVlX/BAQD/wUFBP8FBQT/RUVD/1ZWVf+UlJP/zMzM///////////////////////////////////////////////////////////////////////////////////////////w////JwAAAAAAAAAAAAAAAP///0v////z//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////D///8/AAAAAAAAAAAAAAAAAAAAAAAAAAD///8t////yf//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////w////yQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///0v///+f////z///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////zP///5n///9FAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAB8AAOAAAAAABwAAwAAAAAADAACAAAAAAAEAAIAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAgAAAAAABAADAAAAAAAMAAOAAAAAABwAA+AAAAAAfAAAoAAAAIAAAAEAAAAABACAAAAAAAIAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////Uf///5/////S///////////////////////////////////////////////////////////////////////////////////////////////////////////////P////nP///0gAAAAAAAAAAAAAAAAAAAAA////GP///7H//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////6X///8SAAAAAP///wb////P////////////////////////////////////////////////5fX//67g//+R1f//UL7//1C+//9Rv///YsT//5DU//+85f//8vr//////////////////////////////////////////////////////8P///8D////df//////////////////////////////////////////ruD//z24//8AqP//AKf//wCo//8Ap///AKj//wCo//8Ap/7/AKf//wCn//8AqP//csr//8vq/////////////////////////////////////////////////2b////S////////////////////////////////y+r//ymy//8Ap///AKj//wCo//8Ap///AKf//wCn//8Ap///AKj//wCn//8Ap///AKj//wCo//8AqP//AKj//1C////Y8P///////8rq///Y7///////////////////////w/////z/////////////////////8vr//3LJ//8AqP//AKf//wCn/v9ixP//kNT//8vq///y+v////////////////////////L6///L6v//n9r//2LE//8Trf//AKf//wCo//+u4P//vOX//z65///////////////////////w//////////////////////L6//8+uP//AKf//1C+//+t3///8/r///////////////////////////////////////////////////////////////////////+85f//UL7//wCo///Y7///AKf//8rp///////////////////////////////////Y7///E63//1C+///L6v////////////////////////////////////////////////////////////////////////////////////////P7///L6v//5fT///L6//8ps///kNT//////////////////////////////////5DU//+t3///////////////////////////////////////////////////////////////////////////////////////////////////5fX//1C+//8AqP//AKf//wCn//+Q1f//////////////////////////////////////////////////////////////////8vLy/5SUk/9FRUT/BQUE/wQEA/8yMjD/Z2dm/8zMzP////////////////+GhoX/Z2dm//Lz8////////////+X0///L6v//yun///L6//////////////////////////////////////////////////////////////Ly8v9FRUT/BQUE/wUFBP8FBQT/BQUE/wQEA/8FBQT/BQUD/3Z2dv/z8/P/dnZ2/wUFBP8FBQP/MTEw/9nZ2f//////////////////////////////////////////////////////////////////////////////////////VlZV/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/zIyMP8FBQT/BQUE/wUFBP8FBQT/HR0c/9nZ2f///////////////////////////////////////////////////////////////////////////+bm5v8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8xMTD/HR0c/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/lJST////////////////////////////////////////////////////////////////////////////vb29/wUFBP8EBAP/BQUE/wUFBP8FBQT/dnZ2////////////oqKi/wUFBP8EBAP/BQUE/wUFBP8FBQP/BQUE/zIyMf/y8vL///////////////////////////////////////////////////////////////////////////+UlJP/BQUE/wUFBP8FBQT/BQUE/wUFBP/y8vL/////////////////Z2dm/wUFBP8FBQT/BQUE/wUFBP8FBQT/sbGw/////////////////////////////////////////////////////////////////////////////////7GxsP8FBQT/BQUD/wUFBP8FBQT/BQUD//////////////////////+9vb3/BQUE/wUFBP8FBQT/BQUE/wUFBP/m5ub/////////////////////////////////////////////////////////////////////////////////2dnZ/wUFBP8FBQT/BQUE/wUFBP8FBQT/zMzM/////////////////+bm5v8FBQT/BQUE/wUFA/8FBQT/BQUD////////////////////////////////////////////////////////////////////////////////////////////MTEw/wUFBP8FBQT/BQUE/wUFBP9FRUT/5eXl/////////////////wUFBP8FBQT/BQUE/wUFBP8FBQT////////////////////////////////////////////////////////////////////////////////////////////MzMz/BQUE/wUFA/8FBQT/BQUD/wUFBP8FBQT/dnZ2/5SUk/+9vb3/BQUE/wUFBP8FBQT/BQUE/wUFA/////////////////////////////////////////////////////////////////////////////////////////////////+wsK//HR0c/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE///////////////////////////////////////////////////////////////////////////////////////////////////////m5ub/hoaF/zIyMP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQP//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+bm5v/MzMz/lJST/5SUk/9WVlX/BQUE/wQEA/8FBQT/BQUE/wUFA//////////////////////////////////////////////////////////////////////////////////////////////////y8vL/zMzM/8zMzP/Nzc3///////////////////////////8FBQT/BQUE/wUFBP8FBQT/BQUD////////////////////////////////////////////////////////////////////////////////////////////Z2dm/wUFBP8FBQT/BQUE/wUFBP/y8vL/////////////////2dnZ/wUFA/8FBQP/BQUD/wUFBP8FBQT///////////////////////////////////////////////////////////////////////////////////////////9mZmX/BQUE/wUFBP8FBQT/BQUE/3Z2dv////////////////92dnb/BQUE/wUFBP8FBQT/BQUE/wUFBP///////////////////////////////////////////////////////////////////////////////////////////7CwsP8FBQT/BQUE/wUFBP8FBQT/BQUE/zIyMP9WVlX/RUVE/wUFBP8FBQT/BQUE/wUFBP8FBQT/RUVD/////////////////////////////////////////////////////////////////////////////////////////////////1ZWVf8FBQT/BQUE/wUFBP8EBAP/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP+wsK/////////////////////////////////////////////////2////2///////////////////////////////////////////8vLy/0VFRP8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/dnZ2/////////////////////////////////////////////////////8z///9+/////////////////////////////////////////////////////7Cwr/9FRUT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/RUVE/7Cwr///////////////////////////////////////////////////////////b////wz////b///////////////////////////////////////////////////////////y8vL/zMzM/8zMzP/MzMz/zc3N/+bm5v///////////////////////////////////////////////////////////////9L///8GAAAAAP///yf////b///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////S////HgAAAAAAAAAAAAAAAP///wz///94////2P/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////S////cv///wkAAAAAAAAAAOAAAAeAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAHAAAADKAAAABgAAAAwAAAAAQAgAAAAAABgCQAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8G////hP///9v/////////////////////////////////////////////////////////////////////////////////////////2////4T///8GAAAAAP///wz////P///////////////////////////y+v//vOX//5DV//+C0P//YsT//5DU//+u4P//5fT////////////////////////////////////////////G////Cf///4T/////////////////////8vr//3LK//8Trf//AKj//wCn//8Ap///AKf+/wCo//8AqP//AKf//1C+///K6v//////////////////////////////////////e////9v///////////////+u4P//E6z//wCn//8AqP//AKf//wCo//8Ap///AKf//wCo//8AqP//AKf//wCo//8Ap///kNX/////////////kdX//9jw////////////z/////D//////////4LP//8Ap///AKf//wCo//8qs///csr//5DV///K6f//y+r//8rq///L6v//n9n//3LK//8TrP//AKf//5/a////////kNX//1C+////////////7f////D/////kdX//wCo//8AqP//csn//9jw///////////////////////////////////////////////////y+v//n9r//4LQ////////yun//wCn///l9P//////8P////DK6v//AKf//1C+///l9P//////////////////////////////////////////////////////////////////////////////////yun//wCn//+85f//////8P////Aps///kNX///////////////////////////////////////////////////////////////////////+g2v//KrP//2LE//+Q1P//csr//wCn//+R1f//////8P////C75P////////////////////////////+xsbD/VlZV/1VVVP9WVlX/oaGh//Ly8v/y8vL/dnZ2/7Cwr///////vOT//2HD//8Ap///AKj//wCn/v+85f//////8P////D//////////////////////////4aGhf8EBAP/BQUD/wUFBP8EBAP/BQUD/0VFRP9nZ2b/BQUE/wUFBP92dnb/////////////////2O///+b1////////////8P////D/////////////////////8vLy/wUFBP8FBQT/BQUE/wUFA/9EREP/HR0b/wUFBP8FBQT/BQUD/wUFBP8FBQT/////////////////////////////////////8P////D/////////////////////zMzM/wUFBP8FBQT/BQUE/3Z2dv//////8vLy/x0dHP8FBQT/BQUE/wUFBP+UlJP/////////////////////////////////////8P////D/////////////////////zc3N/wUFBP8FBQT/BQUE/5SUk////////////4aGhf8FBQT/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D//////////////////////////x0dG/8FBQT/BQUE/0VFQ//z8/P//////76+vv8FBQT/BQUE/wUFBP/Nzc3/////////////////////////////////////8P////D//////////////////////////7CwsP8FBQP/BQUE/wUFBP8dHRv/dnZ2/3Z2dv8FBQP/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D///////////////////////////////++vr7/MTEw/wUFBP8FBQP/BQUD/wUFBP8FBQT/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D//////////////////////////////////////////+Xl5f/MzMz/lJST/3Z2dv8FBQT/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D//////////////////////////4aGhf9WVlX/HR0b/729vf///////////7Cwr/8FBQP/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D//////////////////////////2ZmZf8FBQT/BQUE/x0dHP++vr7/zMzM/0VFRP8FBQT/BQUE/wUFBP/y8vL/////////////////////////////////////8P////D//////////////////////////8zMzP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUD/1ZWVP/29vb/////////////////////////////////////7f///9X///////////////////////////////+wsK//HR0c/wUFBP8FBQT/BQUE/wUFBP8FBQT/MTEw/9vb2//6+vr/////////////////////////////////////z////3v/////////////////////////////////////8vLy/76+vv+UlJP/lJST/5SUk/++vr7/////////////////////////////////////////////////////df///wn////D//////////////////////////////////////////////////////////////////////////////////////////////////////////////+9////BgAAAAD///8D////df///9L/////////////////////////////////////////////////////////////////////////////////////////z////3X///8DAAAAAIAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAABACgAAAAQAAAAIAAAAAEAIAAAAAAAQAQAAAAAAAAAAAAAAAAAAAAAAAD///8G////lv////b/////////////////////////////////////////////////////////9v///5b///8G////iv/////////////////////Y7///n9r//5DV//+Q1P//vOT/////////////////////////////////iv///+f//////////8vq//9Qvv//AKj//wCn//8Ap///AKf+/wCn//8ps///u+T////////y+v//8vr//////+f////w/////67g//8AqP//AKj//z24//+C0P//kNX//5DU//+R1f//UL7//wCn//+u4P//vOX//4LQ///////w////8Lzl//8AqP//csn//+bz///////////////////////////////////l9P//rd///9jv//8Trf//////8P////Aqs///2O//////////////////////////////////////////////Ur7//3LK//+C0P//AKf///////D////w5vX/////////////zMzM/x0dG/8FBQT/HR0b/5SUk/9WVlT/RUVD/+fu8/+i2P7/csr//3LK///////w////8P///////////////zExMP8FBQT/BQUE/0VFRP8FBQP/BQUE/wUFBP+UlJP/////////////////////8P////D///////////////8FBQT/BQUE/4aGhP//////ZmZl/wUFBP8FBQT/8vLy//////////////////////D////w////////////////VlZV/wUFBP8yMjD/5ubm/5SUk/8FBQT/BQUE///////////////////////////w////8P///////////////9nZ2f8yMjD/BQUE/wUFBP8FBQT/BQUE/wUFBP//////////////////////////8P////D////////////////m5ub/zMzM/729vf+wsK//VlZV/wUFBP8FBQT///////////////////////////D////w////////////////Z2dm/wUFBP9FRUT/2NjY/2dnZv8FBQT/HR0c///////////////////////////w////5////////////////8zMzP8FBQP/BQUE/wUFBP8FBQT/BQUE/3Z2dv//////////////////////////5////4f/////////////////////2dnZ/3Z2dv9VVVT/VlZV/6Kiov///////////////////////////////4r///8G////jf///+T/////////////////////////////////////////////////////////5P///43///8GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==',
+    iconDataUrl: 'data:image/svg+xml;base64,AAABAAQAMDAAAAEAIACoJQAARgAAACAgAAABACAAqBAAAO4lAAAYGAAAAQAgAIgJAACWNgAAEBAAAAEAIABoBAAAHkAAACgAAAAwAAAAYAAAAAEAIAAAAAAAgCUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///0X///+Z////zP////P////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////w////zP///5P///8/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8k////wP//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////t////x4AAAAAAAAAAAAAAAAAAAAAAAAAAP///0L////z///////////////////////////////////////////////////////////////////////////X7///u+T//5DV//+R1f//csr//1C+//+Cz///kdX//5/Z///L6v//8vr//////////////////////////////////////////////////////////////////////////////////////+3///85AAAAAAAAAAAAAAAA////Lf////D///////////////////////////////////////////////////////////////+85f//csr//xOt//8AqP//AKj//wCn//8Ap///AKf+/wCn//8AqP//AKf//wCn//8Ap///AKj//z64//+Q1f//2PD////////////////////////////////////////////////////////////////////////////q////JAAAAAAAAAAA////zP/////////////////////////////////////////////////////y+v//kNX//xOs//8Ap///AKf//wCo//8Ap///AKf//wCo//8AqP//AKf//wCn/v8Ap///AKj//wCn//8AqP//AKf//wCn//8Ap///AKf//z64//+u4P//////////////////////////////////////////////////////////////////////vQAAAAD///9R////////////////////////////////////////////////8vr//5HV//8TrP//AKj//wCo//8AqP//AKj//wCo//8Ap///AKf//wCn//8AqP//AKf//wCo//8AqP//AKj//wCn//8Ap/7/AKf//wCo//8AqP//AKf//wCo//8Ap///KbL//67g////////////////////////5fT//////////////////////////////////////0L///+l//////////////////////////////////////////+75P//E63//wCn//8Ap///AKf//wCn/v8AqP//AKf//wCo//8psv//UL///4LQ//+R1f//kNX//5DV//+Q1f//kNX//5HV//9hw///UL7//wCo//8Ap/7/AKj//wCn//8Ap///AKj//wCn//9Qvv//5vX/////////////Ub///5DV/////////////////////////////////5b////q////////////////////////////////8vr//3LK//8AqP//AKf//wCn//8AqP//AKj//1C///+R1f//y+r////////////////////////////////////////////////////////////////////////Y7///rd///3LJ//8Trf//AKf+/wCn//8AqP//E63//7zl////////n9r//wCo///l9P///////////////////////////9v////////////////////////////////Y7///Prj//wCn//8Ap///AKf+/1C+//+t3///8vr/////////////////////////////////////////////////////////////////////////////////////////////////////////////vOX//3LK//8Ap///AKf//wCo//+t3///2O///wCn//9zyv////////////////////////////n//////////////////////////9jw//8Trf//AKf//wCn//9yyf//5fT////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////y+v//kNX//xOt//9hw////////xOt//8Trf//////////////////////////////////////////////////u+T//xOt//8AqP//csn//+X0/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////1G///8Ap///5vX////////////////////////////////////////Y7///AKj//1C+///l9f///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9jv//8Ap///Ub///2HD//+Q1f//csr//wCn//8Ap///y+r////////////////////////////////////////Y8P//ruD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////L6v//YsP//wCn//8Ap///AKj//wCo//8Ap///2PD///////////////////////////////////////////////////////////////////////////////////////////////////Pz8/+ioqL/VlZU/x0dG/8FBQT/BQUD/x0dHP9WVlX/hoaE/9jY2P////////////////////////////////++vr7/VlZV/6Kiov' + 
+                 '/////////////////////////////////K6f//yun//8rq///l9P//////////////////////////////////////////////////////////////////////////////////////////////////oqKi/x0dHP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP9WVlT/5ubm/////////////////7Cwr/8FBQT/BQUE/wUFBP92dnb///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+GhoX/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wQEA/8FBQT/BQUD/wUFA/8FBQT/HR0c/7Cwr///////2dnZ/wUFBP8FBQT/BQUE/wUFBP8FBQT/Z2dm//Ly8v///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////729vf8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQP/BQUD/wUFBP8FBQT/BQUE/wUFBP+ioqL/MjIw/wUFBP8FBQT/BQUD/wUFA/8FBQT/BQUE/0REQ//y8vL//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////zExMP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8dHRv/////////////////////////////////////////////////////////////////////////////////////////////////////////////////2dnZ/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8dHRz/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8yMjD/////////////////////////////////////////////////////////////////////////////////////////////////////////////////lJST/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/HR0c/8zMzP///////////8zMzP8xMTD/BQUE/wUFBP8FBQT/BQUD/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP/MzMz/////////////////////////////////////////////////////////////////////////////////////////////////////////////////hoaF/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/zMzM///////////////////////y8vL/HR0c/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/4aGhP//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VlZV/wUFBP8EBAP/BQUD/wUFA/8FBQT/BQUE/wUFBP9FRUT/////////////////////////////////sLCv/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/+Xl5f//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////ZmZl/wUFA/8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP9VVVT//////////////////////////////////////zExMP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////lJST/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP9WVlX//////////////////////////////////////3Z2dv8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////sbGw/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8dHRz//////////////////////////////////////5SUk/8FBQP/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/VlZU////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8vLy/wUFA/8FBQP/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQT/oqKi/////////////////////////////////5SUk/8FBQP/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQP/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////3Z2dv8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/HR0c/729vf///////////////////////////83Nzf8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+bm5v8dHRz/BQUD/wUFA/8FBQT/BQUE/wUFBP8EBAP/BQUE/wUFBP9WVlX/vb29//Pz8////////////83Nzf8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/VlZV//////////////////////////////////////////////////////////////////////////////////' +
+                 '////////////////////////////////////////////////////++vr7/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZU/0REQ/8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/VVVU////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////zMzM/x0dG/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQP/VVVU//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////Ly8v92dnb/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////5ubm/6Kiov9VVVT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9nZ2f/MzMz/lJST/5SUk/9WVlT/VlZV/zExMP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8zMzP8FBQP/BQUE/wUFA/8FBQT/BAQD/wUFBP8FBQT/VlZV////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8/Pz/8zMzP/MzMz/lJST/5SUk//Z2dn//////////////////////////////////////76+vv8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////5WVk/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP9nZ2b//////////////////////////////////////5SUk/8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/dnZ2/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////1ZWVP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFA/8dHRz/8/Pz/////////////////////////////////3Z2dv8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/lJST/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////6Ghof8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/dnZ2////////////////////////////2dnZ/x0dHP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/lJST/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+bm5v8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BAQD/zExMP+xsbD/zMzM/8zMzP+UlJP/HR0c/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/zMzM//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////92dnb/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8dHRv///////////////////////////////////////////////////////////////////////////n////t///////////////////////////////////////////////////////////m5ub/Hh4c/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wQEA/8FBQP/BQUD/wUFBP+UlJP//////////////////////////////////////////////////////////////////////////97///+o////////////////////////////////////////////////////////////////2dnZ/x0dG/8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/0VFRP/z8/P//////////////////////////////////////////////////////////////////////////5b///9U/////////////////////////////////////////////////////////////////////9nZ2f8xMTD/BQUE/wUFBP8FBQP/BQ' +
+                 'UE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VVVU//Ly8v///////////////////////////////////////////////////////////////////////////////0L///8D////z///////////////////////////////////////////////////////////////////////////lZWU/zExMP8FBQT/BQUD/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BQUD/zExMP+xsbD/////////////////////////////////////////////////////////////////////////////////////wwAAAAAAAAAA////MP////b////////////////////////////////////////////////////////////////////////////////Z2dn/lJST/1ZWVf9WVlX/BAQD/wUFBP8FBQT/RUVD/1ZWVf+UlJP/zMzM///////////////////////////////////////////////////////////////////////////////////////////w////JwAAAAAAAAAAAAAAAP///0v////z//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////D///8/AAAAAAAAAAAAAAAAAAAAAAAAAAD///8t////yf//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////w////yQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///0v///+f////z///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////zP///5n///9FAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAB8AAOAAAAAABwAAwAAAAAADAACAAAAAAAEAAIAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAgAAAAAABAADAAAAAAAMAAOAAAAAABwAA+AAAAAAfAAAoAAAAIAAAAEAAAAABACAAAAAAAIAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////Uf///5/////S///////////////////////////////////////////////////////////////////////////////////////////////////////////////P////nP///0gAAAAAAAAAAAAAAAAAAAAA////GP///7H//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////6X///8SAAAAAP///wb////P////////////////////////////////////////////////5fX//67g//+R1f//UL7//1C+//9Rv///YsT//5DU//+85f//8vr//////////////////////////////////////////////////////8P///8D////df//////////////////////////////////////////ruD//z24//8AqP//AKf//wCo//8Ap///AKj//wCo//8Ap/7/AKf//wCn//8AqP//csr//8vq/////////////////////////////////////////////////2b////S////////////////////////////////y+r//ymy//8Ap///AKj//wCo//8Ap///AKf//wCn//8Ap///AKj//wCn//8Ap///AKj//wCo//8AqP//AKj//1C////Y8P///////8rq///Y7///////////////////////w/////z/////////////////////8vr//3LJ//8AqP//AKf//wCn/v9ixP//kNT//8vq///y+v////////////////////////L6///L6v//n9r//2LE//8Trf//AKf//wCo//+u4P//vOX//z65///////////////////////w//////////////////////L6//8+uP//AKf//1C+//+t3///8/r///////////////////////////////////////////////////////////////////////+85f//UL7//wCo///Y7///AKf//8rp///////////////////////////////////Y7///E63//1C+///L6v////////////////////////////////////////////////////////////////////////////////////////P7///L6v//5fT///L6//8ps///kNT//////////////////////////////////5DU//+t3///////////////////////////////////////////////////////////////////////////////////////////////////5fX//1C+//8AqP//AKf//wCn//+Q1f//////////////////////////////////////////////////////////////////8vLy/5SUk/9FRUT/BQUE/wQEA/8yMjD/Z2dm/8zMzP////////////////+GhoX/Z2dm//Lz8////////////+X0///L6v' +
+                 '//yun///L6//////////////////////////////////////////////////////////////Ly8v9FRUT/BQUE/wUFBP8FBQT/BQUE/wQEA/8FBQT/BQUD/3Z2dv/z8/P/dnZ2/wUFBP8FBQP/MTEw/9nZ2f//////////////////////////////////////////////////////////////////////////////////////VlZV/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/zIyMP8FBQT/BQUE/wUFBP8FBQT/HR0c/9nZ2f///////////////////////////////////////////////////////////////////////////+bm5v8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8xMTD/HR0c/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/lJST////////////////////////////////////////////////////////////////////////////vb29/wUFBP8EBAP/BQUE/wUFBP8FBQT/dnZ2////////////oqKi/wUFBP8EBAP/BQUE/wUFBP8FBQP/BQUE/zIyMf/y8vL///////////////////////////////////////////////////////////////////////////+UlJP/BQUE/wUFBP8FBQT/BQUE/wUFBP/y8vL/////////////////Z2dm/wUFBP8FBQT/BQUE/wUFBP8FBQT/sbGw/////////////////////////////////////////////////////////////////////////////////7GxsP8FBQT/BQUD/wUFBP8FBQT/BQUD//////////////////////+9vb3/BQUE/wUFBP8FBQT/BQUE/wUFBP/m5ub/////////////////////////////////////////////////////////////////////////////////2dnZ/wUFBP8FBQT/BQUE/wUFBP8FBQT/zMzM/////////////////+bm5v8FBQT/BQUE/wUFA/8FBQT/BQUD////////////////////////////////////////////////////////////////////////////////////////////MTEw/wUFBP8FBQT/BQUE/wUFBP9FRUT/5eXl/////////////////wUFBP8FBQT/BQUE/wUFBP8FBQT////////////////////////////////////////////////////////////////////////////////////////////MzMz/BQUE/wUFA/8FBQT/BQUD/wUFBP8FBQT/dnZ2/5SUk/+9vb3/BQUE/wUFBP8FBQT/BQUE/wUFA/////////////////////////////////////////////////////////////////////////////////////////////////+wsK//HR0c/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE///////////////////////////////////////////////////////////////////////////////////////////////////////m5ub/hoaF/zIyMP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQP//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+bm5v/MzMz/lJST/5SUk/9WVlX/BQUE/wQEA/8FBQT/BQUE/wUFA//////////////////////////////////////////////////////////////////////////////////////////////////y8vL/zMzM/8zMzP/Nzc3///////////////////////////8FBQT/BQUE/wUFBP8FBQT/BQUD////////////////////////////////////////////////////////////////////////////////////////////Z2dm/wUFBP8FBQT/BQUE/wUFBP/y8vL/////////////////2dnZ/wUFA/8FBQP/BQUD/wUFBP8FBQT///////////////////////////////////////////////////////////////////////////////////////////9mZmX/BQUE/wUFBP8FBQT/BQUE/3Z2dv////////////////92dnb/BQUE/wUFBP8FBQT/BQUE/wUFBP///////////////////////////////////////////////////////////////////////////////////////////7CwsP8FBQT/BQUE/wUFBP8FBQT/BQUE/zIyMP9WVlX/RUVE/wUFBP8FBQT/BQUE/wUFBP8FBQT/RUVD/////////////////////////////////////////////////////////////////////////////////////////////////1ZWVf8FBQT/BQUE/wUFBP8EBAP/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP+wsK/////////////////////////////////////////////////2////2///////////////////////////////////////////8vLy/0VFRP8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/dnZ2/////////////////////////////////////////////////////8z///9+/////////////////////////////////////////////////////7Cwr/9FRUT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/RUVE/7Cwr///////////////////////////////////////////////////////////b////wz////b///////////////////////////////////////////////////////////y8vL/zMzM/8zMzP/MzMz/zc3N/+bm5v///////////////////////////////////////////////////////////////9L///8GAAAAAP///yf////b///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////S////HgAAAAAAAAAAAAAAAP///wz///94////2P////////////////////////////////////' +
+                 '/////////////////////////////////////////////////////////////////////////////////////S////cv///wkAAAAAAAAAAOAAAAeAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAHAAAADKAAAABgAAAAwAAAAAQAgAAAAAABgCQAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8G////hP///9v/////////////////////////////////////////////////////////////////////////////////////////2////4T///8GAAAAAP///wz////P///////////////////////////y+v//vOX//5DV//+C0P//YsT//5DU//+u4P//5fT////////////////////////////////////////////G////Cf///4T/////////////////////8vr//3LK//8Trf//AKj//wCn//8Ap///AKf+/wCo//8AqP//AKf//1C+///K6v//////////////////////////////////////e////9v///////////////+u4P//E6z//wCn//8AqP//AKf//wCo//8Ap///AKf//wCo//8AqP//AKf//wCo//8Ap///kNX/////////////kdX//9jw////////////z/////D//////////4LP//8Ap///AKf//wCo//8qs///csr//5DV///K6f//y+r//8rq///L6v//n9n//3LK//8TrP//AKf//5/a////////kNX//1C+////////////7f////D/////kdX//wCo//8AqP//csn//9jw///////////////////////////////////////////////////y+v//n9r//4LQ////////yun//wCn///l9P//////8P////DK6v//AKf//1C+///l9P//////////////////////////////////////////////////////////////////////////////////yun//wCn//+85f//////8P////Aps///kNX///////////////////////////////////////////////////////////////////////+g2v//KrP//2LE//+Q1P//csr//wCn//+R1f//////8P////C75P////////////////////////////+xsbD/VlZV/1VVVP9WVlX/oaGh//Ly8v/y8vL/dnZ2/7Cwr///////vOT//2HD//8Ap///AKj//wCn/v+85f//////8P////D//////////////////////////4aGhf8EBAP/BQUD/wUFBP8EBAP/BQUD/0VFRP9nZ2b/BQUE/wUFBP92dnb/////////////////2O///+b1////////////8P////D/////////////////////8vLy/wUFBP8FBQT/BQUE/wUFA/9EREP/HR0b/wUFBP8FBQT/BQUD/wUFBP8FBQT/////////////////////////////////////8P////D/////////////////////zMzM/wUFBP8FBQT/BQUE/3Z2dv//////8vLy/x0dHP8FBQT/BQUE/wUFBP+UlJP/////////////////////////////////////8P////D/////////////////////zc3N/wUFBP8FBQT/BQUE/5SUk////////////4aGhf8FBQT/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D//////////////////////////x0dG/8FBQT/BQUE/0VFQ//z8/P//////76+vv8FBQT/BQUE/wUFBP/Nzc3/////////////////////////////////////8P////D//////////////////////////7CwsP8FBQP/BQUE/wUFBP8dHRv/dnZ2/3Z2dv8FBQP/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D///////////////////////////////++vr7/MTEw/wUFBP8FBQP/BQUD/wUFBP8FBQT/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D//////////////////////////////////////////+Xl5f/MzMz/lJST/3Z2dv8FBQT/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D//////////////////////////4aGhf9WVlX/HR0b/729vf///////////7Cwr/8FBQP/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D//////////////////////////2ZmZf8FBQT/BQUE/x0dHP++vr7/zMzM/0VFRP8FBQT/BQUE/wUFBP/y8vL/////////////////////////////////////8P////D//////////////////////////8zMzP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUD/1ZWVP/29vb/////////////////////////////////////7f///9X///////////////////////////////+wsK//HR0c/wUFBP8FBQT/BQUE/wUFBP8FBQT/MTEw/9vb2//6+vr/////////////////////////////////////z////3v/////////////////////////////////////8vLy/76+vv+UlJP/lJST/5SUk/++vr7/////////////////////////////////////////////////////df///wn////D//////////////////////////////////////////////////////////////////////////////////////////////////////////////+9////BgAAAAD///8D////df///9L/////////////////////////////////////////////////////////////////////////////////////////z////3X///8DAAAAAIAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAABACgAAAAQAAAAIAAAAAEAIAAAAAAAQAQAAAAAAAAAAAAAAAAAAAAAAAD///8G////lv////b/////////////////////////////////////////////////////////9v///5b///8G////iv' +
+                 '/////////////////////Y7///n9r//5DV//+Q1P//vOT/////////////////////////////////iv///+f//////////8vq//9Qvv//AKj//wCn//8Ap///AKf+/wCn//8ps///u+T////////y+v//8vr//////+f////w/////67g//8AqP//AKj//z24//+C0P//kNX//5DU//+R1f//UL7//wCn//+u4P//vOX//4LQ///////w////8Lzl//8AqP//csn//+bz///////////////////////////////////l9P//rd///9jv//8Trf//////8P////Aqs///2O//////////////////////////////////////////////Ur7//3LK//+C0P//AKf///////D////w5vX/////////////zMzM/x0dG/8FBQT/HR0b/5SUk/9WVlT/RUVD/+fu8/+i2P7/csr//3LK///////w////8P///////////////zExMP8FBQT/BQUE/0VFRP8FBQP/BQUE/wUFBP+UlJP/////////////////////8P////D///////////////8FBQT/BQUE/4aGhP//////ZmZl/wUFBP8FBQT/8vLy//////////////////////D////w////////////////VlZV/wUFBP8yMjD/5ubm/5SUk/8FBQT/BQUE///////////////////////////w////8P///////////////9nZ2f8yMjD/BQUE/wUFBP8FBQT/BQUE/wUFBP//////////////////////////8P////D////////////////m5ub/zMzM/729vf+wsK//VlZV/wUFBP8FBQT///////////////////////////D////w////////////////Z2dm/wUFBP9FRUT/2NjY/2dnZv8FBQT/HR0c///////////////////////////w////5////////////////8zMzP8FBQP/BQUE/wUFBP8FBQT/BQUE/3Z2dv//////////////////////////5////4f/////////////////////2dnZ/3Z2dv9VVVT/VlZV/6Kiov///////////////////////////////4r///8G////jf///+T/////////////////////////////////////////////////////////5P///43///8GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==',
     comment: 'Standard-Favicon Amazon'
+  },
+  {
+    id: 'preset-paths',
+    enabled: true,
+    patternType: 'regex',
+    pattern: '^(?:[A-Za-z]:[\\/]|(?:\\\\|//)[^\\/\s]+[\\\/][^\\/\s]+|~[\\/]|/|(?:(?!https?:)[A-Za-z][A-Za-z0-9+.-]*:(?:\/\/)?))',
+    iconDataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAGwElEQVR4nO2Y6XMURRyG418BISEHlwrqB0EuhYicIpcSuRQBlfsQiIAgyGEU5BLxwLKQW0RQIAgEQvIFvhiIgQgm5M7m3uy9yW4Odvq1eqZ7pncys7vBKlNWpaueKmqmE573rV/3VCUqqmt1ra71/1/+rO7xvszoTF9WdKs/MwY+yo1YNMn0RGOGgjcjDt7rcfBcj4fnWjzc1+J97mvxt9zp8bM7N0BmdKY/qwdU+UwuH4tGNYAiHxwgAe70BLjSE+BMTzgMRD3RKQF8tPmsGHSwfTkAlXelJ8J1NRHOqwlbOyWA36z9jMjapwGcVxPhuNKL2K8kTu+EADGh278eSfuUXnBcSfQ60nsP+G8DZJq3742wfUWe0ht2yuXesF3uA9vvlL5ooFzqC+ulfrCm9UN92pMydRcpT6GWcuFp1FDO95eppvw2AFWUX59BpUKr5eyzN0rP9o9TA1D55ntz0OYvQZvkRWvAi5ZHHrS0edDc5oa/1Q1fiwu+Zheaml1o9DvR6HPC2+SAp8kBd6Mdbq8dLq8NTe58EMd5wHYGsJ0GGk4BDScA63HAehSoPwzU/QDUHQJqvwWpOQhSfQCkah9I5W4Qy06QilSQ8m0gZVtASjeClKwHKVoLUrgKUsFS+HPmoDZtyM2gAG0tFkW8zaMKU1GvzwFPI5Wzw+m2weFqgM1pRYO9HvW2OtRZa2C1lsNpzUOLLQOwnQKx7IZUuhVS6SeQSrZAKtkMqeRjSMWbIBVvhFT8EWODQtH6yGD7SfE6NOfOlbQRuvkciPcW4LoMuC6FIQ1wUi4CzguA8zxgPwdYT4BUfaWIm0pz2XWMDxUKUwTW6mDPi1K0/fRnC9dCDRCo3AtSfxyk9nuQ6kMg1d+CVH0tC5HKL0Es+0Ese0EqdoNU7AIp/xxS+WeQyj6FVLYdUuk2Xdtm0lyWy62BVLha4SHlAxPYHnn/GjWYGoDUHQOpMZPfB2LZA1LxhSCfCqlsB5Ono2IgbijNhGWpVQjIrGSsQKDABPpO3bdKDaYFqI1Avnyn0PoOoXU+KkbiwdKqsCy2HIGCZYylCvmcJQz2XIbvXc5YIQTokLxR63xUdOJm0qrkYsaiCOH7l8ihhADfdUxennV960biemlReCECf1PeF3jPBHHPQuVn8xcJAaq+Aak6aCKfGmJkWOvyjFPx1TpxselFOmEq9i5jAQIPwqDu1UIJAaj8gQjlN4VofaWBuIG0KjYfgQfzdLyjQ3w3n0EDLRACUPnK/QZjE4k8a12e8WUG4qI0FxBE789lvB0Gtk8IJgQQ73lh5kX5Yr28UeviqOjFmXSQ7FuMOTLSX5TZAsoz/l7brwTSAtDRYR+p9gdW33xKe3n1gAqtm4orwprkLMbMEMwSUILR3yEE2KN9pMpSdbdNqOb5yOhbNxbXGubCMyDlUd7UkWzwbIayXwilBWh3aMWrMhJ5fet6cTPpZEh50wXegHRPII/D3ycL4WaIAXYZzD27Kos2aAc2rDxvXWxcFBeluejrjGlh4Pu0QFqAdqPDDy2/56n8ahN5flDnIXCfy4ujohNXpanUVIW7UxiTDeDvprD9WiA1gHZl6ueef6T4Vbk8hPxcnfxMNiom4qrwJMZrYZgUHOreVCGAPDrbdaMjzj2/55cGH1hDeTYyauuiuCjNxHInQsp9VWCCDv6c7psYFEYIsCPE6NC55x+pxRHI85HhrYuNT9JJT2CMh/QnZZwJ45U9ukBagKCDy24ddXRWmowOv23M5Fnr6qjoxbnwWMYYxmiBMQJjtUAsjBBA375wZQaNTkfk9a0biY+BlDMaUs4rjFEmsPdqKCWMECBU+6FGh9/xM83l1db14qLwy5BykkDucEYK/06S3yl7eBgliBZAvXkM2s83aD+k/DQTebFxRZqospQRIHdeMmAEQwklBhECbNZunrDtG41OsnZgg+QnsMNJ5fmo0P88KVj69ouM4Saw92qgkXIQIQAfH+HmMZz9SEZnMqRcPvN6ed66KD4c5PYwkNtDQbIpQ4Khz2WGaWHkICP1AbTxCf5ohWhf/lDp5O+Gkmeti+LZXHYwSPYLJgwWwrAgd0YIfxeiZ8B0fELNPv9QGY3OOOGwcnneOm98MBMcBPLHQMbzAvzZoHZBHmWP0gI0ZAzxBOQzkGJwePU3TwTth5NXGx9kIB2KgfLPPcpOon/kdasBrBfihteei7ZX/dINj0PlmW6w/NwdltPdUfFTNMpPRaPsZA+UnohByfEYFB+LRdHRWBQe6YmHP/ZEweG4f0XhkUR70ck+Q9UAXatrda2u1bWiHnP9Aw5IwHNzYU21AAAAAElFTkSuQmCC',
+    fallbackOnly: false,
+    comment: 'Standard-Favicon Ordnerpfade'
   },
   {
     id: 'preset-http',
@@ -12760,6 +13214,8 @@ function getDefaultFaviconRules() {
             'css.visual.pickerActive': 'Element picker active: Click an element in content',
             'css.visual.picked': 'Picked',
             'css.visual.applyPreset': 'Apply preset…',
+            'css.visual.selectFont': '-- Select font --',
+            'css.visual.fontPreviewText': 'The quick brown fox jumps over the lazy dog.',
             'css.visual.presetApplied': 'Preset applied',
             'css.visual.rule': 'Rule',
             'css.visual.doubleClickToEdit': 'Double-click to edit',
@@ -12834,7 +13290,7 @@ function getDefaultFaviconRules() {
             'css.templates.cannotDeleteDefault': 'Default templates cannot be deleted',
             'options.colors.add': 'Add Color',
             'options.links': 'Links',
-            'options.sharing': 'Sharing',
+            'options.sharing': 'NTFY-Sharing',
             'options.sync': 'Synchronization',
             // Role badges
             'sync.role.all': 'All',
@@ -13305,10 +13761,19 @@ function getDefaultFaviconRules() {
             , 'export.groups': 'Groups'
             , 'export.selectAll': 'Select All'
             , 'export.deselectAll': 'Deselect All'
+            , 'export.filename': 'Filename'
+            , 'export.filenameHelp': 'The file extension is added automatically based on the selected format.'
             , 'export.format': 'Export Format:'
             , 'export.selected': 'links selected'
             , 'export.export': 'Export'
             , 'export.cancel': 'Cancel'
+            , 'export.saveDescription.json': 'Bookmarks Export (JSON)'
+            , 'export.saveDescription.json-array': 'Bookmarks Export (JSON Array)'
+            , 'export.saveDescription.csv': 'Bookmarks Export (CSV)'
+            , 'export.saveDescription.html': 'Bookmarks Export (HTML Bookmarks)'
+            , 'export.chooseLocation': 'Choose Location…'
+            , 'export.saveUnsupported': 'Save dialog is not supported in this browser. The file will be downloaded automatically.'
+            , 'export.saveFailed': 'Save dialog could not be opened.'
             // Invitation dialog translations
             , 'invitation.groupTitle': 'Shared Group Invitation'
             , 'invitation.linkTitle': 'Shared Links Received'
@@ -13701,7 +14166,7 @@ function getDefaultFaviconRules() {
             'css.templates.cannotDeleteDefault': 'Standard-Vorlagen können nicht gelöscht werden',
             'options.colors.add': 'Farbe hinzufügen',
             'options.links': 'Links',
-            'options.sharing': 'Teilen',
+            'options.sharing': 'NTFY-Teilen',
             'options.sharing.ntfyServerUrl': 'ntfy Server URL',
             'options.sharing.ntfyServerUrl.help': 'URL des ntfy Push-Benachrichtigungsservers',
             'options.sharing.ntfyAuthToken': 'Authentifizierungs-Token',
@@ -13978,10 +14443,19 @@ function getDefaultFaviconRules() {
             'export.groups': 'Gruppen',
             'export.selectAll': 'Alle auswählen',
             'export.deselectAll': 'Alle abwählen',
+            'export.filename': 'Dateiname',
+            'export.filenameHelp': 'Die Dateiendung wird automatisch basierend auf dem ausgewählten Format ergänzt.',
             'export.format': 'Export-Format:',
             'export.selected': 'Links ausgewählt',
             'export.export': 'Exportieren',
             'export.cancel': 'Abbrechen',
+            'export.saveDescription.json': 'Lesezeichen-Export (JSON)',
+            'export.saveDescription.json-array': 'Lesezeichen-Export (JSON-Array)',
+            'export.saveDescription.csv': 'Lesezeichen-Export (CSV)',
+            'export.saveDescription.html': 'Lesezeichen-Export (HTML-Lesezeichen)',
+            'export.chooseLocation': 'Speicherort wählen…',
+            'export.saveUnsupported': 'Der Speicherdialog wird von diesem Browser nicht unterstützt. Die Datei wird automatisch heruntergeladen.',
+            'export.saveFailed': 'Der Speicherdialog konnte nicht geöffnet werden.',
             'members.title': 'Mitglieder',
             'members.filter.allow': 'erlaubt',
             'members.filter.deny': 'blockiert',
@@ -14340,6 +14814,8 @@ function getDefaultFaviconRules() {
             , 'css.visual.pickerActive': 'Element-Picker aktiv: Klicke ein Element im Inhalt'
             , 'css.visual.picked': 'Ausgewählt'
             , 'css.visual.applyPreset': 'Preset anwenden…'
+            , 'css.visual.selectFont': '-- Schrift wählen --'
+            , 'css.visual.fontPreviewText': 'Zwölf Boxkämpfer jagen Viktor quer über den großen Sylter Deich.'
             , 'css.visual.presetApplied': 'Preset angewendet'
             , 'css.visual.addRule': 'Neue CSS Regel hinzufügen'
             , 'css.visual.deleteRule': 'Regel löschen'
@@ -15383,6 +15859,29 @@ function getDefaultFaviconRules() {
             'border-radius': '0.375rem'
           }}
         ],
+        availableFontFamilies: [
+          { label: 'System UI', value: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' },
+          { label: 'Segoe UI', value: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif' },
+          { label: 'Roboto', value: '"Roboto", "Helvetica Neue", Arial, sans-serif' },
+          { label: 'Open Sans', value: '"Open Sans", "Helvetica Neue", Arial, sans-serif' },
+          { label: 'Arial', value: 'Arial, Helvetica, sans-serif' },
+          { label: 'Helvetica Neue', value: '"Helvetica Neue", Helvetica, Arial, sans-serif' },
+          { label: 'Montserrat', value: '"Montserrat", "Helvetica Neue", Arial, sans-serif' },
+          { label: 'Nunito', value: '"Nunito", "Helvetica Neue", Arial, sans-serif' },
+          { label: 'Poppins', value: '"Poppins", "Helvetica Neue", Arial, sans-serif' },
+          { label: 'Inter', value: '"Inter", "Helvetica Neue", Arial, sans-serif' },
+          { label: 'Lato', value: '"Lato", "Helvetica Neue", Arial, sans-serif' },
+          { label: 'Source Sans Pro', value: '"Source Sans Pro", "Helvetica Neue", Arial, sans-serif' },
+          { label: 'Georgia', value: 'Georgia, "Times New Roman", Times, serif' },
+          { label: 'Times New Roman', value: '"Times New Roman", Times, serif' },
+          { label: 'Merriweather', value: '"Merriweather", "Times New Roman", serif' },
+          { label: 'Playfair Display', value: '"Playfair Display", "Times New Roman", serif' },
+          { label: 'Courier New', value: '"Courier New", Courier, monospace' },
+          { label: 'Fira Code', value: '"Fira Code", "Courier New", monospace' },
+          { label: 'Menlo', value: 'Menlo, Monaco, "Courier New", monospace' },
+          { label: 'Comic Sans MS', value: '"Comic Sans MS", "Comic Sans", cursive, sans-serif' },
+          { label: 'Caveat', value: '"Caveat", "Bradley Hand", cursive' }
+        ],
         cssHookClasses: [
           'body',
           '#app.container-fluid.mb-app',
@@ -15581,8 +16080,15 @@ function getDefaultFaviconRules() {
         importCollapsedGroups: {}, // Track which groups are collapsed in import preview
         exportSelection: [],
         exportFormat: 'json',
+        exportFilename: '',
+        exportFilenameTouched: false,
+        exportFileHandle: null,
         
         prevIdentityName: '',
+        activeOptionSection: '',
+        optionsIntersectionObserver: null,
+        optionsScrollContainer: null,
+        optionsScrollHandler: null,
         // NC Folder Picker state
         ncFolders: [],
         ncFoldersLoading: false,
@@ -15906,7 +16412,43 @@ function getDefaultFaviconRules() {
               ntfyAuthToken: { id: 'SharingNtfyToken', type: 'text', translateKey: 'options.sharing.ntfyAuthToken', optionPath: 'sharing.ntfyAuthToken', helpText: 'options.sharing.ntfyAuthToken.help' },
               defaultTtl: { id: 'SharingDefaultTtl', type: 'number', translateKey: 'options.sharing.defaultTtl', optionPath: 'sharing.defaultTtl', helpText: 'options.sharing.defaultTtl.help' },
               quickCodeTtlSec: { id: 'SharingQuickCodeTtl', type: 'number', translateKey: 'options.sharing.quickCodeTtl', optionPath: 'sharing.quickCodeTtlSec', helpText: 'options.sharing.quickCodeTtl.help' },
-              contactOnlineTimeoutSeconds: { id: 'SharingContactOnlineTimeout', type: 'number', translateKey: 'options.sharing.contactOnlineTimeout', optionPath: 'sharing.contactOnlineTimeoutSeconds', helpText: 'options.sharing.contactOnlineTimeout.help' }
+              contactOnlineTimeoutSeconds: { id: 'SharingContactOnlineTimeout', type: 'number', translateKey: 'options.sharing.contactOnlineTimeout', optionPath: 'sharing.contactOnlineTimeoutSeconds', helpText: 'options.sharing.contactOnlineTimeout.help' },
+              conflictNotificationLevel: { 
+                id: 'SharingConflictNotifications', 
+                type: 'select', 
+                translateKey: 'options.sync.conflictNotificationLevel', 
+                optionPath: 'sync.conflictNotificationLevel',
+                helpText: 'options.sync.conflictNotificationLevel.help',
+                values: {
+                  'silent': 'options.sync.conflictNotificationLevel.silent',
+                  'minimal': 'options.sync.conflictNotificationLevel.minimal',
+                  'verbose': 'options.sync.conflictNotificationLevel.verbose'
+                }
+              },
+              conflictResolution: {
+                id: 'SharingConflictResolution',
+                type: 'select',
+                translateKey: 'options.sync.conflictResolution',
+                optionPath: 'sync.conflictResolution',
+                helpText: 'options.sync.conflictResolution.help',
+                roleScope: 'owner',
+                values: {
+                  'owner-wins': 'options.sync.conflictResolution.ownerWins',
+                  'last-write-wins': 'options.sync.conflictResolution.lastWriteWins',
+                  'manual': 'options.sync.conflictResolution.manual'
+                }
+              },
+              memberRateLimit: {
+                id: 'SharingMemberRateLimit',
+                type: 'number',
+                translateKey: 'options.sync.memberRateLimit',
+                optionPath: 'sync.memberRateLimit',
+                helpText: 'options.sync.memberRateLimit.help',
+                roleScope: 'owner',
+                min: 0,
+                max: 100,
+                suffix: 'options.sync.memberRateLimit.suffix'
+              }
             }
           },
           security: {
@@ -15938,50 +16480,6 @@ function getDefaultFaviconRules() {
                 type: 'encryption',
                 translateKey: 'options.security.encryption',
                 helpText: 'options.security.encryption.help'
-              }
-            }
-          },
-          sync: {
-            translateKey: 'options.sync',
-            fields: {
-              // Settings for all users (Owner & Member)
-              conflictNotificationLevel: { 
-                id: 'SyncConflictNotifications', 
-                type: 'select', 
-                translateKey: 'options.sync.conflictNotificationLevel', 
-                optionPath: 'sync.conflictNotificationLevel',
-                helpText: 'options.sync.conflictNotificationLevel.help',
-                roleScope: 'all', // For everyone
-                values: {
-                  'silent': 'options.sync.conflictNotificationLevel.silent',
-                  'minimal': 'options.sync.conflictNotificationLevel.minimal',
-                  'verbose': 'options.sync.conflictNotificationLevel.verbose'
-                }
-              },
-              // Settings only for Owners
-              conflictResolution: {
-                id: 'SyncConflictResolution',
-                type: 'select',
-                translateKey: 'options.sync.conflictResolution',
-                optionPath: 'sync.conflictResolution',
-                helpText: 'options.sync.conflictResolution.help',
-                roleScope: 'owner', // Only for group owners
-                values: {
-                  'owner-wins': 'options.sync.conflictResolution.ownerWins',
-                  'last-write-wins': 'options.sync.conflictResolution.lastWriteWins',
-                  'manual': 'options.sync.conflictResolution.manual'
-                }
-              },
-              memberRateLimit: {
-                id: 'SyncMemberRateLimit',
-                type: 'number',
-                translateKey: 'options.sync.memberRateLimit',
-                optionPath: 'sync.memberRateLimit',
-                helpText: 'options.sync.memberRateLimit.help',
-                roleScope: 'owner',
-                min: 0,
-                max: 100,
-                suffix: 'options.sync.memberRateLimit.suffix'
               }
             }
           },
@@ -16197,6 +16695,18 @@ function getDefaultFaviconRules() {
             this._savedCollapsedStates = null;
           }
         },
+        genericFilterText() {
+          if (this.genericEditConfig?.type !== 'options') return;
+          this.$nextTick(() => {
+            const keys = this.getGenericSectionKeys();
+            if (!keys.length) {
+              this.activeOptionSection = '';
+            } else if (!keys.includes(this.activeOptionSection)) {
+              this.activeOptionSection = keys[0];
+            }
+            this.setupOptionsSectionObserver();
+          });
+        },
         'encryption.setup.password'(value) {
           this.updateEncryptionStrength('setup', value || '');
           if (this.encryption.setup.error) this.encryption.setup.error = '';
@@ -16343,7 +16853,9 @@ function getDefaultFaviconRules() {
             }
             
             if (section === 'sharing') {
-              return this.settingsMatchesFilter(this.optionsDesign.sharing.ntfyServerUrl.translateKey, this.optionsDesign.sharing.ntfyServerUrl.helpText) ||
+              return this.settingsMatchesFilter(this.optionsDesign.sharing.identityName.translateKey, this.optionsDesign.sharing.identityName.helpText) ||
+                     this.settingsMatchesFilter(this.optionsDesign.sharing.conflictNotificationLevel.translateKey, this.optionsDesign.sharing.conflictNotificationLevel.helpText) ||
+                     this.settingsMatchesFilter(this.optionsDesign.sharing.ntfyServerUrl.translateKey, this.optionsDesign.sharing.ntfyServerUrl.helpText) ||
                      this.settingsMatchesFilter(this.optionsDesign.sharing.ntfyAuthToken.translateKey, this.optionsDesign.sharing.ntfyAuthToken.helpText) ||
                      this.settingsMatchesFilter(this.optionsDesign.sharing.defaultTtl.translateKey, this.optionsDesign.sharing.defaultTtl.helpText) ||
                      this.settingsMatchesFilter(this.optionsDesign.sharing.quickCodeTtlSec.translateKey, this.optionsDesign.sharing.quickCodeTtlSec.helpText);
@@ -17353,6 +17865,14 @@ function getDefaultFaviconRules() {
         }
       },
       isFieldDisabled(sectionKey, fieldKey) {
+        const section = this.optionsDesign?.[sectionKey];
+        const field = section?.fields?.[fieldKey];
+        if (field?.roleScope === 'owner' && !this.isOwnerOfAnyGroup()) {
+          return true;
+        }
+        if (field?.roleScope === 'member' && !this.isMemberOfAnyGroup()) {
+          return true;
+        }
         const backend = this.data.options?.sync?.backend || '';
         if (sectionKey === 'carddav') return backend !== 'carddav';
         if (sectionKey === 'bookmarks') return backend !== 'nc-bookmarks';
@@ -19232,6 +19752,7 @@ function getDefaultFaviconRules() {
             'background': 'Background',
             'background-color': 'Background Color',
             'color': 'Text Color',
+            'font-family': 'Font Family',
             'font-size': 'Font Size',
             'font-weight': 'Font Weight',
             'border': 'Border',
@@ -19259,9 +19780,12 @@ function getDefaultFaviconRules() {
 
         validateProperty(rule, property) {
           // Validate CSS property value and persist
-          const value = rule.properties[property];
-          if (!value || value.trim() === '') {
-            delete rule.properties[property];
+          if (!rule || !rule.properties || !(property in rule.properties)) return;
+          const rawValue = rule.properties[property];
+          const value = (rawValue == null) ? '' : rawValue.toString();
+          if (value.trim() === '') {
+            this.$set(rule.properties, property, '');
+            this.$forceUpdate();
             this.saveVisualCss();
             return;
           }
@@ -19313,6 +19837,56 @@ function getDefaultFaviconRules() {
           const name = this.normalizeTokenName(tokenName);
           this.$set(rule.properties, prop, `var(--${name})`);
           this.saveVisualCss();
+        },
+
+        sanitizeFontFamilyValue(raw) {
+          if (!raw) return '';
+          if (typeof raw !== 'string') raw = String(raw);
+          const trimmed = raw.trim();
+          if (!trimmed) return '';
+          if (/^var\(/i.test(trimmed) || /^inherit$/i.test(trimmed) || /^initial$/i.test(trimmed) || /^unset$/i.test(trimmed)) {
+            return trimmed;
+          }
+          const parts = trimmed.split(',');
+          const sanitizedParts = parts
+            .map(part => {
+              let p = part.trim();
+              if (!p) return '';
+              if (/^var\(/i.test(p) || /^inherit$/i.test(p) || /^initial$/i.test(p) || /^unset$/i.test(p)) return p;
+              if (p.startsWith('"') || p.startsWith("'")) return p;
+              if (/\s/.test(p)) {
+                const escaped = p.replace(/"/g, '\\"');
+                return `"${escaped}"`;
+              }
+              return p;
+            })
+            .filter(Boolean);
+          if (!sanitizedParts.length) return '';
+          return sanitizedParts.join(', ');
+        },
+
+        onFontFamilyInput(rule, prop) {
+          if (!rule || !prop) return;
+          const value = (rule.properties?.[prop] ?? '').toString();
+          this.$set(rule.properties, prop, value);
+          this.saveVisualCss();
+        },
+
+        onFontFamilyBlur(rule, prop) {
+          if (!rule || !prop) return;
+          const sanitized = this.sanitizeFontFamilyValue(rule.properties?.[prop] ?? '');
+          this.$set(rule.properties, prop, sanitized);
+          this.validateProperty(rule, prop);
+        },
+
+        onFontFamilySelect(rule, event) {
+          if (!rule) return;
+          const value = event?.target?.value || '';
+          if (!value) return;
+          const sanitized = this.sanitizeFontFamilyValue(value);
+          this.$set(rule.properties, 'font-family', sanitized);
+          this.saveVisualCss();
+          this.validateProperty(rule, 'font-family');
         },
 
         removeProperty(rule, property) {
@@ -20107,15 +20681,35 @@ function getDefaultFaviconRules() {
               // Viele Selektoren sind nicht im Dropdown verfügbar, funktionieren aber trotzdem
 
               // Body & Main Container
-              {
-                id: Date.now() + 1,
-                enabled: true,
-                selector: 'body',
-                groupId: null,
-                linkId: null,
-                properties: {
-                  'background-color': '#1a1a1a',
-                  'color': '#e0e0e0'
+          {
+            id: Date.now() + 1,
+            enabled: true,
+            selector: 'body',
+            groupId: null,
+            linkId: null,
+            properties: {
+              'background-color': '#1a1a1a',
+              'color': '#e0e0e0',
+              '--mb-options-section-bg': 'rgba(17, 24, 39, 0.88)',
+              '--mb-options-section-border': 'rgba(148, 163, 184, 0.35)',
+              '--mb-options-section-shadow': '0 22px 55px rgba(2, 6, 23, 0.6)',
+              '--mb-options-section-header-bg': 'rgba(30, 41, 59, 0.65)',
+              '--mb-options-section-header-hover-bg': 'rgba(59, 130, 246, 0.18)',
+              '--mb-options-filter-bg': '#252525',
+              '--mb-options-filter-border': 'rgba(148, 163, 184, 0.35)',
+              '--mb-options-filter-container-bg': '#232323',
+              '--mb-options-sidebar-link-color': 'rgba(226, 232, 240, 0.92)',
+                  '--mb-options-sidebar-hover-bg': 'rgba(148, 163, 184, 0.18)',
+                  '--mb-options-sidebar-hover-color': '#f8fafc',
+                  '--mb-options-sidebar-active-bg': 'rgba(59, 130, 246, 0.85)',
+                  '--mb-options-sidebar-active-color': '#ffffff',
+                  '--mb-options-shortcut-bg': 'rgba(15, 23, 42, 0.9)',
+                  '--mb-options-shortcut-border': 'rgba(148, 163, 184, 0.35)',
+                  '--mb-options-shortcut-shadow': '0 18px 45px rgba(2, 6, 23, 0.55)',
+                  '--mb-options-shortcut-text-color': '#e2e8f0',
+                  '--mb-options-shortcut-key-bg': 'rgba(148, 163, 184, 0.14)',
+                  '--mb-options-shortcut-key-color': '#e2e8f0',
+                  '--mb-options-shortcut-key-border': 'rgba(148, 163, 184, 0.4)'
                 }
               },
               {
@@ -20161,6 +20755,17 @@ function getDefaultFaviconRules() {
                 properties: {
                   'background-color': '#252525',
                   'border-bottom': '1px solid #333'
+                }
+              },
+              {
+                id: Date.now() + 5_9,
+                enabled: true,
+                selector: '.options-filter-sticky',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background': 'rgba(15, 23, 42, 0.9)',
+                  'border-bottom': '1px solid rgba(148, 163, 184, 0.35)'
                 }
               },
               {
@@ -22370,6 +22975,42 @@ footer a:hover {
               }
             ],
             'minimal': [
+              {
+                id: Date.now() + 0.5,
+                enabled: true,
+                selector: 'body',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  '--mb-options-section-bg': '#ffffff',
+                  '--mb-options-section-border': 'rgba(221, 226, 232, 0.9)',
+                  '--mb-options-section-shadow': '0 12px 32px rgba(15, 23, 42, 0.05)',
+                  '--mb-options-section-header-bg': 'rgba(248, 249, 250, 0.9)',
+                  '--mb-options-section-header-hover-bg': 'rgba(206, 212, 218, 0.32)',
+                  '--mb-options-filter-bg': 'rgba(255, 255, 255, 0.95)',
+                  '--mb-options-filter-border': 'rgba(221, 226, 232, 0.75)',
+                  '--mb-options-filter-container-bg': 'rgba(248, 249, 250, 0.6)',
+                  '--mb-options-sidebar-link-color': '#334155',
+                  '--mb-options-sidebar-hover-bg': 'rgba(13, 110, 253, 0.1)',
+                  '--mb-options-sidebar-hover-color': '#0d6efd',
+                  '--mb-options-sidebar-active-bg': '#0d6efd',
+                  '--mb-options-sidebar-active-color': '#ffffff',
+                  '--mb-options-shortcut-bg': '#ffffff',
+                  '--mb-options-shortcut-border': 'rgba(221, 226, 232, 0.9)',
+                  '--mb-options-shortcut-shadow': '0 10px 28px rgba(15, 23, 42, 0.06)',
+                  '--mb-options-shortcut-text-color': '#334155',
+                  '--mb-options-shortcut-key-bg': 'rgba(15, 23, 42, 0.05)',
+                  '--mb-options-shortcut-key-color': '#1f2937',
+                  '--mb-options-shortcut-key-border': 'rgba(15, 23, 42, 0.12)',
+                  '--mb-options-card-bg': '#ffffff',
+                  '--mb-options-card-border': 'rgba(221, 226, 232, 0.9)',
+                  '--mb-options-card-shadow': '0 12px 28px rgba(15, 23, 42, 0.08)',
+                  '--mb-options-card-body-bg': '#ffffff',
+                  '--mb-options-card-body-border': 'rgba(221, 226, 232, 0.6)',
+                  '--mb-options-card-radius': '16px',
+                  '--mb-options-card-body-radius': '12px'
+                }
+              },
               // Groups kompakt
               {
                 id: Date.now() + 1,
@@ -22609,7 +23250,33 @@ footer a:hover {
                 properties: {
                   'background': 'linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%)',
                   'min-height': '100vh',
-                  'position': 'relative'
+                  'position': 'relative',
+                  '--mb-options-section-bg': 'rgba(255, 255, 255, 0.92)',
+                  '--mb-options-section-border': 'rgba(255, 255, 255, 0.65)',
+                  '--mb-options-section-shadow': '0 14px 40px rgba(47, 72, 88, 0.18)',
+                  '--mb-options-section-header-bg': 'linear-gradient(135deg, rgba(161, 196, 253, 0.35) 0%, rgba(194, 233, 251, 0.35) 100%)',
+                  '--mb-options-section-header-hover-bg': 'rgba(102, 126, 234, 0.2)',
+                  '--mb-options-filter-bg': 'rgba(255, 255, 255, 0.82)',
+                  '--mb-options-filter-border': 'rgba(255, 255, 255, 0.65)',
+                  '--mb-options-sidebar-link-color': 'rgba(45, 53, 97, 0.9)',
+                  '--mb-options-sidebar-hover-bg': 'rgba(102, 126, 234, 0.18)',
+                  '--mb-options-sidebar-hover-color': '#4453a6',
+                  '--mb-options-sidebar-active-bg': 'rgba(102, 126, 234, 0.85)',
+                  '--mb-options-sidebar-active-color': '#ffffff',
+                  '--mb-options-shortcut-bg': 'rgba(255, 255, 255, 0.9)',
+                  '--mb-options-shortcut-border': 'rgba(255, 255, 255, 0.65)',
+                  '--mb-options-shortcut-shadow': '0 16px 44px rgba(47, 72, 88, 0.2)',
+                  '--mb-options-shortcut-text-color': 'rgba(45, 53, 97, 0.9)',
+                  '--mb-options-shortcut-key-bg': 'rgba(102, 126, 234, 0.14)',
+                  '--mb-options-shortcut-key-color': '#2d3561',
+                  '--mb-options-shortcut-key-border': 'rgba(102, 126, 234, 0.28)',
+                  '--mb-options-card-bg': 'rgba(255, 255, 255, 0.9)',
+                  '--mb-options-card-border': 'rgba(255, 255, 255, 0.65)',
+                  '--mb-options-card-shadow': '0 16px 40px rgba(47, 72, 88, 0.22)',
+                  '--mb-options-card-body-bg': 'rgba(255, 255, 255, 0.98)',
+                  '--mb-options-card-body-border': 'rgba(102, 126, 234, 0.18)',
+                  '--mb-options-card-radius': '20px',
+                  '--mb-options-card-body-radius': '16px'
                 }
               },
               {
@@ -28378,7 +29045,10 @@ footer a:hover {
               original: link
             }))
           }));
-          
+
+          this.exportFilename = this.getDefaultExportFilename(this.exportFormat);
+          this.exportFilenameTouched = false;
+
           // Open export dialog
           const modalElement = document.getElementById('exportModal');
           if (!modalElement) return;
@@ -28427,6 +29097,124 @@ footer a:hover {
           });
           return count;
         },
+        async openExportSaveDialog() {
+          if (!window.showSaveFilePicker) {
+            alert(this.getTranslation('export.saveUnsupported') || 'Save dialog is not supported in this browser. The file will be downloaded automatically.');
+            return;
+          }
+          try {
+            const filename = this.ensureExportFilename(this.exportFilename, this.exportFormat, this.getDefaultExportFilename(this.exportFormat));
+            const baseMime = this.getMimeTypeForExport(this.exportFormat);
+            const pickerOpts = {
+              suggestedName: filename,
+              types: [
+                {
+                  description: this.getTranslation('export.saveDescription.' + this.exportFormat) || 'Bookmarks Export',
+                  accept: { [baseMime]: ['.' + this.getExportExtension(this.exportFormat)] }
+                }
+              ]
+            };
+            const handle = await window.showSaveFilePicker(pickerOpts);
+            this.exportFileHandle = handle;
+            this.exportFilename = this.ensureExportFilename(handle.name || filename, this.exportFormat, filename);
+            this.exportFilenameTouched = true;
+          } catch (error) {
+            if (error && error.name === 'AbortError') {
+              return;
+            }
+            debugLog('warn', 'openExportSaveDialog failed', error);
+            alert(this.getTranslation('export.saveFailed') || 'Save dialog could not be opened.');
+          }
+        },
+        onExportFormatChange() {
+          const defaultName = this.getDefaultExportFilename(this.exportFormat);
+          if (!this.exportFilenameTouched) {
+            this.exportFilename = defaultName;
+          } else {
+            this.exportFilename = this.ensureExportFilename(this.exportFilename, this.exportFormat, defaultName);
+          }
+          this.exportFileHandle = null;
+        },
+        onExportFilenameInput() {
+          this.exportFilenameTouched = true;
+          this.exportFileHandle = null;
+        },
+        onExportFilenameBlur() {
+          if (!this.exportFilenameTouched && !this.exportFilename) {
+            return;
+          }
+          this.exportFilename = this.ensureExportFilename(this.exportFilename, this.exportFormat, this.getDefaultExportFilename(this.exportFormat));
+        },
+        resetExportFilename() {
+          this.exportFilename = this.getDefaultExportFilename(this.exportFormat);
+          this.exportFilenameTouched = false;
+           this.exportFileHandle = null;
+        },
+        getExportExtension(format) {
+          switch (format) {
+            case 'json':
+              return 'json';
+            case 'json-array':
+              return 'json';
+            case 'csv':
+              return 'csv';
+            case 'html':
+              return 'html';
+            default:
+              return 'txt';
+          }
+        },
+        getDefaultExportFilename(format, dateStr) {
+          const datePart = dateStr || new Date().toISOString().slice(0, 10);
+          switch (format) {
+            case 'json':
+              return `bookmarks-export-${datePart}.json`;
+            case 'json-array':
+              return `bookmarks-links-${datePart}.json`;
+            case 'csv':
+              return `bookmarks-${datePart}.csv`;
+            case 'html':
+              return `bookmarks-${datePart}.html`;
+            default:
+              return `bookmarks-export-${datePart}.txt`;
+          }
+        },
+        getMimeTypeForExport(format) {
+          switch (format) {
+            case 'json':
+            case 'json-array':
+              return 'application/json';
+            case 'csv':
+              return 'text/csv';
+            case 'html':
+              return 'text/html';
+            default:
+              return 'application/octet-stream';
+          }
+        },
+        sanitizeExportFilename(name) {
+          if (!name) return '';
+          let sanitized = String(name)
+            .replace(/[\\/:*?"<>|]/g, '_')
+            .replace(/\s+/g, ' ')
+            .trim();
+          sanitized = sanitized.replace(/\.+$/, ''); // remove trailing dots
+          return sanitized;
+        },
+        ensureExportFilename(name, format, fallback) {
+          const ext = this.getExportExtension(format);
+          const fallbackName = this.sanitizeExportFilename(fallback || `export.${ext}`);
+          let sanitized = this.sanitizeExportFilename(name);
+          if (!sanitized) {
+            sanitized = fallbackName || `export.${ext}`;
+          }
+          const lowerExt = `.${ext}`;
+          if (!sanitized.toLowerCase().endsWith(lowerExt)) {
+            sanitized = sanitized.replace(/\.[^.]+$/, '');
+            sanitized = `${sanitized}.${ext}`;
+          }
+          return sanitized;
+        },
         getFullJsonPreview() {
           try {
             return JSON.stringify(this.getSavableData(), null, 2);
@@ -28438,7 +29226,7 @@ footer a:hover {
           } catch { return '{}'; }
         },
         
-        confirmExport() {
+        async confirmExport() {
           const selectedGroups = [];
           if (this.exportFormat !== 'json') {
             this.exportSelection.forEach(group => {
@@ -28457,15 +29245,13 @@ footer a:hover {
           }
           
           let content = '';
-          let filename = '';
           let mimeType = '';
           const dateStr = new Date().toISOString().slice(0, 10);
-          
+
           switch (this.exportFormat) {
             case 'json':
               // JSON (Full) exports the complete application data
               content = JSON.stringify(this.getSavableData(), null, 2);
-              filename = `bookmarks-export-${dateStr}.json`;
               mimeType = 'application/json;charset=utf-8';
               break;
               
@@ -28482,7 +29268,6 @@ footer a:hover {
                 });
               });
               content = JSON.stringify(allLinks, null, 2);
-              filename = `bookmarks-links-${dateStr}.json`;
               mimeType = 'application/json;charset=utf-8';
               break;
               
@@ -28498,7 +29283,6 @@ footer a:hover {
                 });
               });
               content = csv;
-              filename = `bookmarks-${dateStr}.csv`;
               mimeType = 'text/csv;charset=utf-8';
               break;
               
@@ -28522,14 +29306,64 @@ footer a:hover {
               });
               html += '</DL><p>\n';
               content = html;
-              filename = `bookmarks-${dateStr}.html`;
               mimeType = 'text/html;charset=utf-8';
               break;
           }
-          
-          // Download file
+
+          const defaultFilename = this.getDefaultExportFilename(this.exportFormat, dateStr);
+          const requestedName = (this.exportFilename || '').trim();
+          const filename = this.ensureExportFilename(requestedName, this.exportFormat, defaultFilename);
+          this.exportFilename = filename;
+
+          const blob = new Blob([content], { type: mimeType });
+
+          const closeModal = () => {
+            const modalElement = document.getElementById('exportModal');
+            const modalInstance = modalElement ? bootstrap.Modal.getInstance(modalElement) : null;
+            modalInstance && modalInstance.hide();
+          };
+
+          if (this.exportFileHandle) {
+            try {
+              const writable = await this.exportFileHandle.createWritable();
+              await writable.write(blob);
+              await writable.close();
+              closeModal();
+              return;
+            } catch (error) {
+              debugLog('warn', 'Writing via stored file handle failed, falling back to picker', error);
+              this.exportFileHandle = null;
+            }
+          }
+
+          if (window.showSaveFilePicker) {
+            try {
+              const baseMime = mimeType.split(';')[0];
+              const pickerOpts = {
+                suggestedName: filename,
+                types: [
+                  {
+                    description: this.getTranslation('export.saveDescription.' + this.exportFormat) || 'Bookmarks Export',
+                    accept: { [baseMime]: ['.' + this.getExportExtension(this.exportFormat)] }
+                  }
+                ]
+              };
+              const fileHandle = await window.showSaveFilePicker(pickerOpts);
+              const writable = await fileHandle.createWritable();
+              await writable.write(blob);
+              await writable.close();
+              this.exportFileHandle = fileHandle;
+              closeModal();
+              return;
+            } catch (error) {
+              if (error && error.name === 'AbortError') {
+                return; // user cancelled the save dialog
+              }
+              debugLog('warn', 'showSaveFilePicker failed, falling back to download attribute', error);
+            }
+          }
+
           try {
-            const blob = new Blob([content], { type: mimeType });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -28538,11 +29372,7 @@ footer a:hover {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            
-            // Close modal
-            const modalElement = document.getElementById('exportModal');
-            const modalInstance = modalElement ? bootstrap.Modal.getInstance(modalElement) : null;
-            modalInstance && modalInstance.hide();
+            closeModal();
           } catch (error) {
             debugLog('error', "Export failed:", error);
             alert("Export failed. See console for details.");
@@ -28706,6 +29536,7 @@ footer a:hover {
         openGenericEditDialog(type, data, design, title, saveCallback) {
           console.log('openGenericEditDialog called with type:', type);
           debugLog('log', 'openGenericEditDialog called with type:', type);
+          this.teardownOptionsSectionObserver();
           this.genericEditConfig = {
             title: title,
             type: type,
@@ -28717,7 +29548,8 @@ footer a:hover {
           this.genericEditData = JSON.parse(JSON.stringify(data));
           this.genericFilterText = '';
           this.genericExpandedSections = {};
-          
+          this.activeOptionSection = '';
+
           debugLog('log', 'Looking for modal element: genericEditModal');
           console.log('Looking for modal element: genericEditModal');
           // Open the modal
@@ -28741,6 +29573,21 @@ footer a:hover {
                 const firstFocusable = modalElement.querySelector('input:not([readonly]), button:not([disabled]), select, textarea');
                 if (firstFocusable) { firstFocusable.focus(); }
               }, { once: true });
+
+              if (type === 'options') {
+                const handleHidden = () => {
+                  this.teardownOptionsSectionObserver();
+                  this.activeOptionSection = '';
+                  if (!this.genericFilterText) this.genericFilterText = '';
+                  modalElement.removeEventListener('hidden.bs.modal', handleHidden);
+                };
+                modalElement.addEventListener('hidden.bs.modal', handleHidden, { once: true });
+                this.$nextTick(() => {
+                  const keys = this.getGenericSectionKeys();
+                  this.activeOptionSection = keys[0] || '';
+                  this.setupOptionsSectionObserver();
+                });
+              }
               
               debugLog('log', 'Modal show called');
               console.log('Modal show() called successfully');
@@ -29037,6 +29884,87 @@ footer a:hover {
           
           return filtered;
         },
+        getGenericSectionKeys() {
+          if (this.genericEditConfig?.type !== 'options') return [];
+          return Object.keys(this.getFilteredGenericSettings());
+        },
+        scrollToOptionSection(sectionKey) {
+          if (!sectionKey) return;
+          if (this.genericExpandedSections?.[sectionKey] === false) {
+            this.$set(this.genericExpandedSections, sectionKey, true);
+          }
+          this.activeOptionSection = sectionKey;
+          this.$nextTick(() => {
+            const container = this.optionsScrollContainer || document.querySelector('#genericEditModal .modal-body');
+            const target = container ? container.querySelector(`#options-section-${sectionKey}`) : document.getElementById(`options-section-${sectionKey}`);
+            if (!target) return;
+            if (container && typeof container.scrollBy === 'function') {
+              const containerRect = container.getBoundingClientRect();
+              const targetRect = target.getBoundingClientRect();
+              const offset = targetRect.top - containerRect.top - 16;
+              container.scrollBy({ top: offset, behavior: 'smooth' });
+            } else {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          });
+        },
+        setupOptionsSectionObserver() {
+          this.teardownOptionsSectionObserver();
+          if (this.genericEditConfig?.type !== 'options') return;
+          const modal = document.getElementById('genericEditModal');
+          if (!modal) return;
+          const container = modal.querySelector('.modal-body');
+          if (!container) return;
+          this.optionsScrollContainer = container;
+          const sections = container.querySelectorAll('[data-section-key]');
+          if (!sections.length) return;
+          const observer = new IntersectionObserver((entries) => {
+            const visible = entries
+              .filter(entry => entry.isIntersecting)
+              .sort((a, b) => a.target.offsetTop - b.target.offsetTop);
+            if (visible.length > 0) {
+              const key = visible[0].target.getAttribute('data-section-key');
+              if (key) this.activeOptionSection = key;
+            }
+          }, { root: container, rootMargin: '0px 0px -65% 0px', threshold: 0.1 });
+          sections.forEach(el => observer.observe(el));
+          this.optionsIntersectionObserver = observer;
+          this.optionsScrollHandler = () => this.updateActiveOptionSectionFromScroll();
+          container.addEventListener('scroll', this.optionsScrollHandler, { passive: true });
+          this.updateActiveOptionSectionFromScroll();
+        },
+        teardownOptionsSectionObserver() {
+          if (this.optionsIntersectionObserver) {
+            try { this.optionsIntersectionObserver.disconnect(); } catch { }
+            this.optionsIntersectionObserver = null;
+          }
+          if (this.optionsScrollContainer && this.optionsScrollHandler) {
+            try { this.optionsScrollContainer.removeEventListener('scroll', this.optionsScrollHandler); } catch { }
+          }
+          this.optionsScrollContainer = null;
+          this.optionsScrollHandler = null;
+        },
+        updateActiveOptionSectionFromScroll() {
+          if (this.genericEditConfig?.type !== 'options') return;
+          this.$nextTick(() => {
+            const container = this.optionsScrollContainer || document.querySelector('#genericEditModal .modal-body');
+            if (!container) return;
+            const sections = [...container.querySelectorAll('[data-section-key]')];
+            if (!sections.length) return;
+            const containerRect = container.getBoundingClientRect();
+            let closestKey = null;
+            let minDistance = Infinity;
+            sections.forEach(el => {
+              const rect = el.getBoundingClientRect();
+              const distance = Math.abs(rect.top - containerRect.top);
+              if (distance < minDistance) {
+                minDistance = distance;
+                closestKey = el.getAttribute('data-section-key');
+              }
+            });
+            if (closestKey) this.activeOptionSection = closestKey;
+          });
+        },
         
         isGenericSectionExpanded(sectionKey) {
           // Auto-expand if filtering
@@ -29071,6 +29999,7 @@ footer a:hover {
           }
           
           // Close the modal
+          this.teardownOptionsSectionObserver();
           const modalElement = document.getElementById('genericEditModal');
           if (modalElement) {
             const modalInstance = bootstrap.Modal.getInstance(modalElement);
@@ -29114,15 +30043,19 @@ footer a:hover {
           });
           this.faviconRulesTestUrl = '';
           const modalEl = document.getElementById('faviconRulesModal');
-          if (modalEl && !modalEl.dataset.refreshListenerAttached) {
-            modalEl.addEventListener('hidden.bs.modal', () => {
-              try {
-                this.onFaviconRulesClosed();
-              } catch (err) {
-                debugLog('warn', '[FaviconRules] hidden handler failed', err);
-              }
-            });
-            modalEl.dataset.refreshListenerAttached = '1';
+          if (modalEl)
+          {
+            if (!modalEl.dataset.refreshListenerAttached) {
+              modalEl.addEventListener('hidden.bs.modal', () => {
+                try {
+                  this.onFaviconRulesClosed();
+                } catch (err) {
+                  debugLog('warn', '[FaviconRules] hidden handler failed', err);
+                }
+              });
+              modalEl.dataset.refreshListenerAttached = '1';
+            }
+            modalEl.addEventListener('hidden.bs.modal', this.refreshVisibleFavicons, { once: true });
           }
           const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
           modal && modal.show();
@@ -29477,17 +30410,19 @@ footer a:hover {
             .map(r => Object.assign({}, r, { fallbackOnly: !!r.fallbackOnly }));
         },
 
-        applyFaviconRulesToLink(link, rulesOverride = null, rawInput = null, allowFallback = true) {
+        applyFaviconRulesToLink(link, rulesOverride = null, rawInput = null, allowFallback = true, allowRuleClear = true) {
           try {
             if (!link || !link.url) return false;
             const enabledRules = Array.isArray(rulesOverride) ? rulesOverride : this.getEnabledFaviconRules();
             if (!enabledRules.length) {
               if (link.faviconSource === 'rule' && (link.favicon || link.faviconRuleId)) {
-                this.$set(link, 'favicon', null);
-                this.$set(link, 'faviconError', false);
-                this.$set(link, 'faviconSource', null);
-                this.$set(link, 'faviconRuleId', null);
-                return true;
+                if (allowRuleClear) {
+                  this.$set(link, 'favicon', null);
+                  this.$set(link, 'faviconError', false);
+                  this.$set(link, 'faviconSource', null);
+                  this.$set(link, 'faviconRuleId', null);
+                  return true;
+                }
               }
               return false;
             }
@@ -29537,6 +30472,9 @@ footer a:hover {
 
             if (link.faviconSource === 'rule' && (link.favicon || link.faviconRuleId)) {
               const isFallbackRule = fallbackRuleSet.some(r => (r?.id ?? null) === (link.faviconRuleId ?? null));
+              if (!allowRuleClear) {
+                return false;
+              }
               if (!isFallbackRule || (allowFallback && !shouldTryFallback)) {
                 this.$set(link, 'favicon', null);
                 this.$set(link, 'faviconError', false);
@@ -29577,13 +30515,12 @@ footer a:hover {
                 if (!link || link.deleted || !link.url) return;
                 let localChanged = false;
                 if (primaryRules.length) {
-                  if (this.applyFaviconRulesToLink(link, primaryRules, null, false)) localChanged = true;
-                } else {
-                  // If no primary rules, ensure stale rule icons are cleared
-                  if (this.applyFaviconRulesToLink(link, [], null, false)) localChanged = true;
+                  if (this.applyFaviconRulesToLink(link, primaryRules, null, false, false)) localChanged = true;
+                } else if (!fallbackRules.length) {
+                  if (this.applyFaviconRulesToLink(link, [], null, false, false)) localChanged = true;
                 }
                 if ((!link.favicon || link.faviconSource === 'rule') && fallbackRules.length) {
-                  if (this.applyFaviconRulesToLink(link, fallbackRules, null, true)) localChanged = true;
+                  if (this.applyFaviconRulesToLink(link, fallbackRules, null, true, false)) localChanged = true;
                 }
                 if (localChanged) changed = true;
               });
@@ -33114,6 +34051,9 @@ footer a:hover {
             this.data.options.sharing.ntfyAuthToken = (this.editableOptions.sharing.ntfyAuthToken || '').trim();
             this.data.options.sharing.defaultTtl = Math.max(0, Number(this.editableOptions.sharing.defaultTtl || 0));
             this.data.options.sharing.quickCodeTtlSec = Math.max(60, Number(this.editableOptions.sharing.quickCodeTtlSec || 180));
+            this.data.options.sync.conflictNotificationLevel = this.editableOptions.sharing.conflictNotificationLevel || 'minimal';
+            this.data.options.sync.conflictResolution = this.editableOptions.sharing.conflictResolution || 'last-write-wins';
+            this.data.options.sync.memberRateLimit = Math.max(0, Number(this.editableOptions.sharing.memberRateLimit || 0));
             
             // Colors
             if (this.editableOptions.colors) {
