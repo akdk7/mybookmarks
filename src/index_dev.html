@@ -4700,7 +4700,9 @@
                   <select @change="addPropertyToRule(rule, $event)"
                           class="form-select form-select-sm">
                     <option value="">{{ getTranslation('css.visual.addProperty') || '+ Eigenschaft hinzufügen...' }}</option>
-                    <option value="custom" :disabled="rule.properties && rule.properties['custom'] !== undefined">{{ getTranslation('css.visual.customCss') || 'Custom CSS' }}</option>
+                    <optgroup :label="getTranslation('css.visual.common') || 'Common'">
+                      <option value="custom" :disabled="rule.properties && rule.properties['custom'] !== undefined">{{ getTranslation('css.visual.customCss') || 'Custom CSS' }}</option>
+                    </optgroup>
                     <optgroup :label="getTranslation('css.visual.colors') || 'Farben'">
                       <option value="background" :disabled="rule.properties && rule.properties['background'] !== undefined">{{ getTranslation('css.background') || 'Hintergrund' }}</option>
                       <option value="background-color" :disabled="rule.properties && rule.properties['background-color'] !== undefined">{{ getTranslation('css.backgroundColor') || 'Hintergrundfarbe' }}</option>
@@ -14147,6 +14149,7 @@ function getDefaultFaviconRules() {
             , 'css.visual.selectLink': '-- Select Link --'
             , 'css.visual.properties': 'CSS Properties'
             , 'css.visual.addProperty': '+ Add Property...'
+            , 'css.visual.common': 'Common'
             , 'css.visual.colors': 'Colors'
             , 'css.visual.typography': 'Typography'
             , 'css.visual.borders': 'Borders'
@@ -15064,6 +15067,7 @@ function getDefaultFaviconRules() {
             , 'css.visual.selectLink': '-- Alle Links --'
             , 'css.visual.properties': 'CSS Eigenschaften'
             , 'css.visual.addProperty': '+ Eigenschaft hinzufügen...'
+            , 'css.visual.common': 'Allgemein'
             , 'css.visual.colors': 'Farben'
             , 'css.visual.typography': 'Typografie'
             , 'css.visual.borders': 'Rahmen'
