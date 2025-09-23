@@ -8,6 +8,7 @@
 - Fiexed an issue that some link favicons being cleared when closing the Favicon rules dialog
 - New css property to select the font-family
 - Fixed a bug when a css property was added, clicked into the value field and then clicked into an empty area of the virtual css editor the property was removed
+- Improved many css properties with more human friendly controls (still in progress)
 
 
 ## Version 2025-09-22
