@@ -1,15 +1,23 @@
+## Version 2025-09-23
+
+### Improvement
+
+- Shortcut menu on settings dialog for quick access
+- Moved settings from the Synchronization section to the NTFY-sharing section
+- Export dialog got the options to define the export-to filename
+- Fiexed an issue that some link favicons being cleared when closing the Favicon rules dialog
+- New css property to select the font-family
+- Fixed a bug when a css property was added, clicked into the value field and then clicked into an empty area of the virtual css editor the property was removed
+
+
 ## Version 2025-09-22
 
 ### Improvements
 
 - Visual CSS Editor: enforced non-empty token names with inline validation, removed auto-reset defaults, and added clearer drop-zone interactions for drag & drop workflows.
-
 - Link Popover: refined positioning and hover behaviour, auto-hides during drags, and now displays a live click counter fed by new link click tracking.
-
 - Drag & Drop: matched horizontal and vertical placeholders to actual cards, widened catch areas only on hover, and ensured popovers collapse whenever dragging starts or ends.
-
 - Favicons: introduced fallback-aware rule processing, a dedicated fallback flag in the rules UI, and kept the HTTP preset as an SVG-based safety net without overwriting existing icons.
-
 - UI Polish: increased drop-zone visibility, tuned link/token editors, and tightened popover/drag visuals for a smoother, more predictable editing experience.
 
 

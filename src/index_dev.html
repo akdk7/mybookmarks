@@ -143,6 +143,12 @@
       row-gap: 0.4rem;
     }
 
+    .length-unit-select {
+      width: 82px;
+      min-width: 72px;
+      max-width: 96px;
+    }
+
     .font-family-preview {
       background-color: rgba(15, 23, 42, 0.04);
       border-color: rgba(148, 163, 184, 0.35) !important;
@@ -154,6 +160,29 @@
       background-color: rgba(148, 163, 184, 0.1);
       border-color: rgba(148, 163, 184, 0.45) !important;
       color: rgba(226, 232, 240, 0.92);
+    }
+
+    .property-details-panel {
+      background-color: rgba(148, 163, 184, 0.08);
+      border-color: rgba(148, 163, 184, 0.35) !important;
+    }
+
+    body.dark-mode .property-details-panel,
+    body[data-theme='dark'] .property-details-panel {
+      background-color: rgba(30, 41, 59, 0.55);
+      border-color: rgba(148, 163, 184, 0.45) !important;
+      color: rgba(226, 232, 240, 0.92);
+    }
+
+    .property-details-enter-active,
+    .property-details-leave-active {
+      transition: all 0.2s ease;
+    }
+
+    .property-details-enter-from,
+    .property-details-leave-to {
+      opacity: 0;
+      transform: translateY(-6px);
     }
 
     @media (max-width: 576px) {
@@ -4351,6 +4380,206 @@
                       </span>
                       <button v-if="prop !== 'custom'"
                               @click="togglePropertyDisabled(rule, prop)"
+                              class="btn btn-outline-secondary"
+                              :title="isPropertyDisabled(rule, prop) ? (getTranslation('css.visual.activateProperty') || 'Aktivieren') : (getTranslation('css.visual.deactivateProperty') || 'Deaktivieren')">
+                        {{ isPropertyDisabled(rule, prop) ? '👁️‍🗨️' : '👁️' }}
+                      </button>
+                      <button @click="removeProperty(rule, prop)"
+                              class="btn btn-outline-danger">×</button>
+                    </div>
+                    <div v-if="!isPropertyValid(rule, prop)"
+                         class="invalid-feedback d-block small mt-1">
+                      {{ getPropertyValidationHint(rule, prop) }}
+                    </div>
+                  </template>
+                  <template v-else-if="isEdgeProperty(prop)">
+                    <div class="d-flex flex-column w-100">
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text">{{ formatPropertyName(prop) }}</span>
+                        <input
+                          :id="'prop-' + rule.id + '-' + prop"
+                          type="text"
+                          v-model="rule.properties[prop]"
+                          @input="saveVisualCss"
+                          @blur="validateProperty(rule, prop)"
+                          class="form-control"
+                          :class="{ 'is-invalid': !isPropertyValid(rule, prop) }"
+                          :placeholder="getTranslation('css.visual.valuePlaceholder') || 'Wert eingeben'">
+                        <select class="form-select" style="max-width: 170px;"
+                                @change="applyTokenToProperty(rule, prop, $event.target.value)">
+                          <option value="">{{ getTranslation('css.visual.tokensSelect') || '-- Token wählen --' }}</option>
+                          <option v-for="t in designTokens" :value="t.name">{{ t.name }}</option>
+                        </select>
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                @click="togglePropertyDetails(rule, prop)">
+                          <span v-if="isPropertyDetailsExpanded(rule, prop)">−</span>
+                          <span v-else>+</span>
+                          {{ isPropertyDetailsExpanded(rule, prop) ? (getTranslation('css.visual.hideDetails') || 'Details verstecken') : (getTranslation('css.visual.showDetails') || 'Details anzeigen') }}
+                        </button>
+                        <span class="input-group-text">
+                          <input type="checkbox"
+                                 :id="'important-' + rule.id + '-' + prop"
+                                 class="form-check-input mt-0"
+                                 :checked="getPropertyImportant(rule, prop)"
+                                 @change="togglePropertyImportant(rule, prop)"
+                                 :title="getTranslation('css.visual.importantHint') || 'Override other styles with !important'">
+                        </span>
+                        <button @click="togglePropertyDisabled(rule, prop)"
+                                class="btn btn-outline-secondary"
+                                :title="isPropertyDisabled(rule, prop) ? (getTranslation('css.visual.activateProperty') || 'Aktivieren') : (getTranslation('css.visual.deactivateProperty') || 'Deaktivieren')">
+                          {{ isPropertyDisabled(rule, prop) ? '👁️‍🗨️' : '👁️' }}
+                        </button>
+                        <button @click="removeProperty(rule, prop)"
+                                class="btn btn-outline-danger">×</button>
+                      </div>
+                      <transition name="property-details">
+                        <div v-if="isPropertyDetailsExpanded(rule, prop)"
+                             class="property-details-panel mt-2 p-3 rounded border">
+                          <div class="form-check form-switch mb-3">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   :id="getPropertyDomId(rule, prop, 'edge-linked')"
+                                   :checked="isEdgeLinked(rule, prop)"
+                                   @change="toggleEdgeLinked(rule, prop)">
+                            <label class="form-check-label" :for="getPropertyDomId(rule, prop, 'edge-linked')">
+                              {{ getEdgeLinkLabel(prop) }}
+                            </label>
+                          </div>
+                          <div class="row g-2">
+                            <div class="col-6"
+                                 v-for="idx in 4"
+                                 :key="idx">
+                              <label class="form-label small mb-1">
+                                {{ getEdgePartLabel(prop, idx - 1) }}
+                              </label>
+                              <div class="input-group input-group-sm">
+                                <input type="number"
+                                       class="form-control"
+                                       :value="getEdgePartNumber(rule, prop, idx - 1)"
+                                       @input="setEdgePart(rule, prop, idx - 1, $event.target.value, null)"
+                                       placeholder="0">
+                                <select class="form-select length-unit-select"
+                                        :value="getEdgePartUnit(rule, prop, idx - 1)"
+                                        @change="setEdgePart(rule, prop, idx - 1, null, $event.target.value)">
+                                  <option v-for="unit in lengthUnitOptions" :key="unit" :value="unit">{{ unit }}</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </transition>
+                    </div>
+                    <div v-if="!isPropertyValid(rule, prop)"
+                         class="invalid-feedback d-block small mt-1">
+                      {{ getPropertyValidationHint(rule, prop) }}
+                    </div>
+                  </template>
+                  <template v-else-if="prop === 'border-radius'">
+                    <div class="d-flex flex-column w-100">
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text">{{ formatPropertyName(prop) }}</span>
+                        <input
+                          :id="'prop-' + rule.id + '-' + prop"
+                          type="text"
+                          v-model="rule.properties[prop]"
+                          @input="saveVisualCss"
+                          @blur="validateProperty(rule, prop)"
+                          class="form-control"
+                          :class="{ 'is-invalid': !isPropertyValid(rule, prop) }"
+                          :placeholder="getTranslation('css.visual.valuePlaceholder') || 'Wert eingeben'">
+                        <select class="form-select" style="max-width: 170px;"
+                                @change="applyTokenToProperty(rule, prop, $event.target.value)">
+                          <option value="">{{ getTranslation('css.visual.tokensSelect') || '-- Token wählen --' }}</option>
+                          <option v-for="t in designTokens" :value="t.name">{{ t.name }}</option>
+                        </select>
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                @click="togglePropertyDetails(rule, prop)">
+                          <span v-if="isPropertyDetailsExpanded(rule, prop)">−</span>
+                          <span v-else>+</span>
+                          {{ isPropertyDetailsExpanded(rule, prop) ? (getTranslation('css.visual.hideDetails') || 'Details verstecken') : (getTranslation('css.visual.showDetails') || 'Details anzeigen') }}
+                        </button>
+                        <span class="input-group-text">
+                          <input type="checkbox"
+                                 :id="'important-' + rule.id + '-' + prop"
+                                 class="form-check-input mt-0"
+                                 :checked="getPropertyImportant(rule, prop)"
+                                 @change="togglePropertyImportant(rule, prop)"
+                                 :title="getTranslation('css.visual.importantHint') || 'Override other styles with !important'">
+                        </span>
+                        <button @click="togglePropertyDisabled(rule, prop)"
+                                class="btn btn-outline-secondary"
+                                :title="isPropertyDisabled(rule, prop) ? (getTranslation('css.visual.activateProperty') || 'Aktivieren') : (getTranslation('css.visual.deactivateProperty') || 'Deaktivieren')">
+                          {{ isPropertyDisabled(rule, prop) ? '👁️‍🗨️' : '👁️' }}
+                        </button>
+                        <button @click="removeProperty(rule, prop)"
+                                class="btn btn-outline-danger">×</button>
+                      </div>
+                      <transition name="property-details">
+                        <div v-if="isPropertyDetailsExpanded(rule, prop)"
+                             class="property-details-panel mt-2 p-3 rounded border">
+                          <div class="form-check form-switch mb-3">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   :id="getPropertyDomId(rule, prop, 'border-radius-linked')"
+                                   :checked="isBorderRadiusLinked(rule)"
+                                   @change="toggleBorderRadiusLinked(rule)">
+                            <label class="form-check-label" :for="getPropertyDomId(rule, prop, 'border-radius-linked')">
+                              {{ getEdgeLinkLabel(prop) }}
+                            </label>
+                          </div>
+                          <div class="row g-2">
+                            <div class="col-6"
+                                 v-for="(cornerKey, idx) in borderRadiusCornerKeys"
+                                 :key="cornerKey">
+                              <label class="form-label small mb-1">
+                                {{ getTranslation('css.' + cornerKey) || borderRadiusCornerFallbacks[idx] }}
+                              </label>
+                              <div class="input-group input-group-sm">
+                                <input type="number"
+                                       class="form-control"
+                                       :value="getBorderRadiusPartNumber(rule, idx)"
+                                       @input="setBorderRadiusPart(rule, idx, $event.target.value, null)"
+                                       placeholder="0">
+                                <select class="form-select length-unit-select"
+                                        :value="getBorderRadiusPartUnit(rule, idx)"
+                                        @change="setBorderRadiusPart(rule, idx, null, $event.target.value)">
+                                  <option v-for="unit in lengthUnitOptions" :key="unit" :value="unit">{{ unit }}</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </transition>
+                    </div>
+                    <div v-if="!isPropertyValid(rule, prop)"
+                         class="invalid-feedback d-block small mt-1">
+                      {{ getPropertyValidationHint(rule, prop) }}
+                    </div>
+                  </template>
+                  <template v-else-if="isLengthProperty(prop) && isSimpleLengthValue(rule, prop) && !isEdgeProperty(prop)">
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">{{ formatPropertyName(prop) }}</span>
+                      <input type="number"
+                             class="form-control"
+                             :value="getLengthNumber(rule, prop)"
+                             @input="setLengthNumber(rule, prop, $event.target.value)"
+                             :placeholder="'0'">
+                      <select class="form-select length-unit-select"
+                              :value="getLengthUnit(rule, prop)"
+                              @change="setLengthUnit(rule, prop, $event.target.value)">
+                        <option v-for="unit in lengthUnitOptions" :key="unit" :value="unit">{{ unit }}</option>
+                      </select>
+                      <span class="input-group-text">
+                        <input type="checkbox"
+                               :id="'important-' + rule.id + '-' + prop"
+                               class="form-check-input mt-0"
+                               :checked="getPropertyImportant(rule, prop)"
+                               @change="togglePropertyImportant(rule, prop)"
+                               :title="getTranslation('css.visual.importantHint') || 'Override other styles with !important'">
+                      </span>
+                      <button @click="togglePropertyDisabled(rule, prop)"
                               class="btn btn-outline-secondary"
                               :title="isPropertyDisabled(rule, prop) ? (getTranslation('css.visual.activateProperty') || 'Aktivieren') : (getTranslation('css.visual.deactivateProperty') || 'Deaktivieren')">
                         {{ isPropertyDisabled(rule, prop) ? '👁️‍🗨️' : '👁️' }}
@@ -13216,6 +13445,10 @@ function getDefaultFaviconRules() {
             'css.visual.applyPreset': 'Apply preset…',
             'css.visual.selectFont': '-- Select font --',
             'css.visual.fontPreviewText': 'The quick brown fox jumps over the lazy dog.',
+            'css.visual.showDetails': 'Show details',
+            'css.visual.hideDetails': 'Hide details',
+            'css.visual.linkCorners': 'Link corners',
+            'css.visual.linkSides': 'Link sides',
             'css.visual.presetApplied': 'Preset applied',
             'css.visual.rule': 'Rule',
             'css.visual.doubleClickToEdit': 'Double-click to edit',
@@ -14816,6 +15049,10 @@ function getDefaultFaviconRules() {
             , 'css.visual.applyPreset': 'Preset anwenden…'
             , 'css.visual.selectFont': '-- Schrift wählen --'
             , 'css.visual.fontPreviewText': 'Zwölf Boxkämpfer jagen Viktor quer über den großen Sylter Deich.'
+            , 'css.visual.showDetails': 'Details anzeigen'
+            , 'css.visual.hideDetails': 'Details verstecken'
+            , 'css.visual.linkCorners': 'Ecken koppeln'
+            , 'css.visual.linkSides': 'Seiten koppeln'
             , 'css.visual.presetApplied': 'Preset angewendet'
             , 'css.visual.addRule': 'Neue CSS Regel hinzufügen'
             , 'css.visual.deleteRule': 'Regel löschen'
@@ -15840,30 +16077,75 @@ function getDefaultFaviconRules() {
         // Design Tokens
         designTokens: [],
         // CSS Presets
-        cssPresets: [
-          { id: 'card-shadow', name: 'Card Shadow', properties: {
-            'box-shadow': '0 2px 8px rgba(0,0,0,0.12)',
-            'border-radius': '12px',
-            'background-color': '#ffffff'
-          }},
-          { id: 'subtle-border', name: 'Subtle Border', properties: {
-            'border': '1px solid rgba(0,0,0,0.08)',
-            'border-radius': '8px',
-            'background-color': '#ffffff'
-          }},
-          { id: 'button-primary', name: 'Button Primary', properties: {
-            'background-color': '#0d6efd',
-            'color': '#ffffff',
-            'border': '1px solid #0d6efd',
-            'padding': '0.375rem 0.75rem',
-            'border-radius': '0.375rem'
-          }}
-        ],
-        availableFontFamilies: [
-          { label: 'System UI', value: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' },
-          { label: 'Segoe UI', value: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif' },
-          { label: 'Roboto', value: '"Roboto", "Helvetica Neue", Arial, sans-serif' },
-          { label: 'Open Sans', value: '"Open Sans", "Helvetica Neue", Arial, sans-serif' },
+      cssPresets: [
+        { id: 'card-shadow', name: 'Card Shadow', properties: {
+          'box-shadow': '0 2px 8px rgba(0,0,0,0.12)',
+          'border-radius': '12px',
+          'background-color': '#ffffff'
+        }},
+        { id: 'subtle-border', name: 'Subtle Border', properties: {
+          'border': '1px solid rgba(0,0,0,0.08)',
+          'border-radius': '8px',
+          'background-color': '#ffffff'
+        }},
+        { id: 'button-primary', name: 'Button Primary', properties: {
+          'background-color': '#0d6efd',
+          'color': '#ffffff',
+          'border': '1px solid #0d6efd',
+          'padding': '0.375rem 0.75rem',
+          'border-radius': '0.375rem'
+        }}
+      ],
+      lengthProperties: [
+        'font-size',
+        'line-height',
+        'letter-spacing',
+        'word-spacing',
+        'width',
+        'height',
+        'min-width',
+        'max-width',
+        'min-height',
+        'max-height',
+        'top',
+        'right',
+        'bottom',
+        'left',
+        'border-width',
+        'border-top-width',
+        'border-right-width',
+        'border-bottom-width',
+        'border-left-width',
+        'outline-width',
+        'outline-offset',
+        'gap',
+        'row-gap',
+        'column-gap',
+        'padding-top',
+        'padding-right',
+        'padding-bottom',
+        'padding-left',
+        'margin-top',
+        'margin-right',
+        'margin-bottom',
+        'margin-left',
+        'border-top-left-radius',
+        'border-top-right-radius',
+        'border-bottom-right-radius',
+        'border-bottom-left-radius'
+      ],
+      lengthUnitOptions: ['px', 'rem', 'em', '%', 'vh', 'vw'],
+      lengthUnitMemory: {},
+      expandedPropertyDetails: {},
+      edgeProperties: ['padding', 'margin', 'border-width'],
+      edgeLinked: {},
+      edgePartFallbacks: ['Top', 'Right', 'Bottom', 'Left'],
+      borderRadiusLinked: {},
+      availableFontFamilies: [
+        { label: 'System UI', value: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' },
+        { label: 'Segoe UI', value: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif' },
+        { label: 'Roboto', value: '"Roboto", "Helvetica Neue", Arial, sans-serif' },
+        { label: 'Open Sans', value: '"Open Sans", "Helvetica Neue", Arial, sans-serif' },
           { label: 'Arial', value: 'Arial, Helvetica, sans-serif' },
           { label: 'Helvetica Neue', value: '"Helvetica Neue", Helvetica, Arial, sans-serif' },
           { label: 'Montserrat', value: '"Montserrat", "Helvetica Neue", Arial, sans-serif' },
@@ -15878,10 +16160,12 @@ function getDefaultFaviconRules() {
           { label: 'Playfair Display', value: '"Playfair Display", "Times New Roman", serif' },
           { label: 'Courier New', value: '"Courier New", Courier, monospace' },
           { label: 'Fira Code', value: '"Fira Code", "Courier New", monospace' },
-          { label: 'Menlo', value: 'Menlo, Monaco, "Courier New", monospace' },
-          { label: 'Comic Sans MS', value: '"Comic Sans MS", "Comic Sans", cursive, sans-serif' },
-          { label: 'Caveat', value: '"Caveat", "Bradley Hand", cursive' }
-        ],
+        { label: 'Menlo', value: 'Menlo, Monaco, "Courier New", monospace' },
+        { label: 'Comic Sans MS', value: '"Comic Sans MS", "Comic Sans", cursive, sans-serif' },
+        { label: 'Caveat', value: '"Caveat", "Bradley Hand", cursive' }
+      ],
+      borderRadiusCornerKeys: ['topLeft', 'topRight', 'bottomRight', 'bottomLeft'],
+      borderRadiusCornerFallbacks: ['Top left', 'Top right', 'Bottom right', 'Bottom left'],
         cssHookClasses: [
           'body',
           '#app.container-fluid.mb-app',
@@ -19755,18 +20039,43 @@ function getDefaultFaviconRules() {
             'font-family': 'Font Family',
             'font-size': 'Font Size',
             'font-weight': 'Font Weight',
+            'line-height': 'Line Height',
+            'letter-spacing': 'Letter Spacing',
+            'word-spacing': 'Word Spacing',
             'border': 'Border',
             'border-color': 'Border Color',
             'border-radius': 'Border Radius',
+            'border-width': 'Border Width',
             'padding': 'Padding',
             'margin': 'Margin',
+            'width': 'Width',
+            'height': 'Height',
+            'min-width': 'Min Width',
+            'max-width': 'Max Width',
+            'min-height': 'Min Height',
+            'max-height': 'Max Height',
+            'top': 'Top',
+            'right': 'Right',
+            'bottom': 'Bottom',
+            'left': 'Left',
+            'padding-top': 'Padding Top',
+            'padding-right': 'Padding Right',
+            'padding-bottom': 'Padding Bottom',
+            'padding-left': 'Padding Left',
+            'margin-top': 'Margin Top',
+            'margin-right': 'Margin Right',
+            'margin-bottom': 'Margin Bottom',
+            'margin-left': 'Margin Left',
+            'gap': 'Gap',
+            'row-gap': 'Row Gap',
+            'column-gap': 'Column Gap',
             'display': 'Display',
             'opacity': 'Opacity',
             'text-decoration': 'Text Decoration',
             'text-transform': 'Text Transform',
             'box-shadow': 'Box Shadow',
-            'width': 'Width',
-            'height': 'Height'
+            'outline-width': 'Outline Width',
+            'outline-offset': 'Outline Offset'
           };
           return propertyMap[property] || property.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         },
@@ -19839,6 +20148,368 @@ function getDefaultFaviconRules() {
           this.saveVisualCss();
         },
 
+        isLengthProperty(prop) {
+          return this.lengthProperties.includes(prop);
+        },
+
+        isSimpleLengthValue(rule, prop) {
+          const raw = (rule?.properties?.[prop] || '').toString();
+          const value = this.stripImportant(raw).trim();
+          if (!value) return true;
+          return /^-?\d*(?:\.\d+)?[a-z%]*$/i.test(value);
+        },
+
+        parseLengthValue(value, fallbackUnit = 'px') {
+          const str = this.stripImportant((value || '').toString()).trim();
+          if (!str) {
+            return { number: '', unit: fallbackUnit };
+          }
+          const match = str.match(/^(-?\d+(?:\.\d+)?)([a-z%]*)$/i);
+          if (match) {
+            const number = match[1];
+            const unit = match[2] || fallbackUnit;
+            return { number, unit };
+          }
+          return { number: str, unit: '' };
+        },
+
+        buildLengthValue(number, unit) {
+          if (number === null || number === undefined) return '';
+          const trimmed = number.toString().trim();
+          if (!trimmed) return '';
+          return `${trimmed}${unit || 'px'}`;
+        },
+
+        getLengthNumber(rule, prop) {
+          const key = this.getRulePropertyKey(rule, prop);
+          const fallbackUnit = this.lengthUnitMemory[key] || 'px';
+          const parts = this.parseLengthValue(rule?.properties?.[prop], fallbackUnit);
+          if (!parts.number || parts.unit === '') {
+            return parts.number && /^-?\d+(?:\.\d+)?$/.test(parts.number) ? parts.number : '';
+          }
+          return parts.number;
+        },
+
+        getLengthUnit(rule, prop) {
+          const key = this.getRulePropertyKey(rule, prop);
+          const fallbackUnit = this.lengthUnitMemory[key] || 'px';
+          const parts = this.parseLengthValue(rule?.properties?.[prop], fallbackUnit);
+          if (!parts.unit && this.lengthUnitMemory[key]) {
+            return this.lengthUnitMemory[key];
+          }
+          const unit = parts.unit || fallbackUnit;
+          this.lengthUnitMemory[key] = unit;
+          return unit;
+        },
+
+        setLengthNumber(rule, prop, number) {
+          const key = this.getRulePropertyKey(rule, prop);
+          const unit = this.getLengthUnit(rule, prop);
+          if (number === '' || number === null || number === undefined) {
+            this.$set(rule.properties, prop, '');
+            this.lengthUnitMemory[key] = unit;
+            this.validateProperty(rule, prop);
+            return;
+          }
+          const sanitized = this.buildLengthValue(number, unit);
+          this.$set(rule.properties, prop, sanitized);
+          this.lengthUnitMemory[key] = unit;
+          this.validateProperty(rule, prop);
+        },
+
+        setLengthUnit(rule, prop, unit) {
+          const key = this.getRulePropertyKey(rule, prop);
+          const number = this.getLengthNumber(rule, prop);
+          this.lengthUnitMemory[key] = unit;
+          if (!number) {
+            this.$set(rule.properties, prop, '');
+            this.validateProperty(rule, prop);
+            return;
+          }
+          const sanitized = this.buildLengthValue(number, unit);
+          this.$set(rule.properties, prop, sanitized);
+          this.validateProperty(rule, prop);
+        },
+
+        getRuleKey(rule) {
+          if (!rule) return 'rule-unknown';
+          if (!rule._internalKey) {
+            rule._internalKey = rule.id || rule.uuid || `rule-${Math.random().toString(36).slice(2, 10)}`;
+          }
+          return rule._internalKey;
+        },
+
+        getRulePropertyKey(rule, prop) {
+          return `${this.getRuleKey(rule)}::${prop}`;
+        },
+
+        getPropertyDomId(rule, prop, prefix = 'property') {
+          const key = this.getRulePropertyKey(rule, prop).replace(/[^a-zA-Z0-9_-]/g, '-');
+          return `${prefix}-${key}`;
+        },
+
+        isPropertyDetailsExpanded(rule, prop) {
+          const key = this.getRulePropertyKey(rule, prop);
+          return !!this.expandedPropertyDetails[key];
+        },
+
+        togglePropertyDetails(rule, prop) {
+          const key = this.getRulePropertyKey(rule, prop);
+          const current = !!this.expandedPropertyDetails[key];
+          this.$set(this.expandedPropertyDetails, key, !current);
+        },
+
+        getBorderRadiusParts(rule) {
+          const raw = (rule?.properties?.['border-radius'] || '').toString();
+          const base = this.stripImportant(raw).split('/')[0].trim();
+          const parts = base ? base.split(/\s+/).filter(Boolean) : [];
+          const resolved = [];
+          const defaultUnit = 'px';
+
+          const valueFromIndex = (idx) => {
+            const val = parts[idx] || parts[0] || '0';
+            return this.parseLengthValue(val, defaultUnit);
+          };
+
+          if (parts.length === 0) {
+            for (let i = 0; i < 4; i += 1) {
+              resolved.push({ number: '', unit: defaultUnit });
+            }
+          } else if (parts.length === 1) {
+            const parsed = valueFromIndex(0);
+            for (let i = 0; i < 4; i += 1) {
+              resolved.push({ number: parsed.number, unit: parsed.unit });
+            }
+          } else if (parts.length === 2) {
+            const first = valueFromIndex(0);
+            const second = valueFromIndex(1);
+            resolved.push({ number: first.number, unit: first.unit });
+            resolved.push({ number: second.number, unit: second.unit });
+            resolved.push({ number: first.number, unit: first.unit });
+            resolved.push({ number: second.number, unit: second.unit });
+          } else if (parts.length === 3) {
+            const first = valueFromIndex(0);
+            const second = valueFromIndex(1);
+            const third = valueFromIndex(2);
+            resolved.push({ number: first.number, unit: first.unit });
+            resolved.push({ number: second.number, unit: second.unit });
+            resolved.push({ number: third.number, unit: third.unit });
+            resolved.push({ number: second.number, unit: second.unit });
+          } else {
+            for (let i = 0; i < 4; i += 1) {
+              const parsed = valueFromIndex(i);
+              resolved.push({ number: parsed.number, unit: parsed.unit });
+            }
+          }
+
+          return resolved;
+        },
+
+        getBorderRadiusPartNumber(rule, index) {
+          const parts = this.getBorderRadiusParts(rule);
+          return parts[index]?.number ?? '';
+        },
+
+        getBorderRadiusPartUnit(rule, index) {
+          const parts = this.getBorderRadiusParts(rule);
+          return parts[index]?.unit ?? 'px';
+        },
+
+        updateBorderRadiusValue(rule, parts) {
+          const values = parts.map(part => this.buildLengthValue(part.number, part.unit)).map(v => v || '0');
+          const allEmpty = values.every(v => !v || v === '0');
+          const finalValue = allEmpty ? '' : values.join(' ').trim();
+          this.$set(rule.properties, 'border-radius', finalValue);
+          this.validateProperty(rule, 'border-radius');
+        },
+
+        setBorderRadiusPart(rule, index, number, unit) {
+          const key = this.getRulePropertyKey(rule, 'border-radius');
+          const parts = this.getBorderRadiusParts(rule);
+          if (number !== null && number !== undefined) {
+            parts[index].number = number === '' ? '' : number.toString();
+          }
+          if (unit) {
+            parts[index].unit = unit;
+          }
+          if (this.isBorderRadiusLinked(rule)) {
+            const ref = parts[index];
+            for (let i = 0; i < parts.length; i += 1) {
+              parts[i].number = ref.number;
+              parts[i].unit = ref.unit;
+            }
+          }
+          this.updateBorderRadiusValue(rule, parts);
+          this.borderRadiusLinked[key] = this.isBorderRadiusLinked(rule);
+        },
+
+        isBorderRadiusLinked(rule) {
+          const key = this.getRulePropertyKey(rule, 'border-radius');
+          if (this.borderRadiusLinked[key] === undefined) {
+            const parts = this.getBorderRadiusParts(rule);
+            const values = parts.map(part => this.buildLengthValue(part.number, part.unit));
+            const linked = values.every(v => v === values[0]);
+            this.$set(this.borderRadiusLinked, key, linked);
+          }
+          return !!this.borderRadiusLinked[key];
+        },
+
+        toggleBorderRadiusLinked(rule) {
+          const key = this.getRulePropertyKey(rule, 'border-radius');
+          const current = this.isBorderRadiusLinked(rule);
+          this.$set(this.borderRadiusLinked, key, !current);
+          if (!current) {
+            const parts = this.getBorderRadiusParts(rule);
+            const ref = parts[0];
+            for (let i = 0; i < parts.length; i += 1) {
+              parts[i].number = ref.number;
+              parts[i].unit = ref.unit;
+            }
+            this.updateBorderRadiusValue(rule, parts);
+          }
+        },
+
+        isEdgeProperty(prop) {
+          return this.edgeProperties.includes(prop);
+        },
+
+        getEdgeParts(rule, prop) {
+          const raw = (rule?.properties?.[prop] || '').toString();
+          const base = this.stripImportant(raw).trim();
+          const parts = base ? base.split(/\s+/).filter(Boolean) : [];
+          const resolved = [];
+          const defaultUnit = 'px';
+
+          const valueFromIndex = (idx) => {
+            const val = parts[idx] || parts[0] || '0';
+            return this.parseLengthValue(val, defaultUnit);
+          };
+
+          if (parts.length === 0) {
+            for (let i = 0; i < 4; i += 1) {
+              resolved.push({ number: '', unit: defaultUnit });
+            }
+          } else if (parts.length === 1) {
+            const parsed = valueFromIndex(0);
+            for (let i = 0; i < 4; i += 1) {
+              resolved.push({ number: parsed.number, unit: parsed.unit });
+            }
+          } else if (parts.length === 2) {
+            const vertical = valueFromIndex(0);
+            const horizontal = valueFromIndex(1);
+            resolved.push({ number: vertical.number, unit: vertical.unit });
+            resolved.push({ number: horizontal.number, unit: horizontal.unit });
+            resolved.push({ number: vertical.number, unit: vertical.unit });
+            resolved.push({ number: horizontal.number, unit: horizontal.unit });
+          } else if (parts.length === 3) {
+            const top = valueFromIndex(0);
+            const horizontal = valueFromIndex(1);
+            const bottom = valueFromIndex(2);
+            resolved.push({ number: top.number, unit: top.unit });
+            resolved.push({ number: horizontal.number, unit: horizontal.unit });
+            resolved.push({ number: bottom.number, unit: bottom.unit });
+            resolved.push({ number: horizontal.number, unit: horizontal.unit });
+          } else {
+            for (let i = 0; i < 4; i += 1) {
+              const parsed = valueFromIndex(i);
+              resolved.push({ number: parsed.number, unit: parsed.unit });
+            }
+          }
+
+          return resolved;
+        },
+
+        getEdgePartNumber(rule, prop, index) {
+          const parts = this.getEdgeParts(rule, prop);
+          return parts[index]?.number ?? '';
+        },
+
+        getEdgePartUnit(rule, prop, index) {
+          const parts = this.getEdgeParts(rule, prop);
+          return parts[index]?.unit ?? 'px';
+        },
+
+        updateEdgeValue(rule, prop, parts) {
+          const values = parts.map(part => this.buildLengthValue(part.number, part.unit).trim() || '0');
+          const allZero = values.every(v => v === '0');
+          let finalValue = '';
+
+          if (!allZero) {
+            const [top, right, bottom, left] = values;
+            if (top === right && top === bottom && top === left) {
+              finalValue = top;
+            } else if (top === bottom && right === left) {
+              finalValue = `${top} ${right}`;
+            } else if (right === left) {
+              finalValue = `${top} ${right} ${bottom}`;
+            } else {
+              finalValue = values.join(' ');
+            }
+          }
+
+          this.$set(rule.properties, prop, finalValue);
+          this.validateProperty(rule, prop);
+        },
+
+        setEdgePart(rule, prop, index, number, unit) {
+          const parts = this.getEdgeParts(rule, prop);
+          if (number !== null && number !== undefined) {
+            parts[index].number = number === '' ? '' : number.toString();
+          }
+          if (unit) {
+            parts[index].unit = unit;
+          }
+          if (this.isEdgeLinked(rule, prop)) {
+            const ref = parts[index];
+            for (let i = 0; i < parts.length; i += 1) {
+              parts[i].number = ref.number;
+              parts[i].unit = ref.unit;
+            }
+          }
+          this.updateEdgeValue(rule, prop, parts);
+          const key = this.getRulePropertyKey(rule, prop);
+          this.edgeLinked[key] = this.isEdgeLinked(rule, prop);
+        },
+
+        isEdgeLinked(rule, prop) {
+          const key = this.getRulePropertyKey(rule, prop);
+          if (this.edgeLinked[key] === undefined) {
+            const parts = this.getEdgeParts(rule, prop);
+            const values = parts.map(part => this.buildLengthValue(part.number, part.unit));
+            const linked = values.every(v => v === values[0]);
+            this.$set(this.edgeLinked, key, linked);
+          }
+          return !!this.edgeLinked[key];
+        },
+
+        toggleEdgeLinked(rule, prop) {
+          const key = this.getRulePropertyKey(rule, prop);
+          const current = this.isEdgeLinked(rule, prop);
+          this.$set(this.edgeLinked, key, !current);
+          if (!current) {
+            const parts = this.getEdgeParts(rule, prop);
+            const ref = parts[0];
+            for (let i = 0; i < parts.length; i += 1) {
+              parts[i].number = ref.number;
+              parts[i].unit = ref.unit;
+            }
+            this.updateEdgeValue(rule, prop, parts);
+          }
+        },
+
+        getEdgePartLabel(prop, index) {
+          const keys = ['top', 'right', 'bottom', 'left'];
+          const key = keys[index] || keys[0];
+          return this.getTranslation('css.' + key) || this.edgePartFallbacks[index] || key;
+        },
+
+        getEdgeLinkLabel(prop) {
+          if (prop === 'border-radius') {
+            return this.getTranslation('css.visual.linkCorners') || 'Link corners';
+          }
+          return this.getTranslation('css.visual.linkSides') || 'Link sides';
+        },
+
         sanitizeFontFamilyValue(raw) {
           if (!raw) return '';
           if (typeof raw !== 'string') raw = String(raw);
@@ -19869,7 +20540,7 @@ function getDefaultFaviconRules() {
           if (!rule || !prop) return;
           const value = (rule.properties?.[prop] ?? '').toString();
           this.$set(rule.properties, prop, value);
-          this.saveVisualCss();
+          this.scheduleVisualCssSave();
         },
 
         onFontFamilyBlur(rule, prop) {
@@ -19885,13 +20556,13 @@ function getDefaultFaviconRules() {
           if (!value) return;
           const sanitized = this.sanitizeFontFamilyValue(value);
           this.$set(rule.properties, 'font-family', sanitized);
-          this.saveVisualCss();
+          this.scheduleVisualCssSave();
           this.validateProperty(rule, 'font-family');
         },
 
         removeProperty(rule, property) {
           // Remove a CSS property from a rule
-          delete rule.properties[property];
+          this.$delete(rule.properties, property);
           // Also remove the important flag for this property
           if (rule.important && rule.important[property]) {
             delete rule.important[property];
@@ -19899,6 +20570,19 @@ function getDefaultFaviconRules() {
           // Also remove disabled state for this property
           if (rule.disabled && rule.disabled[property]) {
             delete rule.disabled[property];
+          }
+          const key = this.getRulePropertyKey(rule, property);
+          if (this.expandedPropertyDetails[key] !== undefined) {
+            this.$delete(this.expandedPropertyDetails, key);
+          }
+          if (this.lengthUnitMemory[key] !== undefined) {
+            delete this.lengthUnitMemory[key];
+          }
+          if (property === 'border-radius' && this.borderRadiusLinked[key] !== undefined) {
+            delete this.borderRadiusLinked[key];
+          }
+          if (this.isEdgeProperty(property) && this.edgeLinked[key] !== undefined) {
+            delete this.edgeLinked[key];
           }
           this.saveVisualCss();
         },
