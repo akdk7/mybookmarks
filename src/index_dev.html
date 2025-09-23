@@ -2833,6 +2833,75 @@
       overflow-y: auto;
       overflow-x: hidden;
     }
+
+    .encryption-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(6px);
+      z-index: 99999;
+      color: #f8fafc;
+      padding: 2rem;
+    }
+
+    .encryption-panel {
+      width: min(420px, 100%);
+      background: rgba(30, 41, 59, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
+    }
+
+    .encryption-panel h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .password-meter {
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.2);
+      margin-top: 0.5rem;
+      overflow: hidden;
+    }
+
+    .password-meter > span {
+      display: block;
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .password-meter--weak > span { background: #ef4444; }
+    .password-meter--fair > span { background: #f59e0b; }
+    .password-meter--strong > span { background: #22c55e; }
+
+    .password-rules {
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+      list-style: none;
+      padding: 0;
+    }
+
+    .password-rules li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: rgba(226, 232, 240, 0.85);
+    }
+
+    .password-rules li[data-met="true"] {
+      color: #22c55e;
+    }
+
+    .password-rules svg {
+      flex-shrink: 0;
+    }
   </style>
   <style id="user-custom-css"></style>
 </head>
@@ -2841,6 +2910,35 @@
   <div id="app"
     :class="['container-fluid', 'app', 'mb-app', {'dragging-group': dragState === 'group', 'dragging-link': dragState === 'link'}]"
     @click.self="hideMenus">
+
+    <div v-if="encryption.locked" class="encryption-overlay">
+      <div class="encryption-panel">
+        <h2>{{ getTranslation('encryption.unlockTitle') || 'Unlock your data' }}</h2>
+        <p class="text-muted text-center mb-4">
+          {{ getTranslation('encryption.unlockSubtitle') || 'Enter your encryption password to continue.' }}
+        </p>
+        <div class="mb-3">
+          <label class="form-label">{{ getTranslation('encryption.passwordLabel') || 'Password' }}</label>
+          <input type="password"
+                 class="form-control form-control-lg"
+                 v-model="encryption.unlock.password"
+                 @keyup.enter="unlockWithPassword"
+                 :disabled="encryption.unlock.busy"
+                 autocomplete="current-password"
+                 autofocus>
+        </div>
+        <div v-if="encryption.unlock.error" class="alert alert-danger py-2" role="alert">
+          {{ encryption.unlock.error }}
+        </div>
+        <button class="btn btn-primary w-100" @click="unlockWithPassword" :disabled="encryption.unlock.busy">
+          <span v-if="!encryption.unlock.busy">{{ getTranslation('encryption.unlockAction') || 'Unlock' }}</span>
+          <span v-else>{{ getTranslation('encryption.unlocking') || 'Unlocking...' }}</span>
+        </button>
+        <div class="text-center mt-3">
+          <small class="text-muted">{{ getTranslation('encryption.unlockHint') || 'Forgot your password? Encryption cannot be recovered without it.' }}</small>
+        </div>
+      </div>
+    </div>
     <!-- Dark Mode Toggle -->
     <!-- <button class="dark-mode-toggle" @click="toggleDarkMode" :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
       <svg v-if="isDarkMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
@@ -2861,6 +2959,11 @@
     <div class="container-fluid toolbar mb-toolbar">
       <div class="btn-toolbar" role="toolbar" aria-label="Toolbar">
         <div class="d-flex align-items-center w-100" style="gap: 0.25rem;">
+          <button type="button" class="btn btn-sm btn-outline-secondary mb-btn mb-btn--lock" @click="lockApplication" :title="getTranslation('toolbar.lock') || 'Lock session'" :disabled="!encryption.active || encryption.locked" style="border-radius: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 1a3 3 0 0 1 3 3v2h1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1V4a3 3 0 0 1 3-3Zm0 1a2 2 0 0 0-2 2v2h4V4a2 2 0 0 0-2-2Zm-3 5v5h6V7H5Z"/>
+            </svg>
+          </button>
           <button @click="addGroup" type="button" class="btn btn-sm btn-success mb-btn mb-btn--add-group text-nowrap" style="border-radius: 8px;">
             {{ getTranslation('addGroup') }}
           </button>
@@ -5535,6 +5638,124 @@
                     <div v-if="field.helpText" class="form-text mb-edit-field-help">{{ getTranslation(field.helpText) }}</div>
                   </div>
 
+                  <!-- Encryption Field -->
+                  <div v-else-if="field.type === 'encryption'">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <label class="form-label mb-edit-field-label mb-0">
+                        {{ getTranslation(field.translateKey) || fieldKey }}
+                      </label>
+                      <span class="badge" :class="encryption.active ? 'bg-success' : 'bg-secondary'">
+                        {{ encryption.active ? (getTranslation('options.security.encryption.statusEnabled') || 'Enabled') : (getTranslation('options.security.encryption.statusDisabled') || 'Disabled') }}
+                      </span>
+                    </div>
+                    <div v-if="field.helpText" class="form-text mb-edit-field-help">{{ getTranslation(field.helpText) }}</div>
+
+                    <div class="card border-0 shadow-sm">
+                      <div class="card-body" style="background: rgba(15, 23, 42, 0.03); border-radius: 12px;">
+                        <template v-if="!encryption.active">
+                          <p class="text-muted">{{ getTranslation('options.security.encryption.description') || 'Protect your bookmarks with a password. Data will be encrypted locally before it is stored.' }}</p>
+
+                          <div class="mb-3">
+                            <label class="form-label">{{ getTranslation('options.security.encryption.newPassword') || 'New password' }}</label>
+                            <input type="password"
+                                   class="form-control"
+                                   v-model="encryption.setup.password"
+                                   :disabled="encryption.setup.busy"
+                                   autocomplete="new-password">
+                            <div class="password-meter" :class="'password-meter--' + encryption.setup.strength.state">
+                              <span :style="{ width: Math.max(encryption.setup.strength.percent, 6) + '%' }"></span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                              <small class="text-muted">{{ encryption.setup.strength.label || (getTranslation('encryption.strength.weak') || 'Weak') }}</small>
+                              <small class="text-muted">{{ encryption.setup.strength.score }}/{{ encryption.setup.strength.maxScore }}</small>
+                            </div>
+                            <ul class="password-rules">
+                              <li v-for="rule in encryption.setup.strength.requirements" :key="rule.id" :data-met="rule.met">
+                                <svg v-if="rule.met" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                  <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7.5 7.5a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708 0z"/>
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                  <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM4.404 4.404a.5.5 0 0 1 .707 0L8 7.293l2.889-2.889a.5.5 0 1 1 .707.707L8.707 8l2.889 2.889a.5.5 0 1 1-.707.707L8 8.707l-2.889 2.889a.5.5 0 0 1-.707-.707L7.293 8 4.404 5.111a.5.5 0 0 1 0-.707z"/>
+                                </svg>
+                                <span>{{ getTranslation('encryption.rule.' + rule.id) || rule.label || rule.id }}</span>
+                              </li>
+                            </ul>
+                          </div>
+
+                          <div class="mb-3">
+                            <label class="form-label">{{ getTranslation('options.security.encryption.confirmPassword') || 'Confirm password' }}</label>
+                            <input type="password" class="form-control" v-model="encryption.setup.confirm" :disabled="encryption.setup.busy" autocomplete="new-password">
+                          </div>
+
+                          <div v-if="encryption.setup.error" class="alert alert-danger py-2" role="alert">{{ encryption.setup.error }}</div>
+
+                          <button type="button" class="btn btn-primary" @click="enableEncryptionFromSettings" :disabled="encryption.setup.busy">
+                            <span v-if="!encryption.setup.busy">{{ getTranslation('options.security.encryption.enableAction') || 'Enable encryption' }}</span>
+                            <span v-else>{{ getTranslation('options.security.encryption.working') || 'Applying...' }}</span>
+                          </button>
+                        </template>
+
+                        <template v-else>
+                          <div class="alert alert-success d-flex align-items-center" role="alert">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="me-2" viewBox="0 0 16 16">
+                              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm3.354-9.646a.5.5 0 0 0-.708-.708L7 8.293 5.354 6.646a.5.5 0 1 0-.708.708L6.293 9l-1.647 1.646a.5.5 0 1 0 .708.708L7 9.707l3.646 3.647a.5.5 0 0 0 .708-.708L7.707 9l3.647-3.646z"/>
+                            </svg>
+                            <div>{{ getTranslation('options.security.encryption.activeDescription') || 'Encryption is enabled. You can update your password or disable encryption below.' }}</div>
+                          </div>
+
+                          <div class="mb-4">
+                            <h6 class="fw-semibold">{{ getTranslation('options.security.encryption.changeTitle') || 'Change password' }}</h6>
+                            <div class="mb-3">
+                              <label class="form-label">{{ getTranslation('options.security.encryption.newPassword') || 'New password' }}</label>
+                              <input type="password" class="form-control" v-model="encryption.change.password" :disabled="encryption.change.busy" autocomplete="new-password">
+                              <div class="password-meter" :class="'password-meter--' + encryption.change.strength.state">
+                                <span :style="{ width: Math.max(encryption.change.strength.percent, 6) + '%' }"></span>
+                              </div>
+                              <div class="d-flex justify-content-between">
+                                <small class="text-muted">{{ encryption.change.strength.label || (getTranslation('encryption.strength.weak') || 'Weak') }}</small>
+                                <small class="text-muted">{{ encryption.change.strength.score }}/{{ encryption.change.strength.maxScore }}</small>
+                              </div>
+                              <ul class="password-rules">
+                                <li v-for="rule in encryption.change.strength.requirements" :key="'change-' + rule.id" :data-met="rule.met">
+                                  <svg v-if="rule.met" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7.5 7.5a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708 0z"/>
+                                  </svg>
+                                  <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM4.404 4.404a.5.5 0 0 1 .707 0L8 7.293l2.889-2.889a.5.5 0 1 1 .707.707L8.707 8l2.889 2.889a.5.5 0 1 1-.707.707L8 8.707l-2.889 2.889a.5.5 0 0 1-.707-.707L7.293 8 4.404 5.111a.5.5 0 0 1 0-.707z"/>
+                                  </svg>
+                                  <span>{{ getTranslation('encryption.rule.' + rule.id) || rule.label || rule.id }}</span>
+                                </li>
+                              </ul>
+                            </div>
+                            <div class="mb-3">
+                              <label class="form-label">{{ getTranslation('options.security.encryption.confirmPassword') || 'Confirm password' }}</label>
+                              <input type="password" class="form-control" v-model="encryption.change.confirm" :disabled="encryption.change.busy" autocomplete="new-password">
+                            </div>
+                            <div v-if="encryption.change.error" class="alert alert-danger py-2" role="alert">{{ encryption.change.error }}</div>
+                            <button type="button" class="btn btn-outline-primary" @click="changeEncryptionPassword" :disabled="encryption.change.busy">
+                              <span v-if="!encryption.change.busy">{{ getTranslation('options.security.encryption.changeAction') || 'Update password' }}</span>
+                              <span v-else>{{ getTranslation('options.security.encryption.working') || 'Applying...' }}</span>
+                            </button>
+                          </div>
+
+                          <div class="border-top pt-3">
+                            <h6 class="fw-semibold text-danger">{{ getTranslation('options.security.encryption.disableTitle') || 'Disable encryption' }}</h6>
+                            <p class="small text-muted">{{ getTranslation('options.security.encryption.disableDescription') || 'Turning off encryption stores your data unprotected on this device.' }}</p>
+                            <div class="mb-3">
+                              <label class="form-label">{{ getTranslation('options.security.encryption.currentPassword') || 'Current password' }}</label>
+                              <input type="password" class="form-control" v-model="encryption.disable.password" :disabled="encryption.disable.busy" autocomplete="current-password">
+                            </div>
+                            <div v-if="encryption.disable.error" class="alert alert-danger py-2" role="alert">{{ encryption.disable.error }}</div>
+                            <button type="button" class="btn btn-outline-danger" @click="disableEncryptionFromSettings" :disabled="encryption.disable.busy">
+                              <span v-if="!encryption.disable.busy">{{ getTranslation('options.security.encryption.disableAction') || 'Disable encryption' }}</span>
+                              <span v-else>{{ getTranslation('options.security.encryption.working') || 'Applying...' }}</span>
+                            </button>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- Link Shorteners Field -->
                   <div v-else-if="field.type === 'linkShorteners'" class="link-shorteners-field">
                     <label class="form-label mb-edit-field-label d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -6065,7 +6286,28 @@ const CONSTS = {
       DEFAULT_STORAGE_WARNING_MB: 4, // Show warning at 4MB localStorage usage
       MAX_STORAGE_MB: 5, // Maximum localStorage size (browser limit)
 
-  DEFAULT_URL_PREFIX: 'http://'
+  DEFAULT_URL_PREFIX: 'http://',
+
+  ENCRYPTION: {
+    VERSION: 1,
+    PBKDF2_ITERATIONS: 210000,
+    SALT_BYTES: 16,
+    IV_BYTES: 12,
+    PASSWORD_COMPLEXITY: {
+      minLength: 12,
+      rules: [
+        { id: 'length', label: 'At least 12 characters', test: (value) => value.length >= 12, score: 2 },
+        { id: 'upper', label: 'Uppercase letter (A-Z)', test: (value) => /[A-Z]/.test(value), score: 1 },
+        { id: 'lower', label: 'Lowercase letter (a-z)', test: (value) => /[a-z]/.test(value), score: 1 },
+        { id: 'digit', label: 'Number (0-9)', test: (value) => /[0-9]/.test(value), score: 1 },
+        { id: 'symbol', label: 'Symbol (!@#$...)', test: (value) => /[^A-Za-z0-9]/.test(value), score: 1 }
+      ],
+      thresholds: {
+        weak: 2,
+        fair: 4
+      }
+    }
+  }
 };
 
 const DEFAULT_FAVICON_RULES = Object.freeze([
@@ -12371,6 +12613,7 @@ function getDefaultFaviconRules() {
             'eraseDatabase.warning': 'Warning! This will permanently delete ALL your bookmarks, groups, and settings. This action cannot be undone!',
             'eraseDatabase.confirm': 'Are you absolutely sure you want to delete everything?',
             'addGroup': 'Add group',
+            'toolbar.lock': 'Lock session',
             'search': 'Search',
             'importFromFile': 'Import from file',
             'exportToFile': 'Export to file',
@@ -12620,6 +12863,61 @@ function getDefaultFaviconRules() {
             'options.sharing.defaultTtl.help': 'Time to live in seconds (0 = server default)',
             'options.sharing.quickCodeTtl': 'Quick Code TTL',
             'options.sharing.quickCodeTtl.help': 'Validity of quick share codes in seconds',
+            'options.security': 'Security',
+            'options.security.encryption': 'Encryption',
+            'options.security.encryption.help': 'Protect all stored data with a password.',
+            'options.security.encryption.description': 'Set a password to encrypt your bookmarks before they are stored locally.',
+            'options.security.encryption.newPassword': 'Password',
+            'options.security.encryption.confirmPassword': 'Confirm password',
+            'options.security.encryption.enableAction': 'Enable encryption',
+            'options.security.encryption.working': 'Working...',
+            'options.security.encryption.statusEnabled': 'Enabled',
+            'options.security.encryption.statusDisabled': 'Disabled',
+            'options.security.encryption.activeDescription': 'Encryption is active. You can update the password or turn encryption off.',
+            'options.security.encryption.changeTitle': 'Change password',
+            'options.security.encryption.changeAction': 'Update password',
+            'options.security.encryption.disableTitle': 'Disable encryption',
+            'options.security.encryption.disableDescription': 'Disabling encryption will store your bookmarks unprotected on this device.',
+            'options.security.encryption.currentPassword': 'Current password',
+            'options.security.encryption.disableAction': 'Disable encryption',
+            'options.security.autoLockEnabled': 'Lock session automatically',
+            'options.security.autoLockEnabled.help': 'Automatically lock the encrypted session after inactivity.',
+            'options.security.autoLockMinutes': 'Lock after inactivity',
+            'options.security.autoLockMinutes.help': 'How many minutes of inactivity before locking the session.',
+            'options.security.autoLockMinutes.5': '5 minutes',
+            'options.security.autoLockMinutes.10': '10 minutes',
+            'options.security.autoLockMinutes.15': '15 minutes',
+            'options.security.autoLockMinutes.30': '30 minutes',
+            'options.security.autoLockMinutes.60': '60 minutes',
+            'encryption.unlockTitle': 'Unlock your data',
+            'encryption.unlockSubtitle': 'Enter your encryption password to continue.',
+            'encryption.passwordLabel': 'Password',
+            'encryption.unlockAction': 'Unlock',
+            'encryption.unlocking': 'Unlocking...',
+            'encryption.unlockHint': 'Forgot your password? Encryption cannot be recovered without it.',
+            'encryption.error.required': 'Password is required.',
+            'encryption.error.mismatch': 'Passwords do not match.',
+            'encryption.error.tooWeak': 'Choose a stronger password.',
+            'encryption.error.invalidPassword': 'Incorrect password.',
+            'encryption.error.enableFailed': 'Failed to enable encryption.',
+            'encryption.error.changeFailed': 'Failed to update password.',
+            'encryption.error.notActive': 'Encryption is not active.',
+            'encryption.error.noMetadata': 'Nothing to unlock.',
+            'encryption.toast.enabled': 'Encryption enabled',
+            'encryption.toast.disabled': 'Encryption disabled',
+            'encryption.toast.passwordChanged': 'Encryption password updated',
+            'encryption.toast.unlocked': 'Session unlocked',
+            'encryption.toast.alreadyLocked': 'Session already locked',
+            'encryption.toast.lockedManual': 'Session locked',
+            'encryption.toast.lockedAuto': 'Session locked after inactivity',
+            'encryption.rule.length': 'At least 12 characters',
+            'encryption.rule.upper': 'Uppercase letter (A-Z)',
+            'encryption.rule.lower': 'Lowercase letter (a-z)',
+            'encryption.rule.digit': 'Number (0-9)',
+            'encryption.rule.symbol': 'Symbol (!@#$...)',
+            'encryption.strength.weak': 'Weak',
+            'encryption.strength.fair': 'Fair',
+            'encryption.strength.strong': 'Strong',
             'options.sharing.contactOnlineTimeout': 'Contact Online Timeout',
             'options.sharing.contactOnlineTimeout.help': 'How long a contact is shown as online without response (in seconds)',
             'options.links.openInNewTab': 'Open links in new tab',
@@ -13274,6 +13572,7 @@ function getDefaultFaviconRules() {
             'eraseDatabase.warning': 'Warnung! Dies wird ALLE Ihre Lesezeichen, Gruppen und Einstellungen dauerhaft löschen. Diese Aktion kann nicht rückgängig gemacht werden!',
             'eraseDatabase.confirm': 'Sind Sie absolut sicher, dass Sie alles löschen möchten?',
             'addGroup': 'Gruppe hinzufügen',
+            'toolbar.lock': 'Sitzung sperren',
             'search': 'Suche',
             'importFromFile': 'Importiere aus Datei',
             'exportToFile': 'Exportiere in Datei',
@@ -13411,6 +13710,61 @@ function getDefaultFaviconRules() {
             'options.sharing.defaultTtl.help': 'Gültigkeitsdauer in Sekunden (0 = Server-Standard)',
             'options.sharing.quickCodeTtl': 'Quick-Code TTL',
             'options.sharing.quickCodeTtl.help': 'Gültigkeit von Quick-Share-Codes in Sekunden',
+            'options.security': 'Sicherheit',
+            'options.security.encryption': 'Verschlüsselung',
+            'options.security.encryption.help': 'Schütze alle gespeicherten Daten mit einem Passwort.',
+            'options.security.encryption.description': 'Lege ein Passwort fest, damit deine Lesezeichen vor dem Speichern lokal verschlüsselt werden.',
+            'options.security.encryption.newPassword': 'Passwort',
+            'options.security.encryption.confirmPassword': 'Passwort bestätigen',
+            'options.security.encryption.enableAction': 'Verschlüsselung aktivieren',
+            'options.security.encryption.working': 'Wird übernommen...',
+            'options.security.encryption.statusEnabled': 'Aktiv',
+            'options.security.encryption.statusDisabled': 'Inaktiv',
+            'options.security.encryption.activeDescription': 'Die Verschlüsselung ist aktiv. Du kannst das Passwort ändern oder deaktivieren.',
+            'options.security.encryption.changeTitle': 'Passwort ändern',
+            'options.security.encryption.changeAction': 'Passwort aktualisieren',
+            'options.security.encryption.disableTitle': 'Verschlüsselung deaktivieren',
+            'options.security.encryption.disableDescription': 'Beim Deaktivieren werden deine Lesezeichen unverschlüsselt auf diesem Gerät gespeichert.',
+            'options.security.encryption.currentPassword': 'Aktuelles Passwort',
+            'options.security.encryption.disableAction': 'Verschlüsselung deaktivieren',
+            'options.security.autoLockEnabled': 'Sitzung automatisch sperren',
+            'options.security.autoLockEnabled.help': 'Sperrt die verschlüsselte Sitzung nach einer Inaktivitätszeit automatisch.',
+            'options.security.autoLockMinutes': 'Sperren nach Inaktivität',
+            'options.security.autoLockMinutes.help': 'Nach wie vielen Minuten ohne Aktivität die Sitzung gesperrt wird.',
+            'options.security.autoLockMinutes.5': '5 Minuten',
+            'options.security.autoLockMinutes.10': '10 Minuten',
+            'options.security.autoLockMinutes.15': '15 Minuten',
+            'options.security.autoLockMinutes.30': '30 Minuten',
+            'options.security.autoLockMinutes.60': '60 Minuten',
+            'encryption.unlockTitle': 'Daten entsperren',
+            'encryption.unlockSubtitle': 'Gib dein Verschlüsselungs-Passwort ein.',
+            'encryption.passwordLabel': 'Passwort',
+            'encryption.unlockAction': 'Entsperren',
+            'encryption.unlocking': 'Entsperren...',
+            'encryption.unlockHint': 'Passwort vergessen? Ohne Passwort können die Daten nicht wiederhergestellt werden.',
+            'encryption.error.required': 'Passwort erforderlich.',
+            'encryption.error.mismatch': 'Passwörter stimmen nicht überein.',
+            'encryption.error.tooWeak': 'Bitte ein stärkeres Passwort wählen.',
+            'encryption.error.invalidPassword': 'Passwort ist falsch.',
+            'encryption.error.enableFailed': 'Verschlüsselung konnte nicht aktiviert werden.',
+            'encryption.error.changeFailed': 'Passwort konnte nicht aktualisiert werden.',
+            'encryption.error.notActive': 'Verschlüsselung ist nicht aktiv.',
+            'encryption.error.noMetadata': 'Keine verschlüsselten Daten gefunden.',
+            'encryption.toast.enabled': 'Verschlüsselung aktiviert',
+            'encryption.toast.disabled': 'Verschlüsselung deaktiviert',
+            'encryption.toast.passwordChanged': 'Verschlüsselungs-Passwort aktualisiert',
+            'encryption.toast.unlocked': 'Sitzung entsperrt',
+            'encryption.toast.alreadyLocked': 'Sitzung ist bereits gesperrt',
+            'encryption.toast.lockedManual': 'Sitzung gesperrt',
+            'encryption.toast.lockedAuto': 'Sitzung nach Inaktivität gesperrt',
+            'encryption.rule.length': 'Mindestens 12 Zeichen',
+            'encryption.rule.upper': 'Großbuchstaben (A-Z)',
+            'encryption.rule.lower': 'Kleinbuchstaben (a-z)',
+            'encryption.rule.digit': 'Ziffer (0-9)',
+            'encryption.rule.symbol': 'Sonderzeichen (!@#$...)',
+            'encryption.strength.weak': 'Schwach',
+            'encryption.strength.fair': 'Mittel',
+            'encryption.strength.strong': 'Stark',
             'options.sharing.contactOnlineTimeout': 'Kontakt Online-Timeout',
             'options.sharing.contactOnlineTimeout.help': 'Wie lange ein Kontakt als online angezeigt wird, ohne zu antworten (in Sekunden)',
             'options.links.openInNewTab': 'Links in neuem Tab öffnen',
@@ -14344,6 +14698,10 @@ function getDefaultFaviconRules() {
         groupSharing: {
           topicPrefix: 'mb-g-',
         },
+        security: {
+          autoLockEnabled: false,
+          autoLockMinutes: '15'
+        },
         colors: {
           background: '',  // Changed from websiteBackground to match optionPath
           toolbarBackground: '',
@@ -14898,6 +15256,37 @@ function getDefaultFaviconRules() {
         data: JSON.parse(JSON.stringify(initialData)), // Deep clone initial data
         dataId: -1, // ID for the IndexedDB record
         isDarkMode: false, // Dark mode state
+        encryption: {
+          active: false,
+          locked: false,
+          key: null,
+          meta: null,
+          record: null,
+          unlock: {
+            password: '',
+            error: '',
+            busy: false
+          },
+          setup: {
+            password: '',
+            confirm: '',
+            error: '',
+            busy: false,
+            strength: { percent: 0, state: 'weak', label: '', score: 0, maxScore: 1, requirements: [] }
+          },
+          change: {
+            password: '',
+            confirm: '',
+            error: '',
+            busy: false,
+            strength: { percent: 0, state: 'weak', label: '', score: 0, maxScore: 1, requirements: [] }
+          },
+          disable: {
+            password: '',
+            error: '',
+            busy: false
+          }
+        },
         // Sync progress UI
         syncInProgress: false,
         syncProgress: 0,
@@ -15167,6 +15556,9 @@ function getDefaultFaviconRules() {
         titleFetchState: 'idle', // idle|loading|ok|fail
         faviconFetchState: 'idle', // idle|loading|ok|fail
         metadataMessage: '',
+        autoLockTimerId: null,
+        _autoLockEventHandler: null,
+        _autoLockEventsRegistered: false,
         editGroup: null, // Group being edited in modal
         editGroupEnableStyling: true, // UI switch for per-group styling
         qrCodeUrl: '',
@@ -15517,6 +15909,38 @@ function getDefaultFaviconRules() {
               contactOnlineTimeoutSeconds: { id: 'SharingContactOnlineTimeout', type: 'number', translateKey: 'options.sharing.contactOnlineTimeout', optionPath: 'sharing.contactOnlineTimeoutSeconds', helpText: 'options.sharing.contactOnlineTimeout.help' }
             }
           },
+          security: {
+            translateKey: 'options.security',
+            fields: {
+              autoLockEnabled: {
+                id: 'SecurityAutoLockEnabled',
+                type: 'checkbox',
+                translateKey: 'options.security.autoLockEnabled',
+                optionPath: 'security.autoLockEnabled',
+                helpText: 'options.security.autoLockEnabled.help'
+              },
+              autoLockMinutes: {
+                id: 'SecurityAutoLockMinutes',
+                type: 'select',
+                translateKey: 'options.security.autoLockMinutes',
+                optionPath: 'security.autoLockMinutes',
+                helpText: 'options.security.autoLockMinutes.help',
+                values: {
+                  '5': 'options.security.autoLockMinutes.5',
+                  '10': 'options.security.autoLockMinutes.10',
+                  '15': 'options.security.autoLockMinutes.15',
+                  '30': 'options.security.autoLockMinutes.30',
+                  '60': 'options.security.autoLockMinutes.60'
+                }
+              },
+              encryption: {
+                id: 'SecurityEncryption',
+                type: 'encryption',
+                translateKey: 'options.security.encryption',
+                helpText: 'options.security.encryption.help'
+              }
+            }
+          },
           sync: {
             translateKey: 'options.sync',
             fields: {
@@ -15773,6 +16197,29 @@ function getDefaultFaviconRules() {
             this._savedCollapsedStates = null;
           }
         },
+        'encryption.setup.password'(value) {
+          this.updateEncryptionStrength('setup', value || '');
+          if (this.encryption.setup.error) this.encryption.setup.error = '';
+        },
+        'encryption.change.password'(value) {
+          this.updateEncryptionStrength('change', value || '');
+          if (this.encryption.change.error) this.encryption.change.error = '';
+        },
+        'encryption.setup.confirm'(value) {
+          if (value !== undefined && this.encryption.setup.error) this.encryption.setup.error = '';
+        },
+        'encryption.change.confirm'(value) {
+          if (value !== undefined && this.encryption.change.error) this.encryption.change.error = '';
+        },
+        'encryption.disable.password'(value) {
+          if (value !== undefined && this.encryption.disable.error) this.encryption.disable.error = '';
+        },
+        'data.options.security.autoLockEnabled'(newVal, oldVal) {
+          if (newVal !== oldVal) this.resetAutoLockTimer();
+        },
+        'data.options.security.autoLockMinutes'(newVal, oldVal) {
+          if (newVal !== oldVal) this.resetAutoLockTimer();
+        },
         dragState(newValue, oldValue) {
           debugLog('log', "dragState changed from", oldValue, "to", newValue);
           if (newValue) {
@@ -15901,7 +16348,14 @@ function getDefaultFaviconRules() {
                      this.settingsMatchesFilter(this.optionsDesign.sharing.defaultTtl.translateKey, this.optionsDesign.sharing.defaultTtl.helpText) ||
                      this.settingsMatchesFilter(this.optionsDesign.sharing.quickCodeTtlSec.translateKey, this.optionsDesign.sharing.quickCodeTtlSec.helpText);
             }
-            
+
+            if (section === 'security') {
+              const secFields = this.optionsDesign.security.fields;
+              return this.settingsMatchesFilter(secFields.encryption.translateKey, secFields.encryption.helpText) ||
+                     this.settingsMatchesFilter(secFields.autoLockEnabled.translateKey, secFields.autoLockEnabled.helpText) ||
+                     this.settingsMatchesFilter(secFields.autoLockMinutes.translateKey, secFields.autoLockMinutes.helpText);
+            }
+
             if (section === 'eventlog') {
               return this.settingsMatchesFilter('options.eventlog.snapshotInterval', 'options.eventlog.snapshotInterval.help') ||
                      this.settingsMatchesFilter('options.eventlog.maxEvents', 'options.eventlog.maxEvents.help') ||
@@ -16026,6 +16480,9 @@ function getDefaultFaviconRules() {
           // Restore design tokens collapsed state
           this.loadDesignTokensCollapsed();
 
+          this.updateEncryptionStrength('setup', '');
+          this.updateEncryptionStrength('change', '');
+
           // No wrapping of confirmShare; extend main confirmShare handler directly
           window.addEventListener('keyup', (e) => {
           if (e.key === 'Escape') {
@@ -16043,6 +16500,8 @@ function getDefaultFaviconRules() {
         // Clean up global listeners
         window.removeEventListener('click', this.handleGlobalClick, true);
         document.removeEventListener('keydown', this.handleGlobalKeyDown);
+        this.unregisterAutoLockListeners();
+        this.resetAutoLockTimer(true);
         
         // Clean up all timers to prevent memory leaks
         this.clearExpandHoverTimers();
@@ -16078,6 +16537,9 @@ function getDefaultFaviconRules() {
             this.resetImportDialog();
           });
         }
+
+        this.registerAutoLockListeners();
+        this.resetAutoLockTimer();
 
         // Configure moment.js with German locale
         if (typeof moment !== 'undefined') {
@@ -27207,261 +27669,47 @@ footer a:hover {
             const dataArray = await linksDb.links.toArray();
             const isFresh = (dataArray.length === 0);
             if (dataArray.length > 0) {
-              this.dataId = dataArray[0].id;
-              const storedData = JSON.parse(dataArray[0].data);
-              // Merge gespeicherte Daten auf die Standardstruktur
-              this.data = Object.assign({}, JSON.parse(JSON.stringify(initialData)), storedData);
-              debugLog('log', "Loaded data:", storedData);
+              const record = dataArray[0];
+              this.dataId = record.id;
+
+              if (record.encrypted) {
+                this.encryption.active = true;
+                this.encryption.locked = true;
+                this.encryption.key = null;
+                this.encryption.meta = {
+                  version: record.version || CONSTS.ENCRYPTION.VERSION,
+                  salt: record.salt || '',
+                  iterations: record.iterations || CONSTS.ENCRYPTION.PBKDF2_ITERATIONS
+                };
+                this.encryption.record = record;
+                this.encryption.unlock.password = '';
+                this.encryption.unlock.error = '';
+                this.encryption.setup.password = '';
+                this.encryption.setup.confirm = '';
+                this.encryption.change.password = '';
+                this.encryption.change.confirm = '';
+                this.encryption.disable.password = '';
+                this.lastSavedJson = '';
+                return;
+              }
+
+              this.encryption.active = false;
+              this.encryption.locked = false;
+              this.encryption.key = null;
+              this.encryption.meta = null;
+              this.encryption.record = null;
+
+              const storedData = record.data ? JSON.parse(record.data) : JSON.parse(JSON.stringify(initialData));
+              await this.processLoadedData(storedData, false);
             } else {
-              // DB leer -> Initialisiere mit Defaults
-              this.data = JSON.parse(JSON.stringify(initialData));
+              this.encryption.active = false;
+              this.encryption.locked = false;
+              this.encryption.key = null;
+              this.encryption.meta = null;
+              this.encryption.record = null;
               this.dataId = -1;
-              // Optional: Default-Gruppe erstellen, wenn gewünscht
-              // const tmpGroup = this.getNewGroupTemplate(this.getTranslation('options.common'));
-              // this.data.groups = [tmpGroup];
+              await this.processLoadedData(JSON.parse(JSON.stringify(initialData)), true);
             }
-            // Track if we need to save due to migrations
-            let needsSaveForMigration = false;
-            // Apply schema migrations and normalization before further processing
-            try { if (this.applyMigrations && this.applyMigrations(this.data)) needsSaveForMigration = true; } catch (e) { debugLog('warn','[MIGRATION] applyMigrations failed', e); }
-
-            // 1. Optionsstruktur sicherstellen
-            this.fixOptions();
-            // Ensure identity exists with a UUID (needed for event-log)
-            if (!this.data.identity) {
-              this.$set(this.data, 'identity', { 
-                uuid: this.generateUUID(), // Always generate a UUID for event-log
-                name: '', 
-                pubKey: '', 
-                privKey: '' 
-              });
-            } else if (!this.data.identity.uuid) {
-              // If identity exists but has no UUID, generate one
-              this.$set(this.data.identity, 'uuid', this.generateUUID());
-            }
-
-            // Ensure display name: on fresh settings or if not set
-            try {
-              const currentName = (this.data.options?.common?.identityName || this.data.identity?.name || '').trim();
-              if (isFresh || !currentName) {
-                const rand = Math.random().toString(36).slice(2, 8); // 6-stellig, [a-z0-9]
-                const generated = `mybookmarks_${rand}`;
-                if (!this.data.options) this.$set(this.data, 'options', {});
-                if (!this.data.options.common) this.$set(this.data.options, 'common', {});
-                this.$set(this.data.options.common, 'identityName', generated);
-                if (!this.data.identity) this.$set(this, 'identity', {});
-                this.$set(this.data.identity, 'name', generated);
-                debugLog('log', '[INIT] Generated default identity name:', generated);
-                // Persist immediately so subsequent logic sees the identity
-                this.saveData();
-              }
-            } catch {}
-            if (!Array.isArray(this.data.contacts)) this.$set(this.data, 'contacts', []);
-            if (!Array.isArray(this.data.inbox)) this.$set(this.data, 'inbox', []);
-            // Ensure auxiliary arrays exist
-            if (!Array.isArray(this.data.savedSearches)) this.$set(this.data, 'savedSearches', []);
-            if (!Array.isArray(this.data.snapshots)) this.$set(this.data, 'snapshots', []);
-
-            // Ensure all groups have required IDs and clean up shared status
-            (this.data.groups || []).forEach(g => {
-              // Ensure every group has a groupId (needed for event-log)
-              if (!g.groupId) {
-                g.groupId = g.uuid || this.generateUUID();
-                if (!g.uuid) {
-                  g.uuid = g.groupId;
-                }
-                debugLog('log', '[INIT] Added groupId to group:', g.name, g.groupId);
-              }
-
-              if (g.favicon === undefined) this.$set(g, 'favicon', '');
-              if (g.faviconError === undefined) this.$set(g, 'faviconError', false);
-              if (g.faviconLoading === undefined) this.$set(g, 'faviconLoading', false);
-              if (g.faviconSource === undefined) this.$set(g, 'faviconSource', null);
-              if (g.faviconRuleId === undefined) this.$set(g, 'faviconRuleId', null);
-              if (g.snapshot && typeof g.snapshot === 'object') {
-                if (g.snapshot.favicon === undefined) this.$set(g.snapshot, 'favicon', g.favicon || '');
-                if (g.snapshot.faviconSource === undefined) this.$set(g.snapshot, 'faviconSource', g.faviconSource || null);
-                if (g.snapshot.faviconRuleId === undefined) this.$set(g.snapshot, 'faviconRuleId', g.faviconRuleId || null);
-              }
-
-              // Add progressive loading defaults for existing groups
-              if (g.linksExpanded === undefined) {
-                g.linksExpanded = false; // Start collapsed for performance
-              }
-              if (g.initialLinkCount === undefined) {
-                // Use global setting or default to 100
-                const threshold = this.data.options?.links?.progressiveLoadingThreshold || CONSTS.PROGRESSIVE_LOADING_THRESHOLD;
-                g.initialLinkCount = threshold;
-              }
-              if (g.expandedLinkCount === undefined) {
-                g.expandedLinkCount = CONSTS.EXPANDED_LINK_LIMIT; // Show 500 when expanded
-              }
-              
-              // Clean up shared flag for groups without active members
-              if (g.shared) {
-                const noMembers = !g.members || g.members.length === 0;
-                const onlyOwnerRemains = g.members && g.members.length === 1 && g.members[0].role === 'owner';
-                const noRegularMembers = g.members && g.members.length > 0 && !g.members.some(x => x.role === 'member');
-                if (noMembers || onlyOwnerRemains || noRegularMembers) {
-                  debugLog('log', '[CLEANUP] Auto-unshare group without active members:', g.name);
-                  g.shared = false;
-                  try { if (g.groupTopic && window.sharing) window.sharing.ntfy.unsubscribe(g.groupTopic); } catch (e) { debugLog('warn','[CLEANUP] Unsubscribe failed', e); }
-                }
-              }
-            });
-
-            // 2. Option lesen *nach* dem Fixen
-            const forceCollapseAll = this.data.options.groups.collapseGroupsOnStart;
-            debugLog('log', "Option collapseGroupsOnStart:", forceCollapseAll);
-            
-            
-            // 3. Gruppen verarbeiten und 'collapsed' Status korrekt setzen
-            if (this.data.groups && Array.isArray(this.data.groups)) {
-              this.data.groups.forEach(g => {
-
-                // --- NEUE, KORRIGIERTE Logik ---
-                if (forceCollapseAll) {
-                  // Option ist TRUE -> Alle Gruppen einklappen, gespeicherten Zustand ignorieren
-                  this.$set(g, 'collapsed', true);
-                  debugLog('log', `Group "${g.name}" (ID: ${g.id}) forced collapsed=true due to option.`);
-                } else {
-                  // Option ist FALSE -> Gespeicherten Zustand verwenden oder auf ausgeklappt (false) setzen
-                  if (g.collapsed === undefined || g.collapsed === null) {
-                    // Wenn kein Zustand gespeichert, default ist AUSGEKLAPPT
-                    this.$set(g, 'collapsed', false);
-                    debugLog('log', `Group "${g.name}" (ID: ${g.id}) 'collapsed' state MISSING, defaulting to expanded (false).`);
-                  } else {
-                    // Gespeicherten Zustand (true oder false) verwenden
-                    debugLog('log', `Group "${g.name}" (ID: ${g.id}) 'collapsed' state loaded from save: ${g.collapsed}`);
-                    // Hier ist keine Aktion nötig, der Wert aus storedData wurde bereits übernommen
-                    // Nur zur Sicherheit via $set setzen, falls Objekt nicht reaktiv war:
-                    this.$set(g, 'collapsed', g.collapsed);
-                  }
-                }
-                // --- Ende NEUE, KORRIGIERTE Logik ---
-
-                // UUID-Migration für Gruppen: Add UUID to existing groups that don't have one
-                if (!g.uuid) {
-                  this.$set(g, 'uuid', this.generateUUID());
-                  needsSaveForMigration = true;
-                  debugLog('log', `[MIGRATION] Added UUID to group "${g.name}": ${g.uuid}`);
-                }
-
-                // Andere Eigenschaften setzen/prüfen (wie zuvor)
-                if (g.column === undefined || g.column === null) this.$set(g, 'column', 0);
-                this.$set(g, 'editing', false);
-                this.$set(g, 'isMouseOver', false);
-                this.$set(g, 'searchCollapsed', true); // Immer für Suche initial einklappen
-                this.$set(g, 'newLinkText', '');
-                this.$set(g, 'newLinkUrl', '');
-
-                // Links verarbeiten und UUID-Migration
-                if (!g.links || !Array.isArray(g.links)) {
-                  this.$set(g, 'links', []);
-                } else {
-                  g.links.forEach(l => {
-                    // UUID-Migration: Add UUID to existing links that don't have one
-                    if (!l.uuid) {
-                      this.$set(l, 'uuid', this.generateUUID());
-                      needsSaveForMigration = true;
-                      debugLog('log', `[MIGRATION] Added UUID to link "${l.text}" in group "${g.name}"`);
-                    }
-                    
-                    if (l.column === undefined || l.column === null) this.$set(l, 'column', 0);
-                    this.$set(l, 'editing', false);
-                    this.$set(l, 'isMouseOver', false);
-                  });
-                  
-                  // Links-Spalten innerhalb der Gruppe neu indizieren
-                  this.getLinkColumns(g.links).forEach(col => this.reindexArr(g.links.filter(l => l.column === col)));
-                }
-              });
-
-              // Gruppen-Spalten neu indizieren
-              this.getGroupColumns().forEach(col => {
-                this.reindexArr(this.data.groups.filter(g => g.column === col));
-              });
-            } else {
-              this.$set(this.data, 'groups', []);
-            }
-
-            if (this.ensureAllTimestamps()) {
-              needsSaveForMigration = true;
-            }
-
-            // Initialdaten speichern, wenn DB leer war oder Migration durchgeführt wurde
-            if (this.dataId === -1 || needsSaveForMigration) {
-              if (needsSaveForMigration) {
-                debugLog('log', "[MIGRATION] Saving data after UUID migration - this is critical for sync!");
-                // Force immediate save to ensure UUIDs are persisted before any sharing operations
-                await this.saveDataImmediate();
-              } else {
-                debugLog('log', "Saving initial data structure.");
-                this.saveData();
-              }
-            }
-
-            // 4. UI-Einstellungen anwenden
-            this.updateSettings();
-            
-            // Apply custom CSS if it exists
-            if (this.data.options?.customCss) {
-              this.applyCustomCss(this.data.options.customCss);
-            }
-
-            // Ensure identity now that data is loaded, then subscribe pairwise
-            try {
-              if (sharing) {
-                sharing.applyConfig();
-                await sharing.ensureIdentity();
-                for (const c of (this.data.contacts || [])) {
-                  try { await sharing.derivePairwiseFor(c.uuid); } catch {}
-                }
-                // subscribe shared groups
-                for (const g of (this.data.groups || [])) {
-                  try { 
-                    if (g.shared && g.groupTopic && g.groupKey) {
-                      debugLog('log', '[INIT] Subscribing to shared group from loadData:', g.name, g.groupId);
-                      sharing.subscribeGroup(g, false); // false = send update request
-                    }
-                  } catch(e) {
-                    debugLog('warn', '[INIT] Failed to subscribe group:', g.name, e);
-                  }
-                }
-                // Ensure owner membership on non-shared groups
-                try {
-                  const myUuid = this.data.identity?.uuid || '';
-                  const myName = this.data.identity?.name || '';
-                  (this.data.groups||[]).forEach(g => {
-                    if (!g.shared) {
-                      if (!Array.isArray(g.members) || !g.members.length) {
-                        this.$set(g, 'members', [ { uuid: myUuid, name: myName, role: 'owner' } ]);
-                      } else if (!g.members.some(m => m.uuid === myUuid && m.role === 'owner')) {
-                        g.members = g.members.filter(m => m.uuid !== myUuid);
-                        g.members.unshift({ uuid: myUuid, name: myName, role: 'owner' });
-                      }
-                    }
-                  });
-                  this.saveData();
-                } catch (error) {
-                debugLog('error', '[Sharing] Error processing message headers:', error);
-              }
-                // Owner-initiated sync on open
-                for (const g of (this.data.groups || [])) {
-                  try { await sharing.sendOwnerSync(g); } catch {}
-                }
-              }
-            } catch {}
-
-            // 5. Vue rendern lassen (Template Binding kümmert sich um 'show' Klasse)
-            this.$nextTick(() => {
-              debugLog('log', "Vue data processed. Template binding should set initial collapse state based on final group.collapsed values.");
-              // Stelle sicher, dass setInitialCollapseStates HIER NICHT aufgerufen wird, wenn du Template Binding nutzt.
-              // Initialize saved searches and history baseline
-              this.savedSearches = Array.isArray(this.data.savedSearches) ? [...this.data.savedSearches] : [];
-              try { this.lastSavedJson = JSON.stringify(this.getSavableData()); } catch { }
-            });
-
           } catch (e) {
             debugLog('error', "Error loading data:", e);
             // Fallback
@@ -27485,6 +27733,505 @@ footer a:hover {
             });
           }
         }, // Ende loadData
+        async processLoadedData(storedData, isFresh) {
+          this.data = Object.assign({}, JSON.parse(JSON.stringify(initialData)), storedData || {});
+          debugLog('log', "Loaded data:", storedData);
+
+          let needsSaveForMigration = false;
+          try {
+            if (this.applyMigrations && this.applyMigrations(this.data)) needsSaveForMigration = true;
+          } catch (e) {
+            debugLog('warn', '[MIGRATION] applyMigrations failed', e);
+          }
+
+          this.fixOptions();
+
+          if (!this.data.identity) {
+            this.$set(this.data, 'identity', {
+              uuid: this.generateUUID(),
+              name: '',
+              pubKey: '',
+              privKey: ''
+            });
+          } else if (!this.data.identity.uuid) {
+            this.$set(this.data.identity, 'uuid', this.generateUUID());
+          }
+
+          try {
+            const currentName = (this.data.options?.common?.identityName || this.data.identity?.name || '').trim();
+            if (isFresh || !currentName) {
+              const rand = Math.random().toString(36).slice(2, 8);
+              const generated = `mybookmarks_${rand}`;
+              if (!this.data.options) this.$set(this.data, 'options', {});
+              if (!this.data.options.common) this.$set(this.data.options, 'common', {});
+              this.$set(this.data.options.common, 'identityName', generated);
+              if (!this.data.identity) this.$set(this, 'identity', {});
+              this.$set(this.data.identity, 'name', generated);
+              debugLog('log', '[INIT] Generated default identity name:', generated);
+              this.saveData();
+            }
+          } catch {}
+
+          if (!Array.isArray(this.data.contacts)) this.$set(this.data, 'contacts', []);
+          if (!Array.isArray(this.data.inbox)) this.$set(this.data, 'inbox', []);
+          if (!Array.isArray(this.data.savedSearches)) this.$set(this.data, 'savedSearches', []);
+          if (!Array.isArray(this.data.snapshots)) this.$set(this.data, 'snapshots', []);
+
+          (this.data.groups || []).forEach(g => {
+            if (!g.groupId) {
+              g.groupId = g.uuid || this.generateUUID();
+              if (!g.uuid) g.uuid = g.groupId;
+              debugLog('log', '[INIT] Added groupId to group:', g.name, g.groupId);
+            }
+
+            if (g.favicon === undefined) this.$set(g, 'favicon', '');
+            if (g.faviconError === undefined) this.$set(g, 'faviconError', false);
+            if (g.faviconLoading === undefined) this.$set(g, 'faviconLoading', false);
+            if (g.faviconSource === undefined) this.$set(g, 'faviconSource', null);
+            if (g.faviconRuleId === undefined) this.$set(g, 'faviconRuleId', null);
+            if (g.snapshot && typeof g.snapshot === 'object') {
+              if (g.snapshot.favicon === undefined) this.$set(g.snapshot, 'favicon', g.favicon || '');
+              if (g.snapshot.faviconSource === undefined) this.$set(g.snapshot, 'faviconSource', g.faviconSource || null);
+              if (g.snapshot.faviconRuleId === undefined) this.$set(g.snapshot, 'faviconRuleId', g.faviconRuleId || null);
+            }
+
+            if (g.linksExpanded === undefined) g.linksExpanded = false;
+            if (g.initialLinkCount === undefined) {
+              const threshold = this.data.options?.links?.progressiveLoadingThreshold || CONSTS.PROGRESSIVE_LOADING_THRESHOLD;
+              g.initialLinkCount = threshold;
+            }
+            if (g.expandedLinkCount === undefined) g.expandedLinkCount = CONSTS.EXPANDED_LINK_LIMIT;
+
+            if (g.shared) {
+              const noMembers = !g.members || g.members.length === 0;
+              const onlyOwnerRemains = g.members && g.members.length === 1 && g.members[0].role === 'owner';
+              const noRegularMembers = g.members && g.members.length > 0 && !g.members.some(x => x.role === 'member');
+              if (noMembers || onlyOwnerRemains || noRegularMembers) {
+                debugLog('log', '[CLEANUP] Auto-unshare group without active members:', g.name);
+                g.shared = false;
+                try { if (g.groupTopic && window.sharing) window.sharing.ntfy.unsubscribe(g.groupTopic); } catch (e) { debugLog('warn', '[CLEANUP] Unsubscribe failed', e); }
+              }
+            }
+
+            if (!g.uuid) {
+              this.$set(g, 'uuid', this.generateUUID());
+              needsSaveForMigration = true;
+              debugLog('log', `[MIGRATION] Added UUID to group "${g.name}": ${g.uuid}`);
+            }
+
+            if (g.column === undefined || g.column === null) this.$set(g, 'column', 0);
+            this.$set(g, 'editing', false);
+            this.$set(g, 'isMouseOver', false);
+            this.$set(g, 'searchCollapsed', true);
+            this.$set(g, 'newLinkText', '');
+            this.$set(g, 'newLinkUrl', '');
+
+            if (!g.links || !Array.isArray(g.links)) {
+              this.$set(g, 'links', []);
+            } else {
+              g.links.forEach(l => {
+                if (!l.uuid) {
+                  this.$set(l, 'uuid', this.generateUUID());
+                  needsSaveForMigration = true;
+                  debugLog('log', `[MIGRATION] Added UUID to link "${l.text}" in group "${g.name}"`);
+                }
+
+                if (l.column === undefined || l.column === null) this.$set(l, 'column', 0);
+                this.$set(l, 'editing', false);
+                this.$set(l, 'isMouseOver', false);
+              });
+
+              this.getLinkColumns(g.links).forEach(col => this.reindexArr(g.links.filter(l => l.column === col)));
+            }
+          });
+
+          this.getGroupColumns().forEach(col => {
+            this.reindexArr(this.data.groups.filter(g => g.column === col));
+          });
+
+          const forceCollapseAll = !!this.data.options?.groups?.collapseGroupsOnStart;
+          if (this.data.groups && Array.isArray(this.data.groups)) {
+            this.data.groups.forEach(g => {
+              if (forceCollapseAll) {
+                this.$set(g, 'collapsed', true);
+              } else {
+                if (g.collapsed === undefined || g.collapsed === null) {
+                  this.$set(g, 'collapsed', false);
+                } else {
+                  this.$set(g, 'collapsed', g.collapsed);
+                }
+              }
+            });
+          } else {
+            this.$set(this.data, 'groups', []);
+          }
+
+          if (this.ensureAllTimestamps()) {
+            needsSaveForMigration = true;
+          }
+
+          if (this.dataId === -1 || needsSaveForMigration) {
+            if (needsSaveForMigration) {
+              debugLog('log', '[MIGRATION] Saving data after UUID migration - this is critical for sync!');
+              await this.saveDataImmediate();
+            } else {
+              debugLog('log', 'Saving initial data structure.');
+              this.saveData();
+            }
+          }
+
+          this.updateSettings();
+
+          if (this.data.options?.customCss) {
+            this.applyCustomCss(this.data.options.customCss);
+          }
+
+          try {
+            if (sharing) {
+              sharing.applyConfig();
+              await sharing.ensureIdentity();
+              for (const c of (this.data.contacts || [])) {
+                try { await sharing.derivePairwiseFor(c.uuid); } catch {}
+              }
+              for (const g of (this.data.groups || [])) {
+                try {
+                  if (g.shared && g.groupTopic && g.groupKey) {
+                    debugLog('log', '[INIT] Subscribing to shared group from loadData:', g.name, g.groupId);
+                    sharing.subscribeGroup(g, false);
+                  }
+                } catch (e) {
+                  debugLog('warn', '[INIT] Failed to subscribe group:', g.name, e);
+                }
+              }
+              try {
+                const myUuid = this.data.identity?.uuid || '';
+                const myName = this.data.identity?.name || '';
+                (this.data.groups || []).forEach(g => {
+                  if (!g.shared) {
+                    if (!Array.isArray(g.members) || !g.members.length) {
+                      this.$set(g, 'members', [{ uuid: myUuid, name: myName, role: 'owner' }]);
+                    } else if (!g.members.some(m => m.uuid === myUuid && m.role === 'owner')) {
+                      g.members = g.members.filter(m => m.uuid !== myUuid);
+                      g.members.unshift({ uuid: myUuid, name: myName, role: 'owner' });
+                    }
+                  }
+                });
+                this.saveData();
+              } catch (error) {
+                debugLog('error', '[Sharing] Error processing message headers:', error);
+              }
+              for (const g of (this.data.groups || [])) {
+                try { await sharing.sendOwnerSync(g); } catch {}
+              }
+            }
+          } catch {}
+
+          this.$nextTick(() => {
+            debugLog('log', 'Vue data processed. Template binding should set initial collapse state based on final group.collapsed values.');
+            this.savedSearches = Array.isArray(this.data.savedSearches) ? [...this.data.savedSearches] : [];
+            try { this.lastSavedJson = JSON.stringify(this.getSavableData()); } catch { }
+          });
+        },
+        updateEncryptionStrength(formKey, password) {
+          if (!this.encryption[formKey]) return;
+          const strength = this.evaluatePasswordStrength(password || '');
+          const label = this.getTranslation('encryption.strength.' + strength.state) || strength.state.charAt(0).toUpperCase() + strength.state.slice(1);
+          this.encryption[formKey].strength = Object.assign({}, strength, { label });
+        },
+        evaluatePasswordStrength(password) {
+          const config = CONSTS.ENCRYPTION.PASSWORD_COMPLEXITY || {};
+          const rules = config.rules || [];
+          const maxScore = rules.reduce((sum, rule) => sum + (rule.score || 0), 0) || 1;
+          let score = 0;
+          const requirements = rules.map(rule => {
+            const testFn = typeof rule.test === 'function' ? rule.test : () => false;
+            const met = testFn(password || '');
+            if (met) score += rule.score || 0;
+            return { id: rule.id, met, label: rule.label };
+          });
+          const percent = Math.min(100, Math.round((score / maxScore) * 100));
+          const weakThreshold = config.thresholds?.weak ?? 2;
+          const fairThreshold = config.thresholds?.fair ?? Math.ceil(maxScore * 0.7);
+          let state = 'weak';
+          if (score >= fairThreshold) {
+            state = 'strong';
+          } else if (score >= weakThreshold) {
+            state = 'fair';
+          }
+          return { score, maxScore, percent, state, requirements };
+        },
+        async unlockWithPassword() {
+          if (!this.encryption.record) {
+            debugLog('warn', '[ENCRYPTION] No encrypted record metadata found');
+            this.encryption.unlock.error = this.getTranslation('encryption.error.noMetadata') || 'Nothing to unlock.';
+            return;
+          }
+          const password = (this.encryption.unlock.password || '').trim();
+          if (!password) {
+            this.encryption.unlock.error = this.getTranslation('encryption.error.required') || 'Password is required.';
+            return;
+          }
+          this.encryption.unlock.busy = true;
+          this.encryption.unlock.error = '';
+          try {
+            const meta = this.encryption.meta || {};
+            const salt = meta.salt || this.encryption.record.salt;
+            const iterations = meta.iterations || this.encryption.record.iterations || CONSTS.ENCRYPTION.PBKDF2_ITERATIONS;
+            if (!salt) throw new Error('Missing salt');
+            const key = await this.deriveEncryptionKey(password, salt, iterations);
+            const payload = await this.ensureEncryptedRecord();
+            const plain = await this.decryptRecordPayload(payload, key);
+            const parsed = JSON.parse(plain);
+
+            this.encryption.key = key;
+            this.encryption.active = true;
+            this.encryption.locked = false;
+            this.encryption.meta = {
+              version: payload.version || CONSTS.ENCRYPTION.VERSION,
+              salt: payload.salt,
+              iterations: payload.iterations || CONSTS.ENCRYPTION.PBKDF2_ITERATIONS
+            };
+            this.encryption.setup.password = '';
+            this.encryption.setup.confirm = '';
+            this.encryption.change.password = '';
+            this.encryption.change.confirm = '';
+            this.encryption.disable.password = '';
+            this.updateEncryptionStrength('setup', '');
+            this.updateEncryptionStrength('change', '');
+
+            await this.processLoadedData(parsed, false);
+            this.resetAutoLockTimer();
+            try { showAppToast(this.getTranslation('encryption.toast.unlocked') || 'Session unlocked', 'success'); } catch {}
+          } catch (error) {
+            debugLog('warn', '[ENCRYPTION] Unlock failed', error);
+            this.encryption.unlock.error = this.getTranslation('encryption.error.invalidPassword') || 'Unable to unlock. Please check your password and try again.';
+            this.encryption.active = false;
+            this.encryption.locked = true;
+            this.encryption.key = null;
+          } finally {
+            this.encryption.unlock.busy = false;
+            this.encryption.unlock.password = '';
+          }
+        },
+        lockApplication() {
+          if (!this.encryption.active) {
+            try { showAppToast(this.getTranslation('encryption.error.notActive') || 'Encryption is not active.', 'warning'); } catch {}
+            return;
+          }
+          if (this.encryption.locked) {
+            try { showAppToast(this.getTranslation('encryption.toast.alreadyLocked') || 'Session already locked', 'info'); } catch {}
+            return;
+          }
+          if (this.performLock()) {
+            try { showAppToast(this.getTranslation('encryption.toast.lockedManual') || 'Session locked', 'info'); } catch {}
+          }
+        },
+        lockForInactivity() {
+          if (this.performLock()) {
+            try { showAppToast(this.getTranslation('encryption.toast.lockedAuto') || 'Session locked after inactivity', 'info'); } catch {}
+          }
+        },
+        performLock() {
+          if (!this.encryption.active || this.encryption.locked) return false;
+          this.encryption.key = null;
+          this.encryption.locked = true;
+          this.encryption.unlock.password = '';
+          this.encryption.unlock.error = '';
+          this.resetAutoLockTimer(true);
+          return true;
+        },
+        resetAutoLockTimer(forceStop = false) {
+          if (this.autoLockTimerId) {
+            clearTimeout(this.autoLockTimerId);
+            this.autoLockTimerId = null;
+          }
+          if (forceStop) return;
+          if (!this.encryption.active || this.encryption.locked) return;
+          const security = this.data.options?.security || {};
+          if (!security.autoLockEnabled) return;
+          const minutes = Number(security.autoLockMinutes || 0);
+          if (!minutes || minutes <= 0) return;
+          this.autoLockTimerId = setTimeout(() => this.lockForInactivity(), minutes * 60000);
+        },
+        registerAutoLockListeners() {
+          if (this._autoLockEventsRegistered) return;
+          this._autoLockEventHandler = () => this.resetAutoLockTimer();
+          const events = ['click', 'keydown', 'mousemove', 'touchstart', 'touchmove'];
+          events.forEach(evt => document.addEventListener(evt, this._autoLockEventHandler, true));
+          this._autoLockEventsRegistered = true;
+        },
+        unregisterAutoLockListeners() {
+          if (!this._autoLockEventsRegistered) return;
+          const events = ['click', 'keydown', 'mousemove', 'touchstart', 'touchmove'];
+          if (this._autoLockEventHandler) {
+            events.forEach(evt => document.removeEventListener(evt, this._autoLockEventHandler, true));
+          }
+          this._autoLockEventsRegistered = false;
+          this._autoLockEventHandler = null;
+        },
+        async enableEncryptionFromSettings() {
+          if (this.encryption.active) return;
+          const pwd = (this.encryption.setup.password || '').trim();
+          const confirm = (this.encryption.setup.confirm || '').trim();
+          this.encryption.setup.error = '';
+          if (!pwd || !confirm) {
+            this.encryption.setup.error = this.getTranslation('encryption.error.required') || 'Password is required.';
+            return;
+          }
+          if (pwd !== confirm) {
+            this.encryption.setup.error = this.getTranslation('encryption.error.mismatch') || 'Passwords do not match.';
+            return;
+          }
+          const strength = this.evaluatePasswordStrength(pwd);
+          const minScore = CONSTS.ENCRYPTION.PASSWORD_COMPLEXITY?.thresholds?.fair ?? strength.maxScore;
+          if (strength.score < minScore) {
+            this.encryption.setup.error = this.getTranslation('encryption.error.tooWeak') || 'Choose a stronger password.';
+            return;
+          }
+          this.encryption.setup.busy = true;
+          try {
+            const saltBytes = new Uint8Array(CONSTS.ENCRYPTION.SALT_BYTES);
+            crypto.getRandomValues(saltBytes);
+            const saltB64 = B64.enc(saltBytes);
+            const key = await this.deriveEncryptionKey(pwd, saltB64, CONSTS.ENCRYPTION.PBKDF2_ITERATIONS);
+            this.encryption.meta = {
+              version: CONSTS.ENCRYPTION.VERSION,
+              salt: saltB64,
+              iterations: CONSTS.ENCRYPTION.PBKDF2_ITERATIONS
+            };
+            this.encryption.key = key;
+            this.encryption.active = true;
+            this.encryption.locked = false;
+            await this.saveDataImmediate();
+            this.encryption.setup.password = '';
+            this.encryption.setup.confirm = '';
+            this.updateEncryptionStrength('setup', '');
+            this.updateEncryptionStrength('change', '');
+            this.resetAutoLockTimer();
+            showAppToast(this.getTranslation('encryption.toast.enabled') || 'Encryption enabled', 'success');
+          } catch (error) {
+            debugLog('error', '[ENCRYPTION] Enabling encryption failed', error);
+            this.encryption.active = false;
+            this.encryption.key = null;
+            this.encryption.meta = null;
+            this.encryption.setup.error = this.getTranslation('encryption.error.enableFailed') || 'Failed to enable encryption.';
+          } finally {
+            this.encryption.setup.busy = false;
+            this.encryption.setup.password = '';
+            this.encryption.setup.confirm = '';
+          }
+        },
+        async changeEncryptionPassword() {
+          if (!this.encryption.active || !this.encryption.key) {
+            this.encryption.change.error = this.getTranslation('encryption.error.notActive') || 'Encryption is not active.';
+            return;
+          }
+          const pwd = (this.encryption.change.password || '').trim();
+          const confirm = (this.encryption.change.confirm || '').trim();
+          this.encryption.change.error = '';
+          if (!pwd || !confirm) {
+            this.encryption.change.error = this.getTranslation('encryption.error.required') || 'Password is required.';
+            return;
+          }
+          if (pwd !== confirm) {
+            this.encryption.change.error = this.getTranslation('encryption.error.mismatch') || 'Passwords do not match.';
+            return;
+          }
+          const strength = this.evaluatePasswordStrength(pwd);
+          const minScore = CONSTS.ENCRYPTION.PASSWORD_COMPLEXITY?.thresholds?.fair ?? strength.maxScore;
+          if (strength.score < minScore) {
+            this.encryption.change.error = this.getTranslation('encryption.error.tooWeak') || 'Choose a stronger password.';
+            return;
+          }
+          this.encryption.change.busy = true;
+          try {
+            const saltBytes = new Uint8Array(CONSTS.ENCRYPTION.SALT_BYTES);
+            crypto.getRandomValues(saltBytes);
+            const saltB64 = B64.enc(saltBytes);
+            const key = await this.deriveEncryptionKey(pwd, saltB64, CONSTS.ENCRYPTION.PBKDF2_ITERATIONS);
+            this.encryption.meta = {
+              version: CONSTS.ENCRYPTION.VERSION,
+              salt: saltB64,
+              iterations: CONSTS.ENCRYPTION.PBKDF2_ITERATIONS
+            };
+            this.encryption.key = key;
+            await this.saveDataImmediate();
+            this.encryption.change.password = '';
+            this.encryption.change.confirm = '';
+            this.updateEncryptionStrength('change', '');
+            this.resetAutoLockTimer();
+            showAppToast(this.getTranslation('encryption.toast.passwordChanged') || 'Encryption password updated', 'success');
+          } catch (error) {
+            debugLog('error', '[ENCRYPTION] Changing password failed', error);
+            this.encryption.change.error = this.getTranslation('encryption.error.changeFailed') || 'Failed to update password.';
+          } finally {
+            this.encryption.change.busy = false;
+            this.encryption.change.password = '';
+            this.encryption.change.confirm = '';
+          }
+        },
+        async disableEncryptionFromSettings() {
+          if (!this.encryption.active) return;
+          const pwd = (this.encryption.disable.password || '').trim();
+          this.encryption.disable.error = '';
+          if (!pwd) {
+            this.encryption.disable.error = this.getTranslation('encryption.error.required') || 'Password is required.';
+            return;
+          }
+          this.encryption.disable.busy = true;
+          try {
+            const record = await this.ensureEncryptedRecord();
+            const key = await this.deriveEncryptionKey(pwd, record.salt, record.iterations || CONSTS.ENCRYPTION.PBKDF2_ITERATIONS);
+            await this.decryptRecordPayload(record, key); // Throws if password incorrect
+            this.encryption.active = false;
+            this.encryption.key = null;
+            this.encryption.meta = null;
+            this.encryption.record = null;
+            await this.saveDataImmediate();
+            this.encryption.disable.password = '';
+            this.updateEncryptionStrength('setup', '');
+            this.updateEncryptionStrength('change', '');
+            this.resetAutoLockTimer(true);
+            showAppToast(this.getTranslation('encryption.toast.disabled') || 'Encryption disabled', 'info');
+          } catch (error) {
+            debugLog('warn', '[ENCRYPTION] Disable failed', error);
+            this.encryption.disable.error = this.getTranslation('encryption.error.invalidPassword') || 'Incorrect password. Could not disable encryption.';
+          } finally {
+            this.encryption.disable.busy = false;
+            this.encryption.disable.password = '';
+          }
+        },
+        async ensureEncryptedRecord() {
+          if (this.encryption.record) return this.encryption.record;
+          if (this.dataId === -1) throw new Error('No encrypted payload available');
+          const record = await linksDb.links.get(this.dataId);
+          if (!record || !record.encrypted) throw new Error('No encrypted record stored');
+          this.encryption.record = record;
+          return record;
+        },
+        async deriveEncryptionKey(password, saltB64, iterations) {
+          const encoder = new TextEncoder();
+          const salt = saltB64 ? B64.dec(saltB64) : new Uint8Array(CONSTS.ENCRYPTION.SALT_BYTES);
+          const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveKey']);
+          return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+        },
+        async encryptPayloadWithKey(plaintext, key) {
+          const iv = crypto.getRandomValues(new Uint8Array(CONSTS.ENCRYPTION.IV_BYTES));
+          const encoder = new TextEncoder();
+          const encoded = encoder.encode(plaintext);
+          const cipherBuffer = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
+          return {
+            payload: B64.enc(new Uint8Array(cipherBuffer)),
+            iv: B64.enc(iv)
+          };
+        },
+        async decryptRecordPayload(record, key) {
+          if (!record || !record.payload || !record.iv) throw new Error('Missing payload');
+          const iv = B64.dec(record.iv);
+          const cipherBytes = B64.dec(record.payload);
+          const plainBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipherBytes);
+          return new TextDecoder().decode(plainBuffer);
+        },
         getSavableData() {
           // Create a deep copy to avoid modifying the original data structure
           const dataToSave = JSON.parse(JSON.stringify({
@@ -27880,6 +28627,16 @@ footer a:hover {
           // Ensure Nextcloud Bookmarks block exists and preserves saved values (including rootFolderId)
           this.data.options.bookmarks = Object.assign({}, defaultOptions.bookmarks || { serverUrl:'', username:'', password:'', rootFolderId:0, syncIntervalSec:0, folderHashes:{} }, this.data.options.bookmarks || {});
           this.data.options.sharing = Object.assign({}, defaultOptions.sharing || {}, this.data.options.sharing || {});
+          this.data.options.security = Object.assign({}, defaultOptions.security || { autoLockEnabled: false, autoLockMinutes: '15' }, this.data.options.security || {});
+          if (typeof this.data.options.security.autoLockEnabled !== 'boolean') {
+            this.$set(this.data.options.security, 'autoLockEnabled', !!(defaultOptions.security && defaultOptions.security.autoLockEnabled));
+          }
+          if (this.data.options.security.autoLockMinutes === undefined || this.data.options.security.autoLockMinutes === null || this.data.options.security.autoLockMinutes === '') {
+            const defMinutes = defaultOptions.security && defaultOptions.security.autoLockMinutes ? String(defaultOptions.security.autoLockMinutes) : '15';
+            this.$set(this.data.options.security, 'autoLockMinutes', defMinutes);
+          } else {
+            this.data.options.security.autoLockMinutes = String(this.data.options.security.autoLockMinutes);
+          }
           this.data.options.colors = Object.assign({}, defaultOptions.colors || {}, this.data.options.colors || {});
           
           // Event-Log defaults - use initialData defaults
@@ -32439,6 +33196,7 @@ footer a:hover {
                 modalInstance.hide();
               }
             }
+            this.resetAutoLockTimer();
             this.editableOptions = null; // Bearbeitungskopie löschen
           } catch (err) {
             debugLog('error', "Error during saveOptionsDialog:", err);
@@ -32448,6 +33206,14 @@ footer a:hover {
 
         // Debounced saving to reduce IndexedDB writes
         saveData() {
+          if (this.encryption && this.encryption.active) {
+            const hasKey = !!this.encryption.key;
+            const hasMeta = !!(this.encryption.meta && this.encryption.meta.salt);
+            if (!hasKey || !hasMeta) {
+              debugLog('log', '[ENCRYPTION] Skipping save while locked or metadata incomplete');
+              return;
+            }
+          }
           if (!this._debouncedSave) {
             this._debouncedSave = debounce(this.saveDataImmediate, 300).bind(this);
           }
@@ -32455,6 +33221,14 @@ footer a:hover {
         },
         async saveDataImmediate() {
           try {
+            if (this.encryption && this.encryption.active) {
+              const hasKey = !!this.encryption.key;
+              const hasMeta = !!(this.encryption.meta && this.encryption.meta.salt);
+              if (!hasKey || !hasMeta) {
+                debugLog('warn', '[ENCRYPTION] saveDataImmediate aborted: metadata incomplete or locked');
+                return;
+              }
+            }
             const savableData = this.getSavableData();
             const parsed = JSON.stringify(savableData);
             // History tracking
@@ -32465,11 +33239,46 @@ footer a:hover {
                 this.historyFuture = [];
               }
             }
-            if (this.dataId === -1) {
-              const newId = await linksDb.links.add({ data: parsed });
-              this.dataId = newId;
+            let recordPayload;
+            if (this.encryption.active) {
+              if (!this.encryption.key || !this.encryption.meta || !this.encryption.meta.salt) {
+                throw new Error('Encryption metadata is incomplete');
+              }
+              const encrypted = await this.encryptPayloadWithKey(parsed, this.encryption.key);
+              recordPayload = {
+                data: null,
+                encrypted: 1,
+                payload: encrypted.payload,
+                iv: encrypted.iv,
+                salt: this.encryption.meta.salt,
+                iterations: this.encryption.meta.iterations || CONSTS.ENCRYPTION.PBKDF2_ITERATIONS,
+                version: this.encryption.meta.version || CONSTS.ENCRYPTION.VERSION
+              };
             } else {
-              await linksDb.links.update(this.dataId, { data: parsed });
+              recordPayload = {
+                data: parsed,
+                encrypted: 0,
+                payload: null,
+                iv: null,
+                salt: null,
+                iterations: null,
+                version: null
+              };
+            }
+
+            if (this.dataId === -1) {
+              const newId = await linksDb.links.add(recordPayload);
+              this.dataId = newId;
+              if (this.encryption.active) {
+                this.encryption.record = Object.assign({ id: newId }, recordPayload);
+              }
+            } else {
+              await linksDb.links.update(this.dataId, recordPayload);
+              if (this.encryption.active) {
+                this.encryption.record = Object.assign({ id: this.dataId }, recordPayload);
+              } else {
+                this.encryption.record = null;
+              }
             }
             this.lastSavedJson = parsed;
             this.$forceUpdate();

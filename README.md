@@ -18,6 +18,7 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 - **Deep customization** – Toggle dark mode, apply per-element styling through the visual CSS editor, manage custom design tokens, and expose advanced developer routing with extensive logging utilities.
 - **Link safety insights** – Analyse URLs in real time, flag suspicious patterns (dangerous protocols, token leakage, punycode, shorteners) and surface actionable hints directly in the UI.
 - **Flexible networking** – Route outbound requests via the browser companion extension **or** a self-hosted proxy, configurable per workspace, complete with custom headers and API token support.
+- **Local encryption & session locking** – Protect the entire workspace with a password, lock instantly from the toolbar, and auto-lock after configurable inactivity.
 
 ## Technology Stack
 
@@ -42,6 +43,12 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 - All state is stored in `localStorage` under the `links` key. Use the built-in backup/restore dialogs for safer migrations.
 - The favicon rules dialog supports JSON import/export, letting you version-control shared rule sets.
 - Snapshots and duplicate reports are available from the toolbar for quick diagnostics.
+
+## Security Options
+
+- Enable local encryption under **Options → Security**. Once a password is set, all data saved to IndexedDB is encrypted; unlocking requires the same password and cannot be recovered if lost.
+- Use the lock icon next to “Add group” to manually re-lock an open session without refreshing. Enter the password again to continue working.
+- Toggle *Lock session automatically* to have MyBookmarks lock itself after a configurable period (5–60 minutes) of inactivity. Any keyboard, mouse, or touch interaction resets the timer.
 
 ## Sync & Sharing
 
