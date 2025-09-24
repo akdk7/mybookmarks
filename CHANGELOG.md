@@ -1,6 +1,4 @@
-## Version 2025-09-23
-
-### Improvement
+## Version 2025-09-24
 
 - Shortcut menu on settings dialog for quick access
 - Moved settings from the Synchronization section to the NTFY-sharing section
@@ -9,6 +7,14 @@
 - New css property to select the font-family
 - Fixed a bug when a css property was added, clicked into the value field and then clicked into an empty area of the virtual css editor the property was removed
 - Improved many css properties with more human friendly controls (still in progress)
+
+
+## Version 2025-09-23
+
+- Added a dedicated “Lock session” button in the main toolbar, allowing immediate relocking of encrypted workspaces without reloading.
+- Introduced configurable auto-lock security settings (Options → Security) with enable/disable toggle and selectable inactivity timeout (5–60 minutes).
+- Implemented inactivity tracking so normal user interactions reset the timer, guaranteeing the session only locks when idle.
+- Updated README with the new security feature highlights and usage guidance.
 
 
 ## Version 2025-09-22
