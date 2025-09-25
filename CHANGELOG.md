@@ -1,9 +1,15 @@
+## Version 2025-09-25
+
+- New button to show a list of all css properties the Element has at this time
+- Fixed an issue with links without url not being able to change "Text Color" via "Visual CSS Editor"
+
+
 ## Version 2025-09-24
 
 - Shortcut menu on settings dialog for quick access
 - Moved settings from the Synchronization section to the NTFY-sharing section
 - Export dialog got the options to define the export-to filename
-- Fiexed an issue that some link favicons being cleared when closing the Favicon rules dialog
+- Fixed an issue that some link favicons being cleared when closing the Favicon rules dialog
 - New css property to select the font-family
 - Fixed a bug when a css property was added, clicked into the value field and then clicked into an empty area of the virtual css editor the property was removed
 - Improved many css properties with more human friendly controls (still in progress)

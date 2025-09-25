@@ -2194,6 +2194,16 @@
       padding-top: 0.25rem;
       padding-bottom: 0.25rem;
     }
+    .visual-css-editor .rule-header-title {
+      min-width: 0;
+    }
+    .visual-css-editor .rule-header-title .rule-number {
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
     .visual-css-editor .input-group.input-group-sm .form-control-color {
       width: 2rem;
       height: calc(1.5em + 0.5rem + 2px);
@@ -3798,7 +3808,7 @@
                                           class="link-favicon-error" title="Favicon konnte nicht geladen werden (Extension erforderlich)">⚠️</span>
                                         <span v-html="sanitizeInlineNoAnchor(link.text || '')"></span>
                                       </a>
-                                      <span v-else>
+                                      <span v-else class="mb-link__anchor-no-url">
                                         <span v-html="sanitizeHtml(link.text || '')"></span>
                                       </span>
                                     </span>
@@ -4166,7 +4176,7 @@
 
             <!-- Rule Header -->
             <div class="rule-header d-flex justify-content-between align-items-center mb-2">
-              <div class="d-flex align-items-center flex-grow-1">
+              <div class="d-flex align-items-center flex-grow-1 rule-header-title">
                 <button @click="toggleRuleCollapse(rule)"
                         class="btn btn-sm btn-link p-0 me-2"
                         :title="getTranslation('css.visual.toggleCollapse') || 'Ein-/Ausklappen'"
@@ -4177,7 +4187,6 @@
                 <div v-if="editingRuleId !== rule.id"
                      @dblclick="startEditingRuleName(rule)"
                      class="rule-number fw-bold"
-                     style="cursor: pointer;"
                      :title="getTranslation('css.visual.doubleClickToEdit') || 'Doppelklick zum Bearbeiten'">
                   {{ rule.name || `${getTranslation('css.visual.rule') || 'Regel'} ${index + 1}` }}
                 </div>
@@ -4196,11 +4205,58 @@
                   {{ getTranslation('css.visual.selectElementShort') || 'Element wählen' }}
                 </span>
               </div>
-              <div class="rule-actions btn-group btn-group-sm">
+              <div class="rule-actions btn-group btn-group-sm align-items-start">
                 <button @click="startElementPicker(rule)"
+                        type="button"
                         class="btn btn-outline-secondary"
                         :class="{ active: elementPickerActive && currentPickerRule && currentPickerRule.id === rule.id }"
                         :title="getTranslation('css.visual.pickElement') || 'Element wählen'">🎯</button>
+                <button @click="togglePropertyImportMenu(rule, $event)"
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        :disabled="!getRuleSelector(rule).base"
+                        :title="getTranslation('css.visual.importElementStyles') || 'Stile übernehmen'">🎨</button>
+                <div v-if="propertyImportMenu.visible && propertyImportMenu.ruleId === rule.id"
+                     class="dropdown-menu show visual-css-import-menu"
+                     @click.stop
+                     @mousedown.stop
+                     @keydown.escape.stop.prevent="closePropertyImportMenu"
+                     :style="{
+                       position: 'fixed',
+                       top: propertyImportMenu.top + 'px',
+                       left: propertyImportMenu.left + 'px',
+                       maxHeight: '320px',
+                       overflowY: 'auto',
+                       zIndex: 1300,
+                       minWidth: '260px'
+                     }">
+                  <h6 class="dropdown-header mb-1">
+                    {{ getTranslation('css.visual.importMenuTitle') || 'Element-Stile' }}
+                  </h6>
+                  <button type="button"
+                          class="dropdown-item"
+                          @click="importAllPropertiesFromMenu(rule)"
+                          :disabled="propertyImportMenu.addableCount === 0">
+                    {{ getTranslation('css.visual.importAddAll') || 'Alle Eigenschaften übernehmen' }}
+                  </button>
+                  <div class="dropdown-divider"></div>
+                  <button v-for="item in propertyImportMenu.items"
+                          :key="item.prop"
+                          type="button"
+                          class="dropdown-item d-flex flex-column align-items-start"
+                          :class="{ 'disabled': item.disabled }"
+                          :disabled="item.disabled"
+                          @click="importPropertyFromMenu(rule, item)">
+                    <span class="fw-semibold">{{ item.prop }}</span>
+                    <small class="text-muted" style="white-space: normal; word-break: break-all;">
+                      {{ item.value }}
+                    </small>
+                  </button>
+                  <div v-if="propertyImportMenu.items.length === 0"
+                       class="dropdown-item text-muted">
+                    {{ getTranslation('css.visual.importNoComputedProps') || 'Keine Eigenschaften verfügbar.' }}
+                  </div>
+                </div>
                 <button @click="moveCssRuleUp(index)"
                         class="btn btn-outline-secondary"
                         :disabled="index === 0"
@@ -13444,6 +13500,17 @@ function getDefaultFaviconRules() {
             'css.visual.pickElement': 'Pick element',
             'css.visual.pickerActive': 'Element picker active: Click an element in content',
             'css.visual.picked': 'Picked',
+            'css.visual.importElementStyles': 'Copy element styles',
+            'css.visual.importNoSelection': 'Select an element first.',
+            'css.visual.importNoSelector': 'Could not derive a selector for this rule.',
+            'css.visual.importNoMatch': 'No element found for the current selector.',
+            'css.visual.importSuccess': 'Added %s properties: %s',
+            'css.visual.importNoNewProps': 'No new properties to add.',
+            'css.visual.importQueryFailed': 'Failed to read element styles (invalid selector?).',
+            'css.visual.importMenuTitle': 'Element styles',
+            'css.visual.importAddAll': 'Add all properties',
+            'css.visual.importPropertyAdded': 'Added %s: %s',
+            'css.visual.importNoComputedProps': 'No computed styles found for this element.',
             'css.visual.applyPreset': 'Apply preset…',
             'css.visual.selectFont': '-- Select font --',
             'css.visual.fontPreviewText': 'The quick brown fox jumps over the lazy dog.',
@@ -15049,6 +15116,17 @@ function getDefaultFaviconRules() {
             , 'css.visual.pickElement': 'Element wählen'
             , 'css.visual.pickerActive': 'Element-Picker aktiv: Klicke ein Element im Inhalt'
             , 'css.visual.picked': 'Ausgewählt'
+            , 'css.visual.importElementStyles': 'Stile übernehmen'
+            , 'css.visual.importNoSelection': 'Bitte wähle zuerst ein Element aus.'
+            , 'css.visual.importNoSelector': 'Für diese Regel konnte kein Selektor ermittelt werden.'
+            , 'css.visual.importNoMatch': 'Kein Element für den aktuellen Selektor gefunden.'
+            , 'css.visual.importSuccess': '%s Eigenschaften übernommen: %s'
+            , 'css.visual.importNoNewProps': 'Keine neuen Eigenschaften vorhanden.'
+            , 'css.visual.importQueryFailed': 'Stile konnten nicht gelesen werden (ungültiger Selektor?).'
+            , 'css.visual.importMenuTitle': 'Element-Stile'
+            , 'css.visual.importAddAll': 'Alle Eigenschaften übernehmen'
+            , 'css.visual.importPropertyAdded': '%s hinzugefügt: %s'
+            , 'css.visual.importNoComputedProps': 'Keine Element-Stile gefunden.'
             , 'css.visual.applyPreset': 'Preset anwenden…'
             , 'css.visual.selectFont': '-- Schrift wählen --'
             , 'css.visual.fontPreviewText': 'Zwölf Boxkämpfer jagen Viktor quer über den großen Sylter Deich.'
@@ -16055,6 +16133,16 @@ function getDefaultFaviconRules() {
         _debouncedVisualCssSave: null,
         showSaveRuleSetDialog: false,
         linkShortenerServices: LINK_SHORTENER_SERVICES,
+        propertyImportMenu: {
+          visible: false,
+          ruleId: null,
+          items: [],
+          top: 0,
+          left: 0,
+          addableCount: 0,
+          triggerEl: null
+        },
+        _propertyImportMenuListenersRegistered: false,
 
         // Visual CSS Rules search
         rulesFilterQuery: '',
@@ -17300,6 +17388,7 @@ function getDefaultFaviconRules() {
         // Clean up global listeners
         window.removeEventListener('click', this.handleGlobalClick, true);
         document.removeEventListener('keydown', this.handleGlobalKeyDown);
+        this.unregisterPropertyImportMenuListeners();
         this.unregisterAutoLockListeners();
         this.resetAutoLockTimer(true);
         
@@ -19716,6 +19805,8 @@ function getDefaultFaviconRules() {
 
               const selector = this.generateCssSelector(rule);
               const properties = [];
+              let colorValue = null;
+              let colorImportant = '';
 
               for (const [prop, value] of Object.entries(rule.properties)) {
                 if (!value) continue;
@@ -19732,6 +19823,10 @@ function getDefaultFaviconRules() {
                   // Add !important if enabled for this property
                   const important = rule.important && rule.important[prop] ? ' !important' : '';
                   properties.push(`  ${prop}: ${value}${important};`);
+                  if (prop === 'color') {
+                    colorValue = value;
+                    colorImportant = important;
+                  }
                 }
               }
 
@@ -19747,6 +19842,16 @@ function getDefaultFaviconRules() {
 
               if (properties.length > 0) {
                 css += `${selector} {\n${properties.join('\n')}\n}\n`;
+              }
+
+              if (colorValue) {
+                const extraSelectors = this.getAdditionalColorSelectors(selObj, selector);
+                if (extraSelectors.length > 0) {
+                  const line = `  color: ${colorValue}${colorImportant};`;
+                  for (const extraSelector of extraSelectors) {
+                    css += `${extraSelector} {\n${line}\n}\n`;
+                  }
+                }
               }
             }
           }
@@ -19907,6 +20012,347 @@ function getDefaultFaviconRules() {
             this.lastHighlightedEl = null;
             this.lastHighlightedOutline = null;
           }
+        },
+        togglePropertyImportMenu(rule, event) {
+          event?.stopPropagation?.();
+          const currentRuleId = this.propertyImportMenu.ruleId;
+          if (this.propertyImportMenu.visible && currentRuleId === rule.id) {
+            this.closePropertyImportMenu();
+            return;
+          }
+
+          const result = this.buildPropertyImportItems(rule);
+          if (!result) {
+            this.closePropertyImportMenu();
+            return;
+          }
+
+          const { items, addableCount } = result;
+          const triggerEl = event?.currentTarget || event?.target || null;
+          const rect = triggerEl ? triggerEl.getBoundingClientRect() : { left: 0, bottom: 0, height: 0 };
+
+          this.propertyImportMenu.visible = true;
+          this.propertyImportMenu.ruleId = rule.id;
+          this.propertyImportMenu.items = items;
+          this.propertyImportMenu.addableCount = addableCount;
+          this.propertyImportMenu.top = rect.bottom;
+          this.propertyImportMenu.left = rect.left;
+          this.propertyImportMenu.triggerEl = triggerEl;
+
+          this.registerPropertyImportMenuListeners();
+
+          if (addableCount === 0 && items.length > 0) {
+            let message = this.getTranslation('css.visual.importNoNewProps');
+            if (!message || message === 'css.visual.importNoNewProps') {
+              message = 'No new properties to add.';
+            }
+            this.showToast(message, 'info');
+          }
+          if (items.length === 0) {
+            let message = this.getTranslation('css.visual.importNoComputedProps');
+            if (!message || message === 'css.visual.importNoComputedProps') {
+              message = 'No computed styles found for this element.';
+            }
+            this.showToast(message, 'info');
+          }
+        },
+        buildPropertyImportItems(rule) {
+          if (!rule) return null;
+          const selectorObj = this.getRuleSelector(rule);
+          if (!selectorObj.base) {
+            let message = this.getTranslation('css.visual.importNoSelection');
+            if (!message || message === 'css.visual.importNoSelection') {
+              message = 'Select an element first.';
+            }
+            this.showToast(message, 'warning');
+            return null;
+          }
+
+          const selector = this.generateCssSelector(rule);
+          const sanitizedSelector = this.sanitizeSelectorForDomQuery(selector);
+          if (!sanitizedSelector) {
+            let message = this.getTranslation('css.visual.importNoSelector');
+            if (!message || message === 'css.visual.importNoSelector') {
+              message = 'Could not derive a selector for this rule.';
+            }
+            this.showToast(message, 'warning');
+            return null;
+          }
+
+          let elements = [];
+          try {
+            elements = Array.from(document.querySelectorAll(sanitizedSelector));
+          } catch (error) {
+            console.error('buildPropertyImportItems: invalid selector', sanitizedSelector, error);
+            let message = this.getTranslation('css.visual.importQueryFailed');
+            if (!message || message === 'css.visual.importQueryFailed') {
+              message = 'Failed to read element styles (invalid selector?).';
+            }
+            this.showToast(message, 'error');
+            return null;
+          }
+
+          const element = elements.find(el => el instanceof HTMLElement) || elements[0];
+          if (!element) {
+            let message = this.getTranslation('css.visual.importNoMatch');
+            if (!message || message === 'css.visual.importNoMatch') {
+              message = 'No element found for the current selector.';
+            }
+            this.showToast(message, 'warning');
+            return null;
+          }
+
+          const computedStyles = window.getComputedStyle(element);
+
+          if (!rule.properties) {
+            if (this.$set) {
+              this.$set(rule, 'properties', {});
+            } else {
+              rule.properties = {};
+            }
+          }
+          if (!rule.important) {
+            if (this.$set) {
+              this.$set(rule, 'important', {});
+            } else {
+              rule.important = {};
+            }
+          }
+
+          const supportedProperties = this.getSupportedCssProperties();
+          const items = [];
+
+          for (const prop of supportedProperties) {
+            let value = computedStyles.getPropertyValue(prop);
+            if (!value) continue;
+            value = value.trim();
+            if (!value) continue;
+
+            const disabled = rule.properties.hasOwnProperty(prop);
+            items.push({
+              prop,
+              value,
+              disabled
+            });
+          }
+
+          items.sort((a, b) => a.prop.localeCompare(b.prop));
+          const addableCount = items.filter(item => !item.disabled).length;
+
+          return { items, addableCount };
+        },
+        importPropertyFromMenu(rule, item) {
+          if (!item || item.disabled) return;
+          if (!rule.properties) {
+            if (this.$set) {
+              this.$set(rule, 'properties', {});
+            } else {
+              rule.properties = {};
+            }
+          }
+
+          if (this.$set) {
+            this.$set(rule.properties, item.prop, item.value);
+          } else {
+            rule.properties[item.prop] = item.value;
+          }
+
+          item.disabled = true;
+          this.propertyImportMenu.addableCount = Math.max(0, this.propertyImportMenu.addableCount - 1);
+
+          let message = this.getTranslation('css.visual.importPropertyAdded', [item.prop, item.value]);
+          if (!message || message === 'css.visual.importPropertyAdded') {
+            message = `Added ${item.prop}: ${item.value}`;
+          }
+          this.showToast(message, 'success');
+
+          this.saveVisualCss();
+        },
+        importAllPropertiesFromMenu(rule) {
+          if (!this.propertyImportMenu.visible || this.propertyImportMenu.ruleId !== rule.id) return;
+          const itemsToAdd = (this.propertyImportMenu.items || []).filter(item => !item.disabled);
+          if (itemsToAdd.length === 0) {
+            let message = this.getTranslation('css.visual.importNoNewProps');
+            if (!message || message === 'css.visual.importNoNewProps') {
+              message = 'No new properties to add.';
+            }
+            this.showToast(message, 'info');
+            return;
+          }
+
+          if (!rule.properties) {
+            if (this.$set) {
+              this.$set(rule, 'properties', {});
+            } else {
+              rule.properties = {};
+            }
+          }
+
+          for (const item of itemsToAdd) {
+            if (this.$set) {
+              this.$set(rule.properties, item.prop, item.value);
+            } else {
+              rule.properties[item.prop] = item.value;
+            }
+            item.disabled = true;
+          }
+
+          this.propertyImportMenu.addableCount = 0;
+
+          let message = this.getTranslation('css.visual.importSuccess', [itemsToAdd.length, itemsToAdd.map(i => i.prop).join(', ')]);
+          if (!message || message === 'css.visual.importSuccess') {
+            message = `Added ${itemsToAdd.length} properties: ${itemsToAdd.map(i => i.prop).join(', ')}`;
+          }
+          this.showToast(message, 'success');
+
+          this.saveVisualCss();
+          this.closePropertyImportMenu();
+        },
+        closePropertyImportMenu() {
+          if (!this.propertyImportMenu.visible) return;
+          this.propertyImportMenu.visible = false;
+          this.propertyImportMenu.ruleId = null;
+          this.propertyImportMenu.items = [];
+          this.propertyImportMenu.addableCount = 0;
+          this.propertyImportMenu.top = 0;
+          this.propertyImportMenu.left = 0;
+          this.propertyImportMenu.triggerEl = null;
+          this.unregisterPropertyImportMenuListeners();
+        },
+        registerPropertyImportMenuListeners() {
+          if (!this._propertyImportMenuListenersRegistered) {
+            this._propertyImportMenuListenersRegistered = true;
+            document.addEventListener('click', this.onPropertyImportMenuOutsideClick, true);
+            document.addEventListener('keydown', this.onPropertyImportMenuKeydown, true);
+          }
+        },
+        unregisterPropertyImportMenuListeners() {
+          if (this._propertyImportMenuListenersRegistered) {
+            this._propertyImportMenuListenersRegistered = false;
+            document.removeEventListener('click', this.onPropertyImportMenuOutsideClick, true);
+            document.removeEventListener('keydown', this.onPropertyImportMenuKeydown, true);
+          }
+        },
+        onPropertyImportMenuOutsideClick(event) {
+          if (!this.propertyImportMenu.visible) return;
+          const menuEl = event.target.closest('.visual-css-import-menu');
+          if (menuEl) return;
+          const triggerEl = this.propertyImportMenu.triggerEl;
+          if (triggerEl && triggerEl.contains(event.target)) return;
+          this.closePropertyImportMenu();
+        },
+        onPropertyImportMenuKeydown(event) {
+          if (!this.propertyImportMenu.visible) return;
+          if (event.key === 'Escape') {
+            event.stopPropagation();
+            event.preventDefault();
+            this.closePropertyImportMenu();
+          }
+        },
+        getAdditionalColorSelectors(selObj, selector) {
+          const selectors = [];
+          if (!selObj || !selObj.base || !selector) return selectors;
+          const base = selObj.base;
+          const anchorStates = [':visited', ':hover', ':focus', ':focus-visible', ':active'];
+
+          if (base === 'link-anchor') {
+            for (const state of anchorStates) {
+              selectors.push(`${selector}${state}`);
+            }
+            selectors.push(`${selector} .mb-link__anchor-no-url`);
+          } else if (base === 'links' || base === 'link-url' || base === 'link-hover') {
+            const anchorSelector = `${selector} .mb-link__anchor`;
+            selectors.push(anchorSelector);
+            for (const state of anchorStates) {
+              selectors.push(`${anchorSelector}${state}`);
+            }
+            selectors.push(`${selector} .mb-link__anchor-no-url`);
+          }
+
+          return Array.from(new Set(selectors));
+        },
+        sanitizeSelectorForDomQuery(selector) {
+          if (!selector) return '';
+          return selector.replace(/:(hover|active|focus|focus-visible|focus-within)/g, '').trim();
+        },
+        getSupportedCssProperties() {
+          if (this._cachedSupportedCssProperties) {
+            return this._cachedSupportedCssProperties;
+          }
+
+          const baseProps = [
+            'background',
+            'background-color',
+            'color',
+            'border',
+            'border-width',
+            'border-style',
+            'border-color',
+            'border-radius',
+            'border-top',
+            'border-right',
+            'border-bottom',
+            'border-left',
+            'border-top-width',
+            'border-right-width',
+            'border-bottom-width',
+            'border-left-width',
+            'border-top-style',
+            'border-right-style',
+            'border-bottom-style',
+            'border-left-style',
+            'border-top-color',
+            'border-right-color',
+            'border-bottom-color',
+            'border-left-color',
+            'border-top-left-radius',
+            'border-top-right-radius',
+            'border-bottom-right-radius',
+            'border-bottom-left-radius',
+            'outline',
+            'outline-width',
+            'outline-style',
+            'outline-color',
+            'outline-offset',
+            'font-size',
+            'padding',
+            'margin',
+            'width',
+            'height',
+            'min-width',
+            'min-height',
+            'max-width',
+            'max-height',
+            'top',
+            'right',
+            'bottom',
+            'left',
+            'gap',
+            'row-gap',
+            'column-gap',
+            'padding-top',
+            'padding-right',
+            'padding-bottom',
+            'padding-left',
+            'margin-top',
+            'margin-right',
+            'margin-bottom',
+            'margin-left',
+            'box-shadow',
+            'opacity',
+            'font-family',
+            'font-weight',
+            'line-height',
+            'letter-spacing',
+            'word-spacing',
+            'text-decoration',
+            'text-align'
+          ];
+
+          const lengthProps = Array.isArray(this.lengthProperties) ? this.lengthProperties : [];
+          const combined = Array.from(new Set([...baseProps, ...lengthProps]));
+          this._cachedSupportedCssProperties = combined;
+          return combined;
         },
         detectBaseForElement(el) {
           // Check most specific targets first; body last
