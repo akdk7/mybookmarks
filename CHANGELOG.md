@@ -1,3 +1,10 @@
+## Version 2025-09-26
+
+- Added CSS suffix to Visual CSS Editor rules
+- Fixed issues with menus and submenues on too small browser windows
+- Changed the dropdown box for Select Tokens in Visual CSS Editor tu a button and menu
+
+
 ## Version 2025-09-25
 
 - New button to show a list of all css properties the Element has at this time
