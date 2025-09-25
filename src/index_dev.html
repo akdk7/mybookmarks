@@ -4719,45 +4719,6 @@
                       {{ getPropertyValidationHint(rule, prop) }}
                     </div>
                   </template>
-                  <template v-else-if="isLengthProperty(prop) && isSimpleLengthValue(rule, prop) && !isEdgeProperty(prop)">
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text">{{ formatPropertyName(prop) }}</span>
-                      <input type="number"
-                             class="form-control"
-                             :value="getLengthNumber(rule, prop)"
-                             @input="setLengthNumber(rule, prop, $event.target.value)"
-                             :placeholder="'0'">
-                      <select class="form-select length-unit-select"
-                              :value="getLengthUnit(rule, prop)"
-                              @change="setLengthUnit(rule, prop, $event.target.value)">
-                        <option v-for="unit in lengthUnitOptions" :key="unit" :value="unit">{{ unit }}</option>
-                      </select>
-                      <span class="input-group-text">
-                        <input type="checkbox"
-                               :id="'important-' + rule.id + '-' + prop"
-                               class="form-check-input mt-0"
-                               :checked="getPropertyImportant(rule, prop)"
-                               @change="togglePropertyImportant(rule, prop)"
-                               :title="getTranslation('css.visual.importantHint') || 'Override other styles with !important'">
-                      </span>
-                      <button @click="togglePropertyDisabled(rule, prop)"
-                              class="btn btn-outline-secondary"
-                              :title="isPropertyDisabled(rule, prop) ? (getTranslation('css.visual.activateProperty') || 'Aktivieren') : (getTranslation('css.visual.deactivateProperty') || 'Deaktivieren')">
-                        {{ isPropertyDisabled(rule, prop) ? '👁️‍🗨️' : '👁️' }}
-                      </button>
-                      <button @click="removeProperty(rule, prop)"
-                              class="btn btn-outline-danger">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                          </svg>
-                      </button>
-                    </div>
-                    <div v-if="!isPropertyValid(rule, prop)"
-                         class="invalid-feedback d-block small mt-1">
-                      {{ getPropertyValidationHint(rule, prop) }}
-                    </div>
-                  </template>
                   <template v-else-if="prop === 'font-family'">
                     <div class="input-group input-group-sm font-family-group">
                       <span class="input-group-text flex-grow-1 flex-sm-grow-0" style="min-width: 110px;">{{ formatPropertyName(prop) }}</span>
@@ -16361,45 +16322,7 @@ function getDefaultFaviconRules() {
           'border-radius': '0.375rem'
         }}
       ],
-      lengthProperties: [
-        'line-height',
-        'letter-spacing',
-        'word-spacing',
-        'width',
-        'height',
-        'min-width',
-        'max-width',
-        'min-height',
-        'max-height',
-        'top',
-        'right',
-        'bottom',
-        'left',
-        'border-width',
-        'border-top-width',
-        'border-right-width',
-        'border-bottom-width',
-        'border-left-width',
-        'outline-width',
-        'outline-offset',
-        'gap',
-        'row-gap',
-        'column-gap',
-        'padding-top',
-        'padding-right',
-        'padding-bottom',
-        'padding-left',
-        'margin-top',
-        'margin-right',
-        'margin-bottom',
-        'margin-left',
-        'border-top-left-radius',
-        'border-top-right-radius',
-        'border-bottom-right-radius',
-        'border-bottom-left-radius'
-      ],
       lengthUnitOptions: ['px', 'rem', 'em', '%', 'vh', 'vw'],
-      lengthUnitMemory: {},
       expandedPropertyDetails: {},
       edgeProperties: ['padding', 'margin', 'border-width'],
       edgeLinked: {},
@@ -20625,8 +20548,7 @@ function getDefaultFaviconRules() {
             'text-align'
           ];
 
-          const lengthProps = Array.isArray(this.lengthProperties) ? this.lengthProperties : [];
-          const combined = Array.from(new Set([...baseProps, ...lengthProps]));
+          const combined = Array.from(new Set(baseProps));
           this._cachedSupportedCssProperties = combined;
           return combined;
         },
@@ -21079,17 +21001,6 @@ function getDefaultFaviconRules() {
           return null;
         },
 
-        isLengthProperty(prop) {
-          return this.lengthProperties.includes(prop);
-        },
-
-        isSimpleLengthValue(rule, prop) {
-          const raw = (rule?.properties?.[prop] || '').toString();
-          const value = this.stripImportant(raw).trim();
-          if (!value) return true;
-          return /^-?\d*(?:\.\d+)?[a-z%]*$/i.test(value);
-        },
-
         parseLengthValue(value, fallbackUnit = 'px') {
           const str = this.stripImportant((value || '').toString()).trim();
           if (!str) {
@@ -21109,57 +21020,6 @@ function getDefaultFaviconRules() {
           const trimmed = number.toString().trim();
           if (!trimmed) return '';
           return `${trimmed}${unit || 'px'}`;
-        },
-
-        getLengthNumber(rule, prop) {
-          const key = this.getRulePropertyKey(rule, prop);
-          const fallbackUnit = this.lengthUnitMemory[key] || 'px';
-          const parts = this.parseLengthValue(rule?.properties?.[prop], fallbackUnit);
-          if (!parts.number || parts.unit === '') {
-            return parts.number && /^-?\d+(?:\.\d+)?$/.test(parts.number) ? parts.number : '';
-          }
-          return parts.number;
-        },
-
-        getLengthUnit(rule, prop) {
-          const key = this.getRulePropertyKey(rule, prop);
-          const fallbackUnit = this.lengthUnitMemory[key] || 'px';
-          const parts = this.parseLengthValue(rule?.properties?.[prop], fallbackUnit);
-          if (!parts.unit && this.lengthUnitMemory[key]) {
-            return this.lengthUnitMemory[key];
-          }
-          const unit = parts.unit || fallbackUnit;
-          this.lengthUnitMemory[key] = unit;
-          return unit;
-        },
-
-        setLengthNumber(rule, prop, number) {
-          const key = this.getRulePropertyKey(rule, prop);
-          const unit = this.getLengthUnit(rule, prop);
-          if (number === '' || number === null || number === undefined) {
-            this.$set(rule.properties, prop, '');
-            this.lengthUnitMemory[key] = unit;
-            this.validateProperty(rule, prop);
-            return;
-          }
-          const sanitized = this.buildLengthValue(number, unit);
-          this.$set(rule.properties, prop, sanitized);
-          this.lengthUnitMemory[key] = unit;
-          this.validateProperty(rule, prop);
-        },
-
-        setLengthUnit(rule, prop, unit) {
-          const key = this.getRulePropertyKey(rule, prop);
-          const number = this.getLengthNumber(rule, prop);
-          this.lengthUnitMemory[key] = unit;
-          if (!number) {
-            this.$set(rule.properties, prop, '');
-            this.validateProperty(rule, prop);
-            return;
-          }
-          const sanitized = this.buildLengthValue(number, unit);
-          this.$set(rule.properties, prop, sanitized);
-          this.validateProperty(rule, prop);
         },
 
         getRuleKey(rule) {
@@ -21505,9 +21365,6 @@ function getDefaultFaviconRules() {
           const key = this.getRulePropertyKey(rule, property);
           if (this.expandedPropertyDetails[key] !== undefined) {
             this.$delete(this.expandedPropertyDetails, key);
-          }
-          if (this.lengthUnitMemory[key] !== undefined) {
-            delete this.lengthUnitMemory[key];
           }
           if (property === 'border-radius' && this.borderRadiusLinked[key] !== undefined) {
             delete this.borderRadiusLinked[key];
