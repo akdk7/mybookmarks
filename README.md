@@ -30,13 +30,9 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 
 ## Getting Started
 
-1. Clone or download this repository.
-2. Open `src/index_dev.html` directly in your browser **or** serve the `src/` folder:
-   ```bash
-   cd src
-   python3 -m http.server 8080
-   ```
-   Navigate to [http://localhost:8080](http://localhost:8080).
+1. Download the latest (releases)[https://github.com/akdk7/mybookmarks/releases]
+2. Open the MyBookmarks.html file in your browser from your local directory
+3. Enjoy the MyBookmarks app, it runs without a webserver :)
 
 ## Data Management
 
