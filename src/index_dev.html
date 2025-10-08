@@ -2278,6 +2278,75 @@
       cursor: help;
     }
 
+    /* Keyword suggestions overlay */
+    .option-row.mb-edit-field-row {
+      position: relative;
+    }
+
+    .mb-keyword-suggestions {
+      position: absolute;
+      top: 75%;
+      left: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 6px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(13, 110, 253, 0.12);
+      border-radius: 10px;
+      box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+      backdrop-filter: blur(10px);
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 2200;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .mb-keyword-suggestion {
+      background: rgba(13, 110, 253, 0.08);
+      border: none;
+      text-align: left;
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      color: #0f172a;
+      border-radius: 6px;
+      transition: background-color 0.18s ease, transform 0.18s ease;
+    }
+
+    .mb-keyword-suggestion + .mb-keyword-suggestion {
+      border-top: none;
+    }
+
+    .mb-keyword-suggestion:hover,
+    .mb-keyword-suggestion:focus {
+      background: rgba(13, 110, 253, 0.22);
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    body.dark-mode .mb-keyword-suggestions,
+    body[data-theme='dark'] .mb-keyword-suggestions {
+      background: rgba(30, 41, 59, 0.94);
+      border-color: rgba(96, 165, 250, 0.25);
+      box-shadow: 0 18px 40px rgba(2, 6, 23, 0.4);
+    }
+
+    body.dark-mode .mb-keyword-suggestion,
+    body[data-theme='dark'] .mb-keyword-suggestion {
+      background: rgba(59, 130, 246, 0.12);
+      color: rgba(226, 232, 240, 0.95);
+    }
+
+    body.dark-mode .mb-keyword-suggestion:hover,
+    body[data-theme='dark'] .mb-keyword-suggestion:hover,
+    body.dark-mode .mb-keyword-suggestion:focus,
+    body[data-theme='dark'] .mb-keyword-suggestion:focus {
+      background: rgba(56, 189, 248, 0.24);
+    }
+
 
     /* Context Menus */
     .context-menu {
@@ -2654,12 +2723,13 @@
 
     /* Generic Options Dialog Styles */
     .options-section {
+      position: relative;
       margin-bottom: 1.25rem;
       border: 1px solid var(--mb-options-section-border);
       border-radius: var(--bs-border-radius-lg, 0.75rem);
       background-color: var(--mb-options-section-bg);
       box-shadow: var(--mb-options-section-shadow);
-      overflow: hidden;
+      overflow: visible;
     }
     /* Sync progress (bottom-right) */
     .mb-sync-progress {
@@ -2687,6 +2757,8 @@
       align-items: center;
       transition: background-color 0.2s;
       color: var(--bs-secondary-color, inherit);
+      border-top-left-radius: inherit;
+      border-top-right-radius: inherit;
     }
     
     .options-section-header:hover {
@@ -2696,6 +2768,8 @@
     .options-section-body {
       padding: 1rem;
       background-color: var(--mb-options-section-bg);
+      border-bottom-left-radius: inherit;
+      border-bottom-right-radius: inherit;
     }
     
     .option-row {
@@ -6325,11 +6399,33 @@
                     <input 
                       type="text" 
                       class="form-control form-control-sm mb-edit-text-input"
+                      :data-section="sectionKey"
+                      :data-field="fieldKey"
                       :value="getGenericFieldValue(sectionKey, fieldKey)"
-                      @input="setGenericFieldValue(sectionKey, fieldKey, $event.target.value)"
+                      @input="onGenericTextInput(sectionKey, fieldKey, $event)"
+                      @focus="maybeUpdateKeywordContext(sectionKey, fieldKey, $event)"
+                      @keyup="maybeUpdateKeywordContext(sectionKey, fieldKey, $event)"
+                      @click="maybeUpdateKeywordContext(sectionKey, fieldKey, $event)"
+                      @blur="clearKeywordContext(sectionKey, fieldKey)"
+                      @keydown.tab="handleKeywordTab(sectionKey, fieldKey, $event)"
                       :placeholder="field.placeholder"
                       :disabled="isFieldDisabled(sectionKey, fieldKey)"
                     >
+                    <div 
+                      v-if="isKeywordField(sectionKey, fieldKey) && isKeywordSuggestionField(sectionKey, fieldKey) && shouldShowKeywordSuggestions"
+                      class="mb-keyword-suggestions"
+                    >
+                      <button 
+                        v-for="item in keywordSuggestionList"
+                        :key="item.value"
+                        type="button"
+                        class="mb-keyword-suggestion"
+                        @mousedown.prevent="applyKeywordSuggestion(sectionKey, fieldKey, item)"
+                        @click.prevent="applyKeywordSuggestion(sectionKey, fieldKey, item)"
+                      >
+                        {{ item.label }}
+                      </button>
+                    </div>
                     <div v-if="field.helpText" class="form-text mb-edit-field-help">{{ getTranslation(field.helpText) }}</div>
                   </div>
                   
@@ -16300,6 +16396,9 @@ function getDefaultFaviconRules() {
         currentPickerRule: null,
         lastHighlightedEl: null,
         lastHighlightedOutline: null,
+        // Keyword suggestion context for generic dialog
+        keywordSuggestionContext: null,
+        keywordSuggestionField: null,
         // Design Tokens
         designTokens: [],
         // CSS Presets
@@ -17375,6 +17474,38 @@ function getDefaultFaviconRules() {
           });
           return Array.from(set).sort((a, b) => a.localeCompare(b));
         },
+        keywordSuggestionList() {
+          if (!['link', 'group'].includes(this.genericEditConfig?.type)) return [];
+          if (!this.keywordSuggestionContext) return [];
+          const context = this.keywordSuggestionContext;
+          const searchTerm = (context.searchTerm || '').toLowerCase();
+          const existingSet = new Set(
+            this.parseKeywords(this.genericEditData?.keywords || '')
+              .map(k => k.toLowerCase())
+          );
+          const currentTokenLower = (context.currentToken || '').toLowerCase();
+          const prefix = context.prefix || '';
+          const suffix = context.suffix || '';
+          const seen = new Set();
+          const suggestions = [];
+          (this.allKeywords || []).forEach(kw => {
+            if (!kw) return;
+            const kwLower = kw.toLowerCase();
+            if (existingSet.has(kwLower) && kwLower !== currentTokenLower) return;
+            if (searchTerm && !kwLower.startsWith(searchTerm)) return;
+            if (seen.has(kwLower)) return;
+            seen.add(kwLower);
+            suggestions.push({
+              value: `${prefix}${kw}${suffix}`,
+              label: kw,
+              cursor: prefix.length + kw.length
+            });
+          });
+          return suggestions.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+        },
+        shouldShowKeywordSuggestions() {
+          return !!this.keywordSuggestionContext && !!this.keywordSuggestionField && this.keywordSuggestionList.length > 0;
+        },
         keywordColorMap() {
           const map = {};
 
@@ -17697,6 +17828,170 @@ function getDefaultFaviconRules() {
         this.appInitialized = true;
       },
         methods: {
+        // ===== KEYWORD SUGGESTION SUPPORT =====
+        onGenericTextInput(sectionKey, fieldKey, event) {
+          const value = event?.target?.value ?? '';
+          this.setGenericFieldValue(sectionKey, fieldKey, value);
+          if (this.isKeywordField(sectionKey, fieldKey)) {
+            this.keywordSuggestionField = { section: sectionKey, field: fieldKey };
+            this.updateKeywordSuggestionContext(value, event?.target);
+          }
+        },
+        isKeywordField(sectionKey, fieldKey) {
+          return ['link', 'group'].includes(this.genericEditConfig?.type) && fieldKey === 'keywords';
+        },
+        isKeywordSuggestionField(sectionKey, fieldKey) {
+          return this.keywordSuggestionField &&
+                 this.keywordSuggestionField.section === sectionKey &&
+                 this.keywordSuggestionField.field === fieldKey;
+        },
+        handleKeywordTab(sectionKey, fieldKey, event) {
+          if (!this.isKeywordField(sectionKey, fieldKey)) return;
+          if (event.shiftKey) return;
+          const input = event.target;
+          if (!input) return;
+          const value = input.value || '';
+          const selectionStart = input.selectionStart;
+          const selectionEnd = input.selectionEnd;
+          const context = this.extractKeywordContext(value, selectionStart, selectionEnd);
+          if (!context) return;
+
+          this.keywordSuggestionContext = context;
+          this.keywordSuggestionField = { section: sectionKey, field: fieldKey };
+          const candidates = this.keywordSuggestionList || [];
+          if (!candidates.length) return;
+
+          const searchTerm = (context.searchTerm || '').toLowerCase();
+          if (!searchTerm) return;
+
+          const currentTokenLower = (context.currentToken || '').toLowerCase();
+          let suggestion = candidates.find(item => {
+            const label = (item.label || item.value || '').toString();
+            const labelLower = label.toLowerCase();
+            return labelLower.startsWith(searchTerm) && labelLower !== currentTokenLower;
+          });
+          if (!suggestion) {
+            suggestion = candidates.find(item => {
+              const label = (item.label || item.value || '').toString();
+              return label.toLowerCase().startsWith(searchTerm);
+            });
+          }
+          if (!suggestion) return;
+          const suggestionLabel = (suggestion.label || suggestion.value || '').toString();
+          if (suggestionLabel.toLowerCase() === currentTokenLower) return;
+
+          event.preventDefault();
+          this.applyKeywordSuggestion(sectionKey, fieldKey, suggestion);
+        },
+        maybeUpdateKeywordContext(sectionKey, fieldKey, event) {
+          if (!this.isKeywordField(sectionKey, fieldKey)) {
+            if (this.isKeywordSuggestionField(sectionKey, fieldKey)) {
+              this.keywordSuggestionField = null;
+              this.keywordSuggestionContext = null;
+            }
+            return;
+          }
+          const input = event?.target;
+          if (!input) return;
+          this.keywordSuggestionField = { section: sectionKey, field: fieldKey };
+          this.updateKeywordSuggestionContext(input.value, input);
+        },
+        clearKeywordContext(sectionKey, fieldKey) {
+          if (!this.isKeywordField(sectionKey, fieldKey)) return;
+          if (this.isKeywordSuggestionField(sectionKey, fieldKey)) {
+            this.keywordSuggestionContext = null;
+            this.keywordSuggestionField = null;
+          }
+        },
+        applyKeywordSuggestion(sectionKey, fieldKey, suggestion) {
+          if (!this.isKeywordField(sectionKey, fieldKey) || !suggestion) return;
+          const suggestionLabel = (suggestion.label || suggestion.value || '').toString();
+          const suggestionValue = (suggestion.value != null ? suggestion.value : suggestionLabel).toString();
+          if (!suggestionValue) return;
+          this.setGenericFieldValue(sectionKey, fieldKey, suggestionValue);
+          this.$nextTick(() => {
+            const selector = `input.mb-edit-text-input[data-section="${sectionKey}"][data-field="${fieldKey}"]`;
+            let input = document.activeElement && typeof document.activeElement.matches === 'function' && document.activeElement.matches(selector)
+              ? document.activeElement
+              : null;
+            if (!input) {
+              const modalElement = document.getElementById('genericEditModal');
+              if (modalElement) {
+                input = modalElement.querySelector(selector);
+              }
+            }
+            if (input) {
+              if (typeof input.focus === 'function') {
+                try { input.focus(); } catch {}
+              }
+              if (input.value !== suggestionValue) {
+                input.value = suggestionValue;
+              }
+              const cursor = typeof suggestion.cursor === 'number' ? suggestion.cursor : suggestionValue.length;
+              if (typeof input.setSelectionRange === 'function') {
+                try { input.setSelectionRange(cursor, cursor); } catch {}
+              }
+            }
+            this.keywordSuggestionContext = null;
+            this.keywordSuggestionField = null;
+          });
+        },
+        updateKeywordSuggestionContext(value, inputEl = null) {
+          if (!['link', 'group'].includes(this.genericEditConfig?.type)) {
+            this.keywordSuggestionContext = null;
+            this.keywordSuggestionField = null;
+            return;
+          }
+          const stringValue = value != null ? String(value) : '';
+          const selectionStart = inputEl?.selectionStart ?? stringValue.length;
+          const selectionEnd = inputEl?.selectionEnd ?? selectionStart;
+          const context = this.extractKeywordContext(stringValue, selectionStart, selectionEnd);
+          this.keywordSuggestionContext = context;
+          if (!context) {
+            this.keywordSuggestionField = null;
+          }
+        },
+        extractKeywordContext(rawValue, selectionStart, selectionEnd = selectionStart) {
+          const value = typeof rawValue === 'string' ? rawValue : (rawValue ?? '').toString();
+          if (selectionStart == null) selectionStart = value.length;
+          if (selectionEnd == null) selectionEnd = selectionStart;
+          if (selectionStart !== selectionEnd) return null;
+          const cursor = Math.max(0, Math.min(selectionStart, value.length));
+
+          const lastComma = value.lastIndexOf(',', cursor - 1);
+          const lastSemicolon = value.lastIndexOf(';', cursor - 1);
+          let tokenStartRaw = Math.max(lastComma, lastSemicolon);
+          tokenStartRaw = tokenStartRaw === -1 ? 0 : tokenStartRaw + 1;
+
+          const nextCommaIndex = value.indexOf(',', cursor);
+          const nextSemicolonIndex = value.indexOf(';', cursor);
+          let tokenEndRaw = value.length;
+          if (nextCommaIndex !== -1) tokenEndRaw = Math.min(tokenEndRaw, nextCommaIndex);
+          if (nextSemicolonIndex !== -1) tokenEndRaw = Math.min(tokenEndRaw, nextSemicolonIndex);
+
+          const rawSegment = value.slice(tokenStartRaw, tokenEndRaw);
+          const leadingSpaces = rawSegment.match(/^\s*/)?.[0].length || 0;
+          const trailingSpaces = rawSegment.match(/\s*$/)?.[0].length || 0;
+          const tokenStart = tokenStartRaw + leadingSpaces;
+          let tokenEnd = tokenEndRaw - trailingSpaces;
+          if (tokenEnd < tokenStart) tokenEnd = tokenStart;
+
+          if (cursor < tokenStart || cursor > tokenEnd) return null;
+
+          const prefix = value.slice(0, tokenStart);
+          const suffix = value.slice(tokenEnd);
+          const currentToken = value.slice(tokenStart, tokenEnd);
+          const partialBeforeCursor = value.slice(tokenStart, cursor);
+          const searchTerm = partialBeforeCursor.trim().toLowerCase();
+
+          return {
+            prefix,
+            suffix,
+            currentToken,
+            searchTerm,
+            cursor
+          };
+        },
         // ===== LINK SHORTENER SUPPORT =====
         getMutableLinkShortenerOptions(preferDraft = true) {
           return MB.LinkShorteners.getOptions(this, { preferDraft, createIfMissing: true });
@@ -31065,6 +31360,8 @@ footer a:hover {
           this.genericFilterText = '';
           this.genericExpandedSections = {};
           this.activeOptionSection = '';
+          this.keywordSuggestionContext = null;
+          this.keywordSuggestionField = null;
 
           debugLog('log', 'Looking for modal element: genericEditModal');
           console.log('Looking for modal element: genericEditModal');
@@ -31266,6 +31563,11 @@ footer a:hover {
               this.autoFetchTimeout = setTimeout(() => {
                 this.autoFetchLinkMetadata(value);
               }, 800); // Wait 800ms after user stops typing
+            }
+            if (fieldKey === 'keywords') {
+              if (!this.isKeywordSuggestionField(sectionKey, fieldKey)) {
+                this.updateKeywordSuggestionContext(this.genericEditData[fieldKey] || '', null);
+              }
             }
           }
         },
