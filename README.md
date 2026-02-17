@@ -10,12 +10,14 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 
 - **Rich bookmark workspace** – Organise links into draggable groups, expand/collapse sections, edit inline, tag with keywords, and surface link metadata with detailed popovers.
 - **Advanced search & discovery** – Filter across groups and links, highlight duplicates, inspect JSON payloads, and capture snapshots for undo/redo workflows.
-- **Flexible import/export** – Round-trip data through JSON, CSV, Netscape HTML, and clipboard pastes. Dedicated dialogs guide exporting selections or bulk importing.
+- **Flexible import/export** – Round-trip data through JSON, CSV, Netscape HTML, and clipboard pastes. Dedicated dialogs support import previews (selectable groups/links), and full exports include settings, identity, contacts, snapshots, and Visual CSS Editor state.
 - **Favicon management** – Auto-fetch icons, upload/remove per item, and maintain reusable favicon rules with presets, comments, testing, JSON export/import, and default restoration.
-- **Collaboration & sharing (optional)** – Push updates via ntfy topics, invite collaborators, generate QR codes, broadcast snapshots, and reconcile conflicts through the integrated event-log system.
+- **Collaboration & sharing (optional)** – Push updates via ntfy topics, invite collaborators, manage contacts with Quick-Connect pairing, generate QR codes, broadcast snapshots, and reconcile conflicts through the integrated event-log system.
   - **Encrypted ntfy delivery** – Each client derives its own public/private key pair; messages are encrypted end-to-end when sharing entire groups, individual links, or broadcast snapshots.
+- **Member & permission management** – Shared groups support owner/member roles, per-member Add/Edit/Delete permissions, member removal, and ownership transfer.
 - **Sync integrations (optional)** – Hook into Nextcloud Bookmarks REST endpoints or CardDAV servers, complete with hash caching, rate limits, conflict handling, and diagnostics.
-- **Deep customization** – Toggle dark mode, apply per-element styling through the visual CSS editor, manage custom design tokens, and expose advanced developer routing with extensive logging utilities.
+- **Deep customization** – Toggle dark mode, apply per-element styling through the visual CSS editor (selectors, rules, rule sets, design tokens), and expose advanced developer routing with extensive logging utilities.
+- **Shortcut manager & productivity** – Define global tree-based shortcuts, group-level shortcuts, and get overlap/conflict hints directly in edit dialogs.
 - **Link safety insights** – Analyse URLs in real time, flag suspicious patterns (dangerous protocols, token leakage, punycode, shorteners) and surface actionable hints directly in the UI.
 - **Flexible networking** – Route outbound requests via the browser companion extension **or** a self-hosted proxy, configurable per workspace, complete with custom headers and API token support.
 - **Local encryption & session locking** – Protect the entire workspace with a password, lock instantly from the toolbar, and auto-lock after configurable inactivity.
@@ -39,6 +41,7 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 - All state is stored in `localStorage` under the `links` key. Use the built-in backup/restore dialogs for safer migrations.
 - The favicon rules dialog supports JSON import/export, letting you version-control shared rule sets.
 - Snapshots and duplicate reports are available from the toolbar for quick diagnostics.
+- The toolbar includes a storage usage indicator; regular full exports are recommended for backup and migration.
 
 ## Security Options
 
@@ -51,6 +54,7 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 - **Nextcloud Bookmarks** – Configure server URL, credentials, and folder scope; the app handles folder discovery, hashing, and conflict resolution.
 - **CardDAV** – Optional address-book sync (requires the browser extension) with scheduling, token management, and logging.
 - **ntfy / Invitations** – Share selections or entire groups via ntfy topics or contact invites, with QR-code and clipboard helpers built in.
+- **Contacts / Quick-Connect** – Pair contacts via code flow and manage sharing participants centrally.
 
 ## Customisation
 
@@ -62,6 +66,7 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 
 - Double-click group titles to edit in place; drag via the handle to reorder groups.
 - Use the snapshots dropdown for quick undo/redo checkpoints.
+- Use the Shortcut Manager for global and group-level keyboard launchers.
 - Hover link badges for metadata popovers; detailed inspectors are available from the toolbar.
 
 ## Contributing
