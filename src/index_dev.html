@@ -455,6 +455,35 @@
       flex-shrink: 0;
     }
 
+    .mb-keyword-add-badge {
+      width: 1.3rem;
+      height: 1.3rem;
+      min-width: 1.3rem;
+      aspect-ratio: 1 / 1;
+      border-radius: 999px !important;
+      padding: 0 !important;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      line-height: 1;
+      flex-shrink: 0;
+      cursor: pointer;
+      color: #fff;
+      background: #198754;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      user-select: none;
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+
+    .mb-keyword-add-badge:hover,
+    .mb-keyword-add-badge:focus {
+      transform: scale(1.05);
+      filter: brightness(0.95);
+      outline: none;
+    }
+
     .linkTextCategory {
       font-weight: bold;
       font-style: italic;
@@ -1063,7 +1092,86 @@
     .groupContainer .collapseIcon path {
       transition: d 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
+
+    .mb-group__body {
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-gutter: stable;
+    }
+
+    .mb-group__body.collapsing,
+    .mb-group__body.collapse:not(.show) {
+      overflow: hidden;
+    }
+
+    .mb-group-resize-handle {
+      height: 10px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.015), rgba(0, 0, 0, 0.035));
+      cursor: ns-resize;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: background-color 0.15s ease;
+    }
+
+    .mb-group-resize-handle::before {
+      content: '';
+      width: 42px;
+      height: 2px;
+      border-radius: 2px;
+      background: rgba(108, 117, 125, 0.6);
+    }
+
+    .mb-group-resize-handle:hover {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .mb-group-resize-handle:hover::before {
+      background: rgba(52, 58, 64, 0.8);
+    }
+
+    .mb-group-resize-handle.resizing {
+      background: rgba(13, 110, 253, 0.18);
+    }
+
+    .mb-group--resizing {
+      box-shadow:
+        0 0 0 2px rgba(13, 110, 253, 0.32),
+        0 1px 3px rgba(0, 0, 0, 0.06),
+        0 6px 18px rgba(0, 0, 0, 0.12);
+    }
+
+    .mb-group--resizing .mb-group__body {
+      box-shadow: inset 0 0 0 2px rgba(13, 110, 253, 0.2);
+    }
+
+    .mb-group-resize-readout {
+      position: absolute;
+      right: 10px;
+      top: -28px;
+      background: rgba(13, 110, 253, 0.94);
+      color: #fff;
+      font-size: 0.72rem;
+      line-height: 1;
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 4px 8px;
+      letter-spacing: 0.01em;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(13, 110, 253, 0.35);
+      white-space: nowrap;
+      z-index: 3;
+    }
+
+    body.mb-group-resizing,
+    body.mb-group-resizing * {
+      cursor: ns-resize !important;
+      user-select: none !important;
+    }
+
 
     .linkContainerListItem {
       padding: 2px 8px;
@@ -1167,6 +1275,16 @@
     .linkText .mb-link__badges {
       flex-shrink: 0;
       max-width: 45%;
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .linkText .mb-link__badge-list {
+      display: inline-block;
+      flex: 1 1 auto;
+      min-width: 0;
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
@@ -2458,6 +2576,14 @@
       z-index: 2000;
     }
 
+    .mb-keyword-quick-field {
+      position: relative;
+    }
+
+    .mb-keyword-quick-field .mb-keyword-suggestions {
+      top: calc(100% - 1px);
+    }
+
     .mb-keyword-suggestion {
       background: transparent;
       border: none;
@@ -3269,7 +3395,7 @@
                 {{ getTranslation('group.dropAfter') }}
               </div>
 
-              <div :key="'group-' + group.uuid" :class="['groupContainer', 'mb-group', cssClassFromUuid('group', group.uuid)]"
+              <div :key="'group-' + group.uuid" :class="['groupContainer', 'mb-group', cssClassFromUuid('group', group.uuid), { 'mb-group--resizing': isGroupHeightResizing && groupHeightResizeState.groupUuid === group.uuid }]"
                 :data-uuid="group.uuid"
                 :data-group-id="group.id"
                 @mouseover="group.isMouseOver = true"
@@ -3347,6 +3473,13 @@
                               :data-group-name="keywordSlug(group.name)"
                               :data-keyword="keywordSlug(kw)"
                               @click.stop="onKeywordClick(kw)" role="button">{{ kw }}</span>
+                            <span v-if="shouldShowGroupKeywordQuickAddBadge(group)"
+                              class="badge mb-keyword-add-badge ms-1"
+                              role="button"
+                              tabindex="0"
+                              :title="getTranslation('menu.keyword.new') || 'New keyword'"
+                              @keydown.stop="onKeyActivate($event, () => openKeywordQuickDialogForGroup(group))"
+                              @click.stop="openKeywordQuickDialogForGroup(group)">+</span>
                           </span>
                         </h2>
                         <input v-else v-model="group.name" type="text" class="form-control form-control-sm"
@@ -3390,7 +3523,8 @@
                   </div>
                 </div>
                 <div :class="['collapse', 'linkContainer', 'mb-group__body', {'show': !group.collapsed}]"
-                  :id="'collapseGroup-' + group.uuid">
+                  :id="'collapseGroup-' + group.uuid"
+                  :style="group.collapsed ? null : { height: getGroupBodyHeight(group) + 'px' }">
                   <!-- Collapsible info section -->
                   <div v-if="group.infoHtml" class="group-info-section mb-group-info-section">
                     <div class="d-flex align-items-center px-1 py-0 mb-group-info-header" 
@@ -3447,7 +3581,7 @@
                             :data-link-id="link.id"
                             :data-drag-id="'link-' + link.uuid"
                             @mouseover="link.isMouseOver = true; prepareForDrag($event, $event.currentTarget); if (shouldShowLinkPopover()) { cancelHideLinkPopover(); showLinkPopover($event, link); }" 
-                            @mouseleave="link.isMouseOver = false; if (shouldShowLinkPopover()) queueHideLinkPopover()"
+                            @mouseleave="link.isMouseOver = false; setLinkKeywordQuickAddBadgeHover(link, false); if (shouldShowLinkPopover()) queueHideLinkPopover()"
                             @focusin="if (shouldShowLinkPopover()) { cancelHideLinkPopover(); showLinkPopover($event, link); }"
                             @focusout="if (shouldShowLinkPopover()) queueHideLinkPopover()"
                             @dblclick="startEditing(link)"
@@ -3481,17 +3615,28 @@
                                     <!-- URL preview on hover - moved before badges -->
                                     <span v-if="link.url" class="link-url-preview">{{ link.url }}</span>
                                     <!-- Link keyword badges - moved outside text-truncate to stay visible -->
-                                    <span v-if="data.options?.links?.showLinkBadges && link.keywords" 
+                                    <span v-if="data.options?.links?.showLinkBadges && (link.keywords || shouldShowLinkKeywordQuickAddBadge(group, link))" 
                                       class="margin-left ms-3 mb-link__badges">
-                                      <span v-for="kw in parseKeywords(link.keywords)" 
-                                        :key="'lkw-' + link.uuid + '-' + kw"
-                                        :class="['badge','keyword-badge','mb-link__keyword-badge', keywordClass(kw)]" 
-                                        :data-group-uuid="group.uuid"
-                                        :data-group-name="keywordSlug(group.name)"
-                                        :data-link-uuid="link.uuid"
-                                        :data-link-text="keywordSlug(link.text)"
-                                        :data-keyword="keywordSlug(kw)"
-                                        @click.stop="onKeywordClick(kw)" role="button">{{ kw }}</span>
+                                      <span class="mb-link__badge-list">
+                                        <span v-for="kw in parseKeywords(link.keywords)" 
+                                          :key="'lkw-' + link.uuid + '-' + kw"
+                                          :class="['badge','keyword-badge','mb-link__keyword-badge', keywordClass(kw)]" 
+                                          :data-group-uuid="group.uuid"
+                                          :data-group-name="keywordSlug(group.name)"
+                                          :data-link-uuid="link.uuid"
+                                          :data-link-text="keywordSlug(link.text)"
+                                          :data-keyword="keywordSlug(kw)"
+                                          @click.stop="onKeywordClick(kw)" role="button">{{ kw }}</span>
+                                      </span>
+                                      <span v-if="shouldShowLinkKeywordQuickAddBadge(group, link)"
+                                        class="badge mb-keyword-add-badge"
+                                        role="button"
+                                        tabindex="0"
+                                        :title="getTranslation('menu.keyword.new') || 'New keyword'"
+                                        @mouseenter.stop="setLinkKeywordQuickAddBadgeHover(link, true)"
+                                        @mouseleave.stop="setLinkKeywordQuickAddBadgeHover(link, false)"
+                                        @keydown.stop="onKeyActivate($event, () => openKeywordQuickDialogForLink(group, link))"
+                                        @click.stop="openKeywordQuickDialogForLink(group, link)">+</span>
                                     </span>
                                   </template>
                                   <input v-else v-model="link.text" type="text" ref="linkTextInput"
@@ -3608,6 +3753,17 @@
                       class="btn btn-sm btn-success">{{ getTranslation('group.link.add') }}</button>
                   </div>
                 </div>
+                <div v-if="!group.collapsed"
+                  :class="['mb-group-resize-handle', { 'resizing': isGroupHeightResizing && groupHeightResizeState.groupUuid === group.uuid }]"
+                  role="separator"
+                  aria-orientation="horizontal"
+                  :title="getTranslation('group.resizeHeight') || 'Drag to resize group height. Double-click to auto-fit this group.'"
+                  @mousedown.stop.prevent="startGroupHeightResize($event, group)"
+                  @dblclick.stop.prevent="autoFitGroupHeight(group)">
+                  <span v-if="isGroupHeightResizing && groupHeightResizeState.groupUuid === group.uuid" class="mb-group-resize-readout">
+                    {{ getGroupBodyHeight(group) }}px
+                  </span>
+                </div>
               </div>
             </template>
             <div v-if="getGroupsByColumn(colIndex).length > 0"
@@ -3642,7 +3798,7 @@
       <li class="submenu" tabindex="0">
         {{ getTranslation('menu.keywords') || 'Keywords' }}
         <ul class="context-submenu mb-context-submenu keyword-submenu">
-          <li @click="showGroupEditModal(contextGroup); hideMenus()">
+          <li @click="openKeywordQuickDialogForGroup(contextGroup); hideMenus()">
             {{ getTranslation('menu.keyword.new') || 'New keyword' }}
           </li>
           <li class="separator mb-context-menu-separator"></li>
@@ -3663,12 +3819,12 @@
           </li>
         </ul>
       </li>
-      <li class="separator mb-context-menu-separator"></li>
-      <li v-if="hasNtfyUrl()" @click="shareGroup(contextGroup); hideMenus()">{{ getTranslation('menu.group.sendGroup') }}</li>
-      <li v-if="hasNtfyUrl() && (!contextGroup?.shared || isOwnerOfGroup(contextGroup))" @click="inviteMembers(contextGroup); hideMenus()">{{ getTranslation('menu.group.inviteMembers') }}</li>
+      <li v-if="shouldShowGroupSharingSection(contextGroup)" class="separator mb-context-menu-separator"></li>
+      <li v-if="hasNtfyUrl() && hasConnectedContacts()" @click="shareGroup(contextGroup); hideMenus()">{{ getTranslation('menu.group.sendGroup') }}</li>
+      <li v-if="hasNtfyUrl() && hasConnectedContacts() && (!contextGroup?.shared || isOwnerOfGroup(contextGroup))" @click="inviteMembers(contextGroup); hideMenus()">{{ getTranslation('menu.group.inviteMembers') }}</li>
       <li v-if="hasNtfyUrl() && contextGroup?.shared && isOwnerOfGroup(contextGroup)" @click="openOwnerTransferDialog(contextGroup); hideMenus()">{{ getTranslation('menu.group.transferOwnership') || 'Transfer ownership…' }}</li>
-      <li v-if="hasNtfyUrl()" @click="openMembersModal(contextGroup); hideMenus()">{{ getTranslation('menu.group.members') }}</li>
-      <li v-if="hasNtfyUrl()" class="separator mb-context-menu-separator"></li>
+      <li v-if="hasNtfyUrl() && hasConnectedContacts()" @click="openMembersModal(contextGroup); hideMenus()">{{ getTranslation('menu.group.members') }}</li>
+      <li v-if="shouldShowGroupSharingSection(contextGroup)" class="separator mb-context-menu-separator"></li>
       <li class="submenu" tabindex="0">
         {{ getTranslation('menu.group.sort') || 'Sort links' }}
         <ul class="context-submenu mb-context-submenu">
@@ -3696,7 +3852,7 @@
       <li class="separator mb-context-menu-separator"></li>
       <li @click="inspectGroupJSON(contextGroup); hideMenus()">{{ getTranslation('menu.group.inspectJSON') || 'Inspect JSON' }}</li>
       <li class="separator mb-context-menu-separator"></li>
-      <li class="submenu" tabindex="0">
+      <li v-if="cssSidebarVisible" class="submenu" tabindex="0">
         {{ getTranslation('menu.group.copyForCss') || 'Copy for CSS' }}
         <ul class="context-submenu mb-context-submenu">
           <li @click="copyGroupCssClass(contextGroup); hideMenus()">{{ getTranslation('menu.group.copyCssClass') || 'Copy CSS class' }}</li>
@@ -3704,7 +3860,7 @@
           <li @click="copyGroupUuid(contextGroup, {shiftKey: true}); hideMenus()">{{ getTranslation('menu.group.copyCssSelector') || 'Copy CSS selector [data-group-uuid]' }}</li>
         </ul>
       </li>
-      <li class="separator mb-context-menu-separator"></li>
+      <li v-if="cssSidebarVisible" class="separator mb-context-menu-separator"></li>
       <li v-if="contextGroup?.shared && !isOwnerOfGroup(contextGroup)" @click="delGroup(contextGroup); hideMenus()">{{ getTranslation('menu.group.leaveGroup') || 'Leave group' }}</li>
       <li v-if="isOwnerOfGroup(contextGroup)" @click="delGroup(contextGroup); hideMenus()">{{ getTranslation('group.deleteGroup') }}</li>
     </ul>
@@ -4916,15 +5072,15 @@
         {{ getTranslation('menu.link.editLink') }}
         <span v-if="!canEdit(contextGroup)" class="text-muted"> ({{ getTranslation('permission.denied') || 'No permission' }})</span>
       </li>
-      <li v-if="hasNtfyUrl() && contextLink.url" class="separator mb-context-menu-separator"></li>
-      <li v-if="hasNtfyUrl() && contextLink.url" @click="shareLink(contextLink)">{{ getTranslation('menu.link.sendLink') }}</li>
+      <li v-if="hasNtfyUrl() && hasConnectedContacts() && contextLink.url" class="separator mb-context-menu-separator"></li>
+      <li v-if="hasNtfyUrl() && hasConnectedContacts() && contextLink.url" @click="shareLink(contextLink)">{{ getTranslation('menu.link.sendLink') }}</li>
       <li class="separator mb-context-menu-separator" v-if="contextLink.url"></li>
       <li @click="showQrCodeModal(contextLink.url)" v-if="contextLink.url">{{ getTranslation('menu.link.createQrCode') }}</li>
       <li class="separator mb-context-menu-separator"></li>
       <li class="submenu" tabindex="0">
         {{ getTranslation('menu.keywords') || 'Keywords' }}
         <ul class="context-submenu mb-context-submenu keyword-submenu">
-          <li @click="canEdit(contextGroup) ? (showLinkEditModal(contextLink), hideMenus()) : null"
+          <li @click="canEdit(contextGroup) ? (openKeywordQuickDialogForLink(contextGroup, contextLink), hideMenus()) : null"
               :class="{ 'disabled': !canEdit(contextGroup) }">
             {{ getTranslation('menu.keyword.new') || 'New keyword' }}
           </li>
@@ -4949,7 +5105,7 @@
         </ul>
       </li>
       <li class="separator mb-context-menu-separator"></li>
-      <li class="submenu" tabindex="0">
+      <li v-if="cssSidebarVisible" class="submenu" tabindex="0">
         {{ getTranslation('menu.link.copyForCss') || 'Copy for CSS' }}
         <ul class="context-submenu mb-context-submenu">
           <li @click="copyLinkCssClass(contextLink); hideMenus()">{{ getTranslation('menu.link.copyCssClass') || 'Copy CSS class' }}</li>
@@ -4957,7 +5113,7 @@
           <li @click="copyLinkUuid(contextLink, {shiftKey: true}); hideMenus()">{{ getTranslation('menu.link.copyCssSelector') || 'Copy CSS selector [data-link-uuid]' }}</li>
         </ul>
       </li>
-      <li class="separator mb-context-menu-separator"></li>
+      <li v-if="cssSidebarVisible" class="separator mb-context-menu-separator"></li>
       <li @click="canDelete(contextGroup) ? (deleteLink(contextLink), hideMenus()) : null" 
           :class="{ 'disabled': !canDelete(contextGroup) }"
           :title="!canDelete(contextGroup) ? getTranslation('error.perm.delete') : ''">
@@ -5014,6 +5170,60 @@
             {{ getTranslation('keywords.dialog.rename') || 'Rename' }}
           </button>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            {{ getTranslation('dialog.close') || 'Close' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="keywordQuickAddModal" tabindex="-1" aria-labelledby="keywordQuickAddModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content mb-modal">
+        <div class="modal-header">
+          <h5 class="modal-title" id="keywordQuickAddModalLabel">
+            {{ keywordQuickDialog.mode === 'group'
+              ? (getTranslation('keywords.quick.title.group') || 'Add group keyword')
+              : (getTranslation('keywords.quick.title.link') || 'Add link keyword') }}
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="resetKeywordQuickDialog"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label small mb-1">{{ getTranslation('keywords.quick.inputLabel') || 'Keyword' }}</label>
+          <div class="mb-keyword-quick-field">
+            <input
+              ref="keywordQuickInput"
+              type="text"
+              class="form-control form-control-sm"
+              v-model="keywordQuickDialog.value"
+              :placeholder="getTranslation('keywords.quick.placeholder') || 'Enter keyword'"
+              @focus="updateQuickKeywordContext($event)"
+              @keyup="updateQuickKeywordContext($event)"
+              @click="updateQuickKeywordContext($event)"
+              @blur="clearQuickKeywordContext"
+              @keydown.tab="handleQuickKeywordTab($event)"
+              @keydown.enter.prevent="submitKeywordQuickDialog"
+            >
+            <div v-if="shouldShowQuickKeywordSuggestions" class="mb-keyword-suggestions">
+              <button
+                v-for="item in quickKeywordSuggestionList"
+                :key="'quick-kw-' + item.value"
+                type="button"
+                class="mb-keyword-suggestion"
+                @mousedown.prevent="applyQuickKeywordSuggestion(item)"
+                @click.prevent="applyQuickKeywordSuggestion(item)"
+              >
+                {{ item.label }}
+              </button>
+            </div>
+          </div>
+          <div class="form-text">{{ getTranslation('keywords.quick.help') || 'Separate multiple keywords with comma or semicolon.' }}</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" @click="submitKeywordQuickDialog">
+            {{ getTranslation('keywords.quick.add') || 'Add' }}
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="resetKeywordQuickDialog">
             {{ getTranslation('dialog.close') || 'Close' }}
           </button>
         </div>
@@ -5519,6 +5729,15 @@
             </div>
             <div class="mb-3">
               <textarea class="form-control" rows="5" v-model="pasteContent" @input="parsePastedContent" :placeholder="getTranslation('clipboard.placeholder') || 'Paste your data here...'"></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">{{ getTranslation('import.csvSeparator') || 'CSV separator (optional):' }}</label>
+              <input type="text" class="form-control form-control-sm"
+                v-model="importCsvSeparator"
+                maxlength="8"
+                @input="parsePastedContent"
+                :placeholder="getTranslation('import.csvSeparator.placeholder') || 'Auto-detect (e.g. ; or ,)'">
+              <div class="form-text">{{ getTranslation('import.csvSeparator.help') || 'Leave empty for automatic detection. Use \\t for tab.' }}</div>
             </div>
             <div class="text-muted small mb-2" v-if="pasteHint">{{ pasteHint }}</div>
             
@@ -6424,6 +6643,8 @@ const CONSTS = {
       EXPANDED_LINK_LIMIT: 500, // Number of links to show when expanded
       PAGE_SIZE: 200, // Default page size for pagination
       INITIAL_LIMIT: 200, // Initial display limit
+      GROUP_BODY_HEIGHT_DEFAULT: 360, // Default fixed group body height in px
+      GROUP_BODY_HEIGHT_MIN: 45, // Minimum group body height in px
 
       // Event Log
       EVENT_LOG_MAX_EVENTS: 500, // Maximum events to keep in log
@@ -12102,6 +12323,7 @@ function getDefaultFaviconRules() {
           language: 'en',
           pageTitle: 'My Bookmarks',
           searchAsYouType: false,
+          showKeywordQuickAddBadge: true,
           confirmDeleteGroup: true,
         confirmDeleteLink: true,
         },
@@ -12310,6 +12532,9 @@ function getDefaultFaviconRules() {
         // UI State
         contextMenuTarget: null, // { type: 'link'/'group', item: object }
         isLinkMenuVisible: false,
+        // Group body resize
+        isGroupHeightResizing: false,
+        groupHeightResizeState: { groupUuid: null, startY: 0, startHeight: 0 },
         // Conflict Resolution UI
         showConflictNotification: false,
         conflictNotificationText: '',
@@ -12367,7 +12592,7 @@ function getDefaultFaviconRules() {
         currentPickerRule: null,
         lastHighlightedEl: null,
         lastHighlightedOutline: null,
-        // Keyword suggestion context for generic dialog
+        // Keyword suggestion context for generic edit dialog
         keywordSuggestionContext: null,
         keywordSuggestionField: null,
         // Design Tokens
@@ -12577,6 +12802,7 @@ function getDefaultFaviconRules() {
         parsedLinks: null,
         detectedFormat: '',
         importGroupTitle: '',
+        importCsvSeparator: '',
         isFullExport: false,
         fullExportData: null,
         importUrl: '',
@@ -12601,6 +12827,13 @@ function getDefaultFaviconRules() {
         // Saved searches
         savedSearches: [],
         keywordManager: { selected: '', newName: '' },
+        keywordQuickDialog: {
+          mode: '',
+          group: null,
+          link: null,
+          value: ''
+        },
+        keywordQuickSuggestionContext: null,
         shortcutManager: { linkFilter: '', globalDrafts: [] },
         
         // Info popup
@@ -12686,6 +12919,7 @@ function getDefaultFaviconRules() {
               pageTitle: { id: 'CommonPageTitle', type: 'text', translateKey: 'options.common.pageTitle', optionPath: 'common.pageTitle', helpText: 'options.common.pageTitle.help' },
               
               searchAsYouType: { id: 'SearchAsYouType', type: 'checkbox', translateKey: 'options.common.searchAsYouType', optionPath: 'common.searchAsYouType', helpText: 'options.common.searchAsYouType.help' },
+              showKeywordQuickAddBadge: { id: 'CommonShowKeywordQuickAddBadge', type: 'checkbox', translateKey: 'options.common.showKeywordQuickAddBadge', optionPath: 'common.showKeywordQuickAddBadge', helpText: 'options.common.showKeywordQuickAddBadge.help' },
               confirmDeleteGroup: { id: 'CommonConfirmDeleteGroup', type: 'checkbox', translateKey: 'options.common.confirmDeleteGroup', optionPath: 'common.confirmDeleteGroup', helpText: 'options.common.confirmDeleteGroup.help' },
               confirmDeleteLink: { id: 'CommonConfirmDeleteLink', type: 'checkbox', translateKey: 'options.common.confirmDeleteLink', optionPath: 'common.confirmDeleteLink', helpText: 'options.common.confirmDeleteLink.help' }
             }
@@ -13272,6 +13506,8 @@ function getDefaultFaviconRules() {
             'options.groups.hoverExpandDelay.help': 'Time to hover a collapsed group with a dragged link before it expands (milliseconds)',
             'options.common.searchAsYouType': 'Search as you type',
             'options.common.searchAsYouType.help': 'You can start typing a search term without clicking in the search text field, unless you have focused on another input field',
+            'options.common.showKeywordQuickAddBadge': 'Show + badge for keywords on hover',
+            'options.common.showKeywordQuickAddBadge.help': 'Show a round + badge next to group and link keywords on mouseover to add keywords quickly',
             'options.common.confirmDeleteGroup': 'Confirm before deleting groups',
             'options.common.confirmDeleteGroup.help': 'Ask for confirmation when deleting a group',
             'options.common.confirmDeleteLink': 'Confirm before deleting links',
@@ -13590,6 +13826,7 @@ function getDefaultFaviconRules() {
             'menu.group.editGroup': 'Edit group',
             'group.showMore': 'Show more',
             'group.showLess': 'Show less',
+            'group.resizeHeight': 'Drag to resize group height. Double-click to auto-fit this group.',
             'menu.group.inviteMembers': 'Invite members…',
             'menu.group.transferOwnership': 'Transfer ownership…',
             'menu.group.duplicate': 'Duplicate',
@@ -13610,6 +13847,15 @@ function getDefaultFaviconRules() {
             'keywords.dialog.renameSuccess': 'Keyword renamed.',
             'keywords.dialog.deleteSuccess': 'Keyword deleted.',
             'keywords.dialog.confirmDelete': 'Delete keyword "%s" everywhere?',
+            'keywords.quick.title.group': 'Add group keyword',
+            'keywords.quick.title.link': 'Add link keyword',
+            'keywords.quick.inputLabel': 'Keyword',
+            'keywords.quick.placeholder': 'Enter keyword',
+            'keywords.quick.help': 'Separate multiple keywords with comma or semicolon.',
+            'keywords.quick.add': 'Add',
+            'keywords.quick.empty': 'Please enter at least one keyword.',
+            'keywords.quick.added': 'Keyword added.',
+            'keywords.quick.duplicate': 'Keyword already assigned.',
             'dialog.contacts.title': 'Contacts',
             'dialog.contacts.empty': 'No contacts yet',
             'dialog.contacts.name': 'Name',
@@ -13878,6 +14124,9 @@ function getDefaultFaviconRules() {
             , 'import.corsError': 'Cannot fetch due to CORS policy. Try downloading the file and importing it locally, or use a CORS proxy.'
             , 'import.fetchError': 'Failed to fetch'
             , 'import.fromClipboard': 'Paste from clipboard:'
+            , 'import.csvSeparator': 'CSV separator (optional):'
+            , 'import.csvSeparator.placeholder': 'Auto-detect (e.g. ; or ,)'
+            , 'import.csvSeparator.help': 'Leave empty for automatic detection. Use \\t for tab.'
             , 'import.or': '— OR —'
             , 'import.newGroupTitle': 'New group title:'
             , 'import.groupTitlePlaceholder': 'Enter group title (optional)'
@@ -14187,6 +14436,8 @@ function getDefaultFaviconRules() {
             'options.groups.hoverExpandDelay.help': 'Zeit in Millisekunden, die ein gezogener Link über einer eingeklappten Gruppe schweben muss, um sie zu öffnen',
             'options.common.searchAsYouType': 'Suche während des Tippens',
             'options.common.searchAsYouType.help': 'Du kannst anfangen, einen Suchbegriff einzugeben, ohne in das Suchfeld zu klicken, es sei denn, du hast ein anderes Eingabefeld fokussiert',
+            'options.common.showKeywordQuickAddBadge': '+-Badge für Keywords bei Mouseover anzeigen',
+            'options.common.showKeywordQuickAddBadge.help': 'Zeigt bei Mouseover neben Gruppen- und Link-Keywords ein rundes +-Badge zum schnellen Hinzufügen',
             'options.common.confirmDeleteGroup': 'Vor dem Löschen von Gruppen nachfragen',
             'options.common.confirmDeleteGroup.help': 'Beim Löschen einer Gruppe eine Bestätigung anzeigen',
             'options.common.confirmDeleteLink': 'Vor dem Löschen von Links nachfragen',
@@ -14360,6 +14611,7 @@ function getDefaultFaviconRules() {
             'menu.group.editGroup': 'Gruppe bearbeiten',
             'group.showMore': 'Weitere anzeigen',
             'group.showLess': 'Weniger anzeigen',
+            'group.resizeHeight': 'Gruppenhöhe ziehen zum Ändern. Doppelklick passt diese Gruppe automatisch an.',
             'menu.group.inviteMembers': 'Mitglieder einladen…',
             'menu.group.transferOwnership': 'Eigentümer übertragen…',
             'menu.group.duplicate': 'Duplizieren',
@@ -14380,6 +14632,15 @@ function getDefaultFaviconRules() {
             'keywords.dialog.renameSuccess': 'Keyword umbenannt.',
             'keywords.dialog.deleteSuccess': 'Keyword gelöscht.',
             'keywords.dialog.confirmDelete': 'Keyword "%s" überall löschen?',
+            'keywords.quick.title.group': 'Gruppen-Keyword hinzufügen',
+            'keywords.quick.title.link': 'Link-Keyword hinzufügen',
+            'keywords.quick.inputLabel': 'Keyword',
+            'keywords.quick.placeholder': 'Keyword eingeben',
+            'keywords.quick.help': 'Mehrere Keywords mit Komma oder Semikolon trennen.',
+            'keywords.quick.add': 'Hinzufügen',
+            'keywords.quick.empty': 'Bitte mindestens ein Keyword eingeben.',
+            'keywords.quick.added': 'Keyword hinzugefügt.',
+            'keywords.quick.duplicate': 'Keyword ist bereits zugewiesen.',
             'dialog.contacts.title': 'Kontakte',
             'dialog.contacts.empty': 'Keine Kontakte',
             'dialog.contacts.name': 'Name',
@@ -14507,6 +14768,9 @@ function getDefaultFaviconRules() {
             'import.corsError': 'Abruf aufgrund von CORS-Richtlinien nicht möglich. Laden Sie die Datei herunter und importieren Sie sie lokal, oder verwenden Sie einen CORS-Proxy.',
             'import.fetchError': 'Abruf fehlgeschlagen',
             'import.fromClipboard': 'Aus Zwischenablage einfügen:',
+            'import.csvSeparator': 'CSV-Trennzeichen (optional):',
+            'import.csvSeparator.placeholder': 'Automatisch erkennen (z. B. ; oder ,)',
+            'import.csvSeparator.help': 'Leer lassen für automatische Erkennung. Für Tab \\t eingeben.',
             'import.or': '— ODER —',
             'import.newGroupTitle': 'Neuer Gruppentitel:',
             'import.groupTitlePlaceholder': 'Gruppentitel eingeben (optional)',
@@ -15108,6 +15372,7 @@ function getDefaultFaviconRules() {
               return this.settingsMatchesFilter(this.optionsDesign.common.language.translateKey, this.optionsDesign.common.language.helpText) ||
                      this.settingsMatchesFilter(this.optionsDesign.common.pageTitle.translateKey, this.optionsDesign.common.pageTitle.helpText) ||
                      this.settingsMatchesFilter(this.optionsDesign.common.searchAsYouType.translateKey, this.optionsDesign.common.searchAsYouType.helpText) ||
+                     this.settingsMatchesFilter(this.optionsDesign.common.showKeywordQuickAddBadge.translateKey, this.optionsDesign.common.showKeywordQuickAddBadge.helpText) ||
                      this.settingsMatchesFilter(this.optionsDesign.common.confirmDeleteGroup.translateKey, this.optionsDesign.common.confirmDeleteGroup.helpText) ||
                      this.settingsMatchesFilter(this.optionsDesign.common.confirmDeleteLink.translateKey, this.optionsDesign.common.confirmDeleteLink.helpText);
             }
@@ -15286,17 +15551,13 @@ function getDefaultFaviconRules() {
             );
             if (!groupMatchesText) return;
 
-            const groupMatchesKeyword = !activeKeywords.length ||
-              this.keywordListContainsAll(group.keywords || '', activeKeywords) ||
-              (group.links && group.links.some(link => this.keywordListContainsAll(link.keywords || '', activeKeywords)));
+            const groupMatchesKeyword = this.groupMatchesKeywordFilters(group, activeKeywords);
             if (!groupMatchesKeyword) return;
 
             this.parseKeywords(group.keywords).forEach(kw => set.add(kw));
 
             const groupHasKeywordToken = tokens.length && this.parseKeywords(group.keywords || '')
               .map(k => k.toLowerCase()).some(kw => tokens.some(t => kw.includes(t)));
-            const groupHasKeywordFilter = activeKeywords.length && this.keywordListContainsAll(group.keywords || '', activeKeywords);
-
             (group.links || []).forEach(link => {
               const linkText = (link.text || '').toLowerCase();
               const linkUrl = (link.url || '').toLowerCase();
@@ -15304,8 +15565,7 @@ function getDefaultFaviconRules() {
               const linkMatchesText = tokens.length === 0 || groupHasKeywordToken ||
                 tokens.every(t => linkText.includes(t) || linkUrl.includes(t) || linkKeywordsLower.includes(t));
               if (!linkMatchesText) return;
-              const linkMatchesKeyword = !activeKeywords.length || groupHasKeywordFilter ||
-                this.keywordListContainsAll(link.keywords || '', activeKeywords);
+              const linkMatchesKeyword = !activeKeywords.length || this.groupOrLinkKeywordsContainAll(group, link, activeKeywords);
               if (!linkMatchesKeyword) return;
               this.parseKeywords(link.keywords).forEach(kw => set.add(kw));
             });
@@ -15409,8 +15669,33 @@ function getDefaultFaviconRules() {
           });
           return suggestions;
         },
+        quickKeywordSuggestionList() {
+          const context = this.keywordQuickSuggestionContext;
+          if (!context) return [];
+          const searchTerm = (context.searchTerm || '').toLowerCase();
+          const prefix = context.prefix || '';
+          const suffix = context.suffix || '';
+          const seen = new Set();
+          const suggestions = [];
+          (this.allKeywords || []).forEach(kw => {
+            if (!kw) return;
+            const kwLower = kw.toLowerCase();
+            if (searchTerm && !kwLower.startsWith(searchTerm)) return;
+            if (seen.has(kwLower)) return;
+            seen.add(kwLower);
+            suggestions.push({
+              value: `${prefix}${kw}${suffix}`,
+              label: kw,
+              cursor: prefix.length + kw.length
+            });
+          });
+          return suggestions;
+        },
         shouldShowKeywordSuggestions() {
           return !!this.keywordSuggestionContext && !!this.keywordSuggestionField && this.keywordSuggestionList.length > 0;
+        },
+        shouldShowQuickKeywordSuggestions() {
+          return !!this.keywordQuickSuggestionContext && this.quickKeywordSuggestionList.length > 0;
         },
 
         
@@ -15445,6 +15730,10 @@ function getDefaultFaviconRules() {
         // Clean up global listeners
         window.removeEventListener('click', this.handleGlobalClick, true);
         document.removeEventListener('keydown', this.handleGlobalKeyDown);
+        document.removeEventListener('mousemove', this.handleGroupHeightResize);
+        document.removeEventListener('mouseup', this.endGroupHeightResize);
+        document.body.classList.remove('mb-group-resizing');
+        this.isGroupHeightResizing = false;
         
         // Clean up all timers to prevent memory leaks
         this.clearExpandHoverTimers();
@@ -15478,6 +15767,13 @@ function getDefaultFaviconRules() {
         if (importModal) {
           importModal.addEventListener('hidden.bs.modal', () => {
             this.resetImportDialog();
+          });
+        }
+
+        const keywordQuickModal = document.getElementById('keywordQuickAddModal');
+        if (keywordQuickModal) {
+          keywordQuickModal.addEventListener('hidden.bs.modal', () => {
+            this.resetKeywordQuickDialog();
           });
         }
 
@@ -24897,6 +25193,14 @@ footer a:hover {
         hasNtfyUrl() {
           return this.data.options?.sharing?.ntfyServerUrl && this.data.options.sharing.ntfyServerUrl.trim();
         },
+        hasConnectedContacts() {
+          return Array.isArray(this.data?.contacts) && this.data.contacts.some(c => String(c?.uuid || '').trim());
+        },
+        shouldShowGroupSharingSection(group) {
+          if (!this.hasNtfyUrl()) return false;
+          if (this.hasConnectedContacts()) return true;
+          return !!(group?.shared && this.isOwnerOfGroup(group));
+        },
         // --- Permission helpers ---
         normalizeUrl(u) {
           try {
@@ -26446,26 +26750,13 @@ footer a:hover {
             // Not JSON, try other formats
           }
           
-          // Try CSV if no JSON found
-          if (links.length === 0 && txt.includes(',')) {
-            const lines = txt.split('\n').filter(line => line.trim());
-            const hasHeader = lines[0] && (lines[0].toLowerCase().includes('url') || lines[0].toLowerCase().includes('title'));
-            const startIdx = hasHeader ? 1 : 0;
-            
-            for (let i = startIdx; i < lines.length; i++) {
-              const parts = lines[i].split(',').map(p => p.trim().replace(/^["']|["']$/g, ''));
-              if (parts.length >= 1) {
-                const url = parts.find(p => /^https?:\/\//i.test(p)) || parts[0];
-                if (url && /^https?:\/\//i.test(url)) {
-                  this.detectedFormat = 'CSV';
-                  links.push({
-                    url: url,
-                    text: parts.find(p => p !== url) || '',
-                    keywords: '',
-                    selected: true
-                  });
-                }
-              }
+          // Try CSV if no JSON found (supports auto/manual separator and quoted fields)
+          if (links.length === 0) {
+            const csvResult = this.parseCsvLinks(txt);
+            if (csvResult && csvResult.links.length > 0) {
+              const delimiterLabel = csvResult.delimiter === '\t' ? '\\t' : csvResult.delimiter;
+              this.detectedFormat = `CSV (${delimiterLabel})`;
+              links = csvResult.links;
             }
           }
           }
@@ -26536,6 +26827,291 @@ footer a:hover {
           } else {
             this.pasteHint = '';
           }
+        },
+
+        getCsvSeparatorCharacter() {
+          const raw = (this.importCsvSeparator || '').trim();
+          if (!raw) return '';
+          const normalized = raw.toLowerCase();
+          if (normalized === '\\t' || normalized === 'tab') return '\t';
+          return raw[0];
+        },
+
+        countDelimiterOutsideQuotes(line, delimiter) {
+          if (!line || !delimiter) return 0;
+          let inQuotes = false;
+          let count = 0;
+          for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') {
+              if (inQuotes && line[i + 1] === '"') {
+                i++;
+                continue;
+              }
+              inQuotes = !inQuotes;
+              continue;
+            }
+            if (!inQuotes && ch === delimiter) {
+              count++;
+            }
+          }
+          return count;
+        },
+
+        detectCsvDelimiter(text) {
+          const manual = this.getCsvSeparatorCharacter();
+          if (manual) return manual;
+
+          const lines = (text || '')
+            .replace(/\r\n/g, '\n')
+            .split('\n')
+            .filter(line => line.trim())
+            .slice(0, 25);
+          if (lines.length === 0) return '';
+
+          const candidates = [';', ',', '|'];
+          let bestDelimiter = '';
+          let bestScore = -1;
+
+          candidates.forEach(delimiter => {
+            let totalSeparators = 0;
+            let linesWithSeparators = 0;
+            lines.forEach(line => {
+              const count = this.countDelimiterOutsideQuotes(line, delimiter);
+              totalSeparators += count;
+              if (count > 0) linesWithSeparators++;
+            });
+            const score = (linesWithSeparators * 10) + totalSeparators;
+            if (score > bestScore) {
+              bestScore = score;
+              bestDelimiter = delimiter;
+            }
+          });
+
+          return bestScore > 0 ? bestDelimiter : '';
+        },
+
+        parseCsvRows(text, delimiter) {
+          if (!text || !delimiter) return [];
+          const normalizedText = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+          const rows = [];
+          let row = [];
+          let field = '';
+          let inQuotes = false;
+
+          for (let i = 0; i < normalizedText.length; i++) {
+            const ch = normalizedText[i];
+
+            if (ch === '"') {
+              if (inQuotes && normalizedText[i + 1] === '"') {
+                field += '"';
+                i++;
+              } else {
+                inQuotes = !inQuotes;
+              }
+              continue;
+            }
+
+            if (!inQuotes && ch === delimiter) {
+              row.push(field.trim());
+              field = '';
+              continue;
+            }
+
+            if (!inQuotes && ch === '\n') {
+              row.push(field.trim());
+              if (row.some(cell => cell !== '')) {
+                rows.push(row);
+              }
+              row = [];
+              field = '';
+              continue;
+            }
+
+            field += ch;
+          }
+
+          row.push(field.trim());
+          if (row.some(cell => cell !== '')) {
+            rows.push(row);
+          }
+
+          return rows;
+        },
+
+        isProbablyUrl(value) {
+          const v = String(value || '').trim();
+          if (!v) return false;
+          if (/^javascript:/i.test(v)) return false;
+          if (/^(https?:\/\/|ftp:\/\/|mailto:|www\.)/i.test(v)) return true;
+          return /^[a-z0-9][a-z0-9-]*\.[a-z]{2,}(\/|$)/i.test(v) && !/\s/.test(v);
+        },
+
+        normalizeImportedUrl(value) {
+          const raw = String(value || '').trim().replace(/^["']|["']$/g, '');
+          if (!raw || /^javascript:/i.test(raw)) return '';
+
+          let normalized = raw;
+          if (!/^[a-z][a-z0-9+.-]*:/i.test(normalized)) {
+            normalized = MB.Utils.ensureProtocol(normalized);
+          }
+
+          if (!/^(https?:\/\/|ftp:\/\/|mailto:)/i.test(normalized)) return '';
+
+          try {
+            new URL(normalized);
+            return normalized;
+          } catch (e) {
+            return '';
+          }
+        },
+
+        parseCsvLinks(text) {
+          const delimiter = this.detectCsvDelimiter(text);
+          if (!delimiter) return null;
+
+          const rows = this.parseCsvRows(text, delimiter);
+          if (!rows.length) return null;
+
+          const maxColumns = Math.max(...rows.map(row => row.length));
+          if (!maxColumns) return null;
+
+          const normalizeHeader = (value) => String(value || '')
+            .replace(/^\ufeff/, '')
+            .toLowerCase()
+            .trim()
+            .replace(/[\s._-]+/g, '');
+          const urlHeaderTokens = ['url', 'link', 'href', 'uri', 'website', 'webseite', 'adresse'];
+          const titleHeaderTokens = ['title', 'titel', 'name', 'text', 'label', 'bezeichnung', 'beschreibung'];
+          const keywordHeaderTokens = ['keywords', 'keyword', 'tags', 'tag', 'schlagwoerter', 'schlagworte', 'schlagwörter'];
+
+          const headerRow = rows[0] || [];
+          const findHeaderColumn = (tokens) => {
+            for (let i = 0; i < maxColumns; i++) {
+              const normalized = normalizeHeader(headerRow[i] || '');
+              if (!normalized) continue;
+              if (tokens.some(token => normalized === token || normalized.includes(token))) {
+                return i;
+              }
+            }
+            return -1;
+          };
+
+          let urlColumn = findHeaderColumn(urlHeaderTokens);
+          let titleColumn = findHeaderColumn(titleHeaderTokens);
+          const keywordsColumn = findHeaderColumn(keywordHeaderTokens);
+          const hasKnownHeader = urlColumn >= 0 || titleColumn >= 0 || keywordsColumn >= 0;
+          let startRow = hasKnownHeader ? 1 : 0;
+
+          const findBestUrlColumn = (fromRow) => {
+            let bestColumn = -1;
+            let bestScore = -1;
+            const maxRow = Math.min(rows.length, fromRow + 50);
+            for (let col = 0; col < maxColumns; col++) {
+              let score = 0;
+              for (let i = fromRow; i < maxRow; i++) {
+                const cell = String((rows[i] && rows[i][col]) || '').trim();
+                if (!cell) continue;
+                if (this.isProbablyUrl(cell)) {
+                  score += 2;
+                } else if (/^[a-z0-9.-]+\.[a-z]{2,}(\/|$)/i.test(cell) && !/\s/.test(cell)) {
+                  score += 1;
+                }
+              }
+              if (score > bestScore) {
+                bestScore = score;
+                bestColumn = col;
+              }
+            }
+            return { bestColumn, bestScore };
+          };
+
+          if (urlColumn < 0) {
+            const scanFromCurrentStart = findBestUrlColumn(startRow);
+            const scanFromSecondRow = (!hasKnownHeader && rows.length > 1) ? findBestUrlColumn(1) : scanFromCurrentStart;
+            const firstRowHasUrl = (rows[0] || []).some(cell => this.isProbablyUrl(cell));
+
+            if (!hasKnownHeader && !firstRowHasUrl && scanFromSecondRow.bestScore > scanFromCurrentStart.bestScore) {
+              startRow = 1;
+            }
+
+            const scan = startRow === 1 ? scanFromSecondRow : scanFromCurrentStart;
+            if (scan.bestScore <= 0) return null;
+            urlColumn = scan.bestColumn;
+          }
+
+          if (titleColumn < 0) {
+            let bestTitleColumn = -1;
+            let bestTitleScore = -1;
+            const maxRow = Math.min(rows.length, startRow + 50);
+            for (let col = 0; col < maxColumns; col++) {
+              if (col === urlColumn) continue;
+              let score = 0;
+              for (let i = startRow; i < maxRow; i++) {
+                const cell = String((rows[i] && rows[i][col]) || '').trim();
+                if (!cell) continue;
+                if (this.isProbablyUrl(cell)) {
+                  score -= 2;
+                } else {
+                  score += 1;
+                }
+              }
+              if (score > bestTitleScore) {
+                bestTitleScore = score;
+                bestTitleColumn = col;
+              }
+            }
+            if (bestTitleScore > 0) {
+              titleColumn = bestTitleColumn;
+            }
+          }
+
+          const parsedLinks = [];
+          for (let i = startRow; i < rows.length; i++) {
+            const row = rows[i] || [];
+            let rawUrl = String(row[urlColumn] || '').trim();
+
+            if (!this.isProbablyUrl(rawUrl)) {
+              const fallbackUrl = row.find(cell => this.isProbablyUrl(cell));
+              if (fallbackUrl) rawUrl = String(fallbackUrl).trim();
+            }
+
+            const normalizedUrl = this.normalizeImportedUrl(rawUrl);
+            if (!normalizedUrl) continue;
+
+            let title = '';
+            if (titleColumn >= 0 && titleColumn !== urlColumn) {
+              title = String(row[titleColumn] || '').trim();
+            }
+            if (!title) {
+              const fallbackTitle = row.find((cell, colIdx) =>
+                colIdx !== urlColumn && cell && !this.isProbablyUrl(cell)
+              );
+              title = String(fallbackTitle || '').trim();
+            }
+
+            let keywords = '';
+            if (keywordsColumn >= 0 && keywordsColumn !== urlColumn) {
+              keywords = String(row[keywordsColumn] || '').trim();
+            }
+
+            parsedLinks.push({
+              url: normalizedUrl,
+              text: title,
+              keywords,
+              selected: true
+            });
+          }
+
+          if (!parsedLinks.length) return null;
+
+          return {
+            links: parsedLinks,
+            delimiter,
+            urlColumn,
+            titleColumn,
+            startRow
+          };
         },
         
         selectAllLinks() {
@@ -27789,6 +28365,42 @@ footer a:hover {
           const current = new Set(this.parseKeywords(value || '').map(kw => this.normalizeKeyword(kw)));
           return required.every(req => current.has(req));
         },
+        keywordValuesContainAll(values, requiredKeywords = this.activeKeywordFilters) {
+          const required = this.normalizeKeywordList(requiredKeywords || []).map(kw => this.normalizeKeyword(kw));
+          if (!required.length) return true;
+          const current = new Set();
+          const list = Array.isArray(values) ? values : [values];
+          list.forEach(value => {
+            this.parseKeywords(value || '').forEach(kw => current.add(this.normalizeKeyword(kw)));
+          });
+          return required.every(req => current.has(req));
+        },
+        groupOrLinkKeywordsContainAll(group, link, requiredKeywords = this.activeKeywordFilters) {
+          return this.keywordValuesContainAll([group?.keywords || '', link?.keywords || ''], requiredKeywords);
+        },
+        groupMatchesKeywordFilters(group, requiredKeywords = this.activeKeywordFilters) {
+          if (!group) return false;
+          const required = this.normalizeKeywordList(requiredKeywords || []);
+          if (!required.length) return true;
+          if (this.keywordListContainsAll(group.keywords || '', required)) return true;
+          return (group.links || []).some(link => this.groupOrLinkKeywordsContainAll(group, link, required));
+        },
+        isKeywordQuickAddBadgeEnabled() {
+          return this.data?.options?.common?.showKeywordQuickAddBadge !== false;
+        },
+        shouldShowGroupKeywordQuickAddBadge(group) {
+          if (!this.isKeywordQuickAddBadgeEnabled()) return false;
+          return !!group?.isMouseOver;
+        },
+        setLinkKeywordQuickAddBadgeHover(link, isHovered) {
+          if (!link) return;
+          this.$set(link, 'isKeywordQuickAddBadgeHover', !!isHovered);
+        },
+        shouldShowLinkKeywordQuickAddBadge(group, link) {
+          if (!this.isKeywordQuickAddBadgeEnabled()) return false;
+          if (!this.canEdit(group)) return false;
+          return !!(link?.isMouseOver || link?.isKeywordQuickAddBadgeHover);
+        },
         getAssignedKeywordsForGroup(group) {
           if (!group) return [];
           return this.sortKeywords(this.parseKeywords(group.keywords || ''));
@@ -27846,6 +28458,180 @@ footer a:hover {
           const nowTs = this.touchLink(link);
           this.touchGroup(group, nowTs);
           this.saveData();
+        },
+        openKeywordQuickDialogForGroup(group) {
+          if (!group) return;
+          this.keywordQuickDialog = {
+            mode: 'group',
+            group,
+            link: null,
+            value: ''
+          };
+          this.keywordQuickSuggestionContext = null;
+          const modalElement = document.getElementById('keywordQuickAddModal');
+          if (!modalElement) return;
+          const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
+          modalInstance.show();
+          this.$nextTick(() => {
+            const input = this.$refs.keywordQuickInput;
+            if (input && typeof input.focus === 'function') input.focus();
+          });
+        },
+        openKeywordQuickDialogForLink(group, link) {
+          if (!group || !link) return;
+          this.keywordQuickDialog = {
+            mode: 'link',
+            group,
+            link,
+            value: ''
+          };
+          this.keywordQuickSuggestionContext = null;
+          const modalElement = document.getElementById('keywordQuickAddModal');
+          if (!modalElement) return;
+          const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
+          modalInstance.show();
+          this.$nextTick(() => {
+            const input = this.$refs.keywordQuickInput;
+            if (input && typeof input.focus === 'function') input.focus();
+          });
+        },
+        resetKeywordQuickDialog() {
+          this.keywordQuickDialog = {
+            mode: '',
+            group: null,
+            link: null,
+            value: ''
+          };
+          this.keywordQuickSuggestionContext = null;
+        },
+        submitKeywordQuickDialog() {
+          const mode = this.keywordQuickDialog?.mode;
+          const group = this.keywordQuickDialog?.group;
+          const link = this.keywordQuickDialog?.link;
+          const rawValue = String(this.keywordQuickDialog?.value || '').trim();
+          if (!rawValue) {
+            this.showToast(this.getTranslation('keywords.quick.empty') || 'Please enter at least one keyword.', 'warning');
+            return;
+          }
+
+          const requested = this.normalizeKeywordList(this.parseKeywords(rawValue));
+          if (!requested.length) {
+            this.showToast(this.getTranslation('keywords.quick.empty') || 'Please enter at least one keyword.', 'warning');
+            return;
+          }
+
+          if (mode === 'link' && (!group || !link || !this.canEdit(group))) {
+            this.showToast(this.getTranslation('error.perm.edit') || 'You do not have permission to edit links in this group.', 'warning');
+            return;
+          }
+
+          let changed = false;
+          if (mode === 'group' && group) {
+            const current = this.parseKeywords(group.keywords || '');
+            const currentSet = new Set(current.map(kw => this.normalizeKeyword(kw)));
+            requested.forEach(kw => {
+              const norm = this.normalizeKeyword(kw);
+              if (!norm || currentSet.has(norm)) return;
+              current.push(kw);
+              currentSet.add(norm);
+              changed = true;
+            });
+            if (changed) {
+              this.$set(group, 'keywords', this.joinKeywords(current));
+              this.touchGroup(group);
+              this.saveData();
+            }
+          } else if (mode === 'link' && group && link) {
+            const current = this.parseKeywords(link.keywords || '');
+            const currentSet = new Set(current.map(kw => this.normalizeKeyword(kw)));
+            requested.forEach(kw => {
+              const norm = this.normalizeKeyword(kw);
+              if (!norm || currentSet.has(norm)) return;
+              current.push(kw);
+              currentSet.add(norm);
+              changed = true;
+            });
+            if (changed) {
+              this.$set(link, 'keywords', this.joinKeywords(current));
+              const nowTs = this.touchLink(link);
+              this.touchGroup(group, nowTs);
+              this.saveData();
+            }
+          }
+
+          if (changed) {
+            this.showToast(this.getTranslation('keywords.quick.added') || 'Keyword added.', 'success');
+          } else {
+            this.showToast(this.getTranslation('keywords.quick.duplicate') || 'Keyword already assigned.', 'info');
+          }
+
+          const modalElement = document.getElementById('keywordQuickAddModal');
+          const modalInstance = modalElement ? bootstrap.Modal.getInstance(modalElement) : null;
+          if (modalInstance) modalInstance.hide();
+          this.resetKeywordQuickDialog();
+        },
+        updateQuickKeywordContext(event) {
+          const input = event?.target || this.$refs.keywordQuickInput;
+          if (!input) return;
+          this.keywordQuickSuggestionContext = this.extractKeywordContext(
+            input.value || '',
+            input.selectionStart,
+            input.selectionEnd
+          );
+        },
+        clearQuickKeywordContext() {
+          this.keywordQuickSuggestionContext = null;
+        },
+        applyQuickKeywordSuggestion(suggestion) {
+          if (!suggestion) return;
+          const nextValue = (suggestion.value != null ? suggestion.value : suggestion.label || '').toString();
+          if (!nextValue) return;
+          this.keywordQuickDialog.value = nextValue;
+          this.$nextTick(() => {
+            const input = this.$refs.keywordQuickInput;
+            if (input && input.value !== nextValue) input.value = nextValue;
+            const cursor = typeof suggestion.cursor === 'number' ? suggestion.cursor : nextValue.length;
+            if (input && typeof input.setSelectionRange === 'function') {
+              try { input.setSelectionRange(cursor, cursor); } catch {}
+              if (typeof input.focus === 'function') input.focus();
+            }
+            this.keywordQuickSuggestionContext = null;
+          });
+        },
+        handleQuickKeywordTab(event) {
+          if (event.shiftKey) return;
+          const input = event?.target || this.$refs.keywordQuickInput;
+          if (!input) return;
+
+          const context = this.extractKeywordContext(input.value || '', input.selectionStart, input.selectionEnd);
+          if (!context) return;
+
+          this.keywordQuickSuggestionContext = context;
+          const candidates = this.quickKeywordSuggestionList || [];
+          if (!candidates.length) return;
+
+          const searchTerm = (context.searchTerm || '').toLowerCase();
+          if (!searchTerm) return;
+
+          const currentTokenLower = (context.currentToken || '').toLowerCase();
+          let suggestion = candidates.find(item => {
+            const label = (item.label || item.value || '').toString();
+            const labelLower = label.toLowerCase();
+            return labelLower.startsWith(searchTerm) && labelLower !== currentTokenLower;
+          });
+          if (!suggestion) {
+            suggestion = candidates.find(item => {
+              const label = (item.label || item.value || '').toString();
+              return label.toLowerCase().startsWith(searchTerm);
+            });
+          }
+          if (!suggestion) return;
+
+          const suggestionLabel = (suggestion.label || suggestion.value || '').toString();
+          if (suggestionLabel.toLowerCase() === currentTokenLower) return;
+
+          event.preventDefault();
+          this.applyQuickKeywordSuggestion(suggestion);
         },
         updateActiveKeywordFilterAfterRename(oldKeyword, newKeyword) {
           const oldNorm = this.normalizeKeyword(oldKeyword);
@@ -28949,6 +29735,11 @@ footer a:hover {
               if (g.expandedLinkCount === undefined) {
                 g.expandedLinkCount = CONSTS.EXPANDED_LINK_LIMIT; // Show 500 when expanded
               }
+              if (g.bodyHeight === undefined || g.bodyHeight === null) {
+                g.bodyHeight = CONSTS.GROUP_BODY_HEIGHT_DEFAULT;
+              } else {
+                g.bodyHeight = this.normalizeGroupBodyHeight(g.bodyHeight);
+              }
               
               // Clean up shared flag for groups without active members
               if (g.shared) {
@@ -29170,6 +29961,7 @@ footer a:hover {
             group.links.forEach(link => {
               delete link.editing;
               delete link.isMouseOver;
+              delete link.isKeywordQuickAddBadgeHover;
             });
           });
 
@@ -31009,6 +31801,7 @@ footer a:hover {
             newLinkUrl: '',    // Moved from main data
             // Progressive loading state
             linksExpanded: false, // Start with limited links for performance
+            bodyHeight: CONSTS.GROUP_BODY_HEIGHT_DEFAULT,
             // If true, disable colored background and use neutral styling
             shared: false,
             members: [ { uuid: this.data.identity?.uuid || '', name: this.data.identity?.name || '', role: 'owner' } ],
@@ -31303,8 +32096,7 @@ footer a:hover {
               );
               if (!matchesText) return false;
               if (!activeKeywords.length) return true;
-              return this.keywordListContainsAll(g.keywords || '', activeKeywords) ||
-                (g.links && g.links.some(l => this.keywordListContainsAll(l.keywords || '', activeKeywords)));
+              return this.groupMatchesKeywordFilters(g, activeKeywords);
             })
             .sort((a, b) => a.index - b.index);
         },
@@ -32128,7 +32920,6 @@ footer a:hover {
           // If any token matches group keywords, show all links
           const groupHasKeyword = group && tokens.length && this.parseKeywords(group.keywords || '')
             .map(k => k.toLowerCase()).some(kw => tokens.some(t => kw.includes(t)));
-          const groupHasKeywordFilter = group && activeKeywords.length && this.keywordListContainsAll(group.keywords || '', activeKeywords);
           
           let result = links
             .filter(l => {
@@ -32142,7 +32933,7 @@ footer a:hover {
               })());
               if (!matchesText) return false;
               if (!activeKeywords.length) return true;
-              return !!groupHasKeywordFilter || this.keywordListContainsAll(l.keywords || '', activeKeywords);
+              return this.groupOrLinkKeywordsContainAll(group, l, activeKeywords);
             })
             .sort((a, b) => a.index - b.index); // Sort by index
 
@@ -32177,6 +32968,77 @@ footer a:hover {
           } catch {}
 
           return result;
+        },
+        getMaxGroupBodyHeight() {
+          const viewportHeight = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 1000;
+          return Math.max(CONSTS.GROUP_BODY_HEIGHT_MIN + 40, Math.floor(viewportHeight * 0.85));
+        },
+        normalizeGroupBodyHeight(value) {
+          const numeric = Number(value);
+          const fallback = CONSTS.GROUP_BODY_HEIGHT_DEFAULT;
+          const safeValue = Number.isFinite(numeric) ? numeric : fallback;
+          const min = CONSTS.GROUP_BODY_HEIGHT_MIN;
+          const max = this.getMaxGroupBodyHeight();
+          return Math.round(Math.min(Math.max(safeValue, min), max));
+        },
+        getGroupBodyHeight(group) {
+          return this.normalizeGroupBodyHeight(group?.bodyHeight);
+        },
+        startGroupHeightResize(event, group) {
+          if (!group || group.collapsed) return;
+          if (event && event.button !== undefined && event.button !== 0) return;
+          const currentHeight = this.getGroupBodyHeight(group);
+          if (group.bodyHeight === undefined || group.bodyHeight === null) {
+            this.$set(group, 'bodyHeight', currentHeight);
+          }
+          this.isGroupHeightResizing = true;
+          this.groupHeightResizeState = {
+            groupUuid: group.uuid,
+            startY: event.clientY,
+            startHeight: currentHeight
+          };
+          document.body.classList.add('mb-group-resizing');
+          document.addEventListener('mousemove', this.handleGroupHeightResize);
+          document.addEventListener('mouseup', this.endGroupHeightResize);
+        },
+        handleGroupHeightResize(event) {
+          if (!this.isGroupHeightResizing || !this.groupHeightResizeState?.groupUuid) return;
+          const group = (this.data.groups || []).find(g => g.uuid === this.groupHeightResizeState.groupUuid);
+          if (!group) return;
+          const deltaY = event.clientY - this.groupHeightResizeState.startY;
+          const nextHeight = this.normalizeGroupBodyHeight(this.groupHeightResizeState.startHeight + deltaY);
+          this.$set(group, 'bodyHeight', nextHeight);
+        },
+        endGroupHeightResize() {
+          if (!this.isGroupHeightResizing) return;
+          this.isGroupHeightResizing = false;
+          this.groupHeightResizeState = { groupUuid: null, startY: 0, startHeight: 0 };
+          document.removeEventListener('mousemove', this.handleGroupHeightResize);
+          document.removeEventListener('mouseup', this.endGroupHeightResize);
+          document.body.classList.remove('mb-group-resizing');
+          this.saveData();
+        },
+        autoFitGroupHeight(group) {
+          if (!group || group.collapsed) return;
+          const bodyEl = document.getElementById(`collapseGroup-${group.uuid}`);
+          let targetHeight = this.getGroupBodyHeight(group);
+          if (bodyEl) {
+            const prevHeight = bodyEl.style.height;
+            const prevOverflowY = bodyEl.style.overflowY;
+            bodyEl.style.height = 'auto';
+            bodyEl.style.overflowY = 'visible';
+            const contentHeight = Number(bodyEl.scrollHeight || bodyEl.getBoundingClientRect().height || 0);
+            bodyEl.style.height = prevHeight;
+            bodyEl.style.overflowY = prevOverflowY;
+            if (Number.isFinite(contentHeight) && contentHeight > 0) {
+              targetHeight = this.normalizeGroupBodyHeight(contentHeight + 2);
+            }
+          }
+          const currentHeight = this.getGroupBodyHeight(group);
+          if (currentHeight !== targetHeight || group.bodyHeight === undefined || group.bodyHeight === null) {
+            this.$set(group, 'bodyHeight', targetHeight);
+            this.saveData();
+          }
         },
         // --- Sorting helpers for links ---
         _getLocaleCollator() {
@@ -34777,7 +35639,7 @@ footer a:hover {
     let footer = new Vue({
       el: '#footer',
       data: {
-        version: '2026-02-17', // Updated version string
+        version: '2026-02-18', // Updated version string
       },
     });
   </script>
