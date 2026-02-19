@@ -945,6 +945,11 @@
     .groupCell {
       vertical-align: top;
       padding-right: 0; /* Remove padding - spacing handled by vertical dropzones */
+      transition: box-shadow 0.15s ease;
+    }
+
+    .groupCell.group-cell--resizing {
+      box-shadow: inset 0 0 0 2px rgba(13, 110, 253, 0.2);
     }
 
     .groupCell:last-child {
@@ -1106,8 +1111,8 @@
 
     .mb-group-resize-handle {
       height: 10px;
-      border-top: 1px solid rgba(0, 0, 0, 0.06);
-      background: linear-gradient(180deg, rgba(0, 0, 0, 0.015), rgba(0, 0, 0, 0.035));
+      border-top: 1px solid transparent;
+      background: transparent;
       cursor: ns-resize;
       user-select: none;
       display: flex;
@@ -1123,6 +1128,17 @@
       height: 2px;
       border-radius: 2px;
       background: rgba(108, 117, 125, 0.6);
+      opacity: 0;
+      transition: opacity 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .groupContainer:hover .mb-group-resize-handle {
+      border-top-color: rgba(0, 0, 0, 0.06);
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.015), rgba(0, 0, 0, 0.035));
+    }
+
+    .groupContainer:hover .mb-group-resize-handle::before {
+      opacity: 1;
     }
 
     .mb-group-resize-handle:hover {
@@ -1135,6 +1151,10 @@
 
     .mb-group-resize-handle.resizing {
       background: rgba(13, 110, 253, 0.18);
+    }
+
+    .mb-group-resize-handle.resizing::before {
+      opacity: 1;
     }
 
     .mb-group--resizing {
@@ -1169,6 +1189,12 @@
     body.mb-group-resizing,
     body.mb-group-resizing * {
       cursor: ns-resize !important;
+      user-select: none !important;
+    }
+
+    body.mb-group-column-resizing,
+    body.mb-group-column-resizing * {
+      cursor: ew-resize !important;
       user-select: none !important;
     }
 
@@ -1296,9 +1322,15 @@
       }
     }
 
-    @container (max-width: 500px) {
-      .linkContainerListItem .mb-link__badges {
-        display: none !important;
+    @container (max-width: 420px) {
+      .linkText .mb-link__badges {
+        max-width: 55%;
+      }
+    }
+
+    @container (max-width: 340px) {
+      .linkText .mb-link__badges {
+        max-width: 40%;
       }
     }
     
@@ -1519,9 +1551,72 @@
       transition: all 0.2s ease;
     }
 
+    .groupColumnResizeHandle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 10px;
+      cursor: ew-resize;
+      pointer-events: auto;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      transition: background-color 0.15s ease;
+    }
+
+    .groupColumnResizeHandle::before {
+      content: '';
+      width: 2px;
+      height: 70%;
+      border-radius: 2px;
+      background: rgba(108, 117, 125, 0.28);
+      opacity: 0;
+      transition: opacity 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .groupColumnResizeHandle:hover::before {
+      opacity: 1;
+      background: rgba(13, 110, 253, 0.75);
+      box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.16);
+    }
+
+    .groupColumnResizeHandle.resizing::before {
+      opacity: 1;
+      background: rgba(13, 110, 253, 0.9);
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.22);
+    }
+
+    .groupColumnResizeReadout {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(13, 110, 253, 0.94);
+      color: #fff;
+      font-size: 0.7rem;
+      line-height: 1;
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 4px 8px;
+      letter-spacing: 0.01em;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(13, 110, 253, 0.35);
+      white-space: nowrap;
+      z-index: 4;
+    }
+
     /* Active state when dragging groups */
     #app.dragging-group .verticalDropZone {
       pointer-events: auto;
+    }
+
+    #app.dragging-group .groupColumnResizeHandle {
+      pointer-events: none;
+      opacity: 0;
     }
 
     /* Expanded hit area for easier dropping */
@@ -2576,6 +2671,15 @@
       z-index: 2000;
     }
 
+    .mb-keyword-suggestions--overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: auto;
+      max-height: 220px;
+      z-index: 12050;
+    }
+
     .mb-keyword-quick-field {
       position: relative;
     }
@@ -3208,6 +3312,17 @@
                   d="M14.354 8.354a.5.5 0 0 1-.708 0L8 2.707l-5.646 5.647a.5.5 0 1 1-.708-.708l6-6a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708Z" />
               </svg>
             </button>
+            <button v-if="isManualGroupColumnWidthEnabled()"
+              type="button"
+              class="btn btn-outline-secondary"
+              :title="getTranslation('toolbar.equalizeGroupColumns') || 'Equalize group column widths'"
+              @click="equalizeGroupColumnWidths">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <rect x="1.5" y="2" width="3" height="12" rx="0.75"></rect>
+                <rect x="6.5" y="2" width="3" height="12" rx="0.75"></rect>
+                <rect x="11.5" y="2" width="3" height="12" rx="0.75"></rect>
+              </svg>
+            </button>
           </div>
           
           <!-- Import & Export group -->
@@ -3377,7 +3492,10 @@
           </td>
 
           <template v-for="(colIndex, groupColumnIndex) in getGroupColumns()" :key="'groupColumn-' + groupColumnIndex">
-            <td class="groupCell">
+            <td class="groupCell"
+                :data-column-index="colIndex"
+                :style="getGroupColumnCellStyle(colIndex)"
+                :class="{ 'group-cell--resizing': isGroupColumnResizing && (groupColumnResizeState.leftColumn === colIndex || groupColumnResizeState.rightColumn === colIndex) }">
 
             <div v-if="getGroupsByColumn(colIndex).length === 0"
               :class="['groupContainerDragAndDrop', 'group-drop-zone']"
@@ -3753,7 +3871,7 @@
                       class="btn btn-sm btn-success">{{ getTranslation('group.link.add') }}</button>
                   </div>
                 </div>
-                <div v-if="!group.collapsed"
+                <div v-if="!group.collapsed && canManuallyResizeGroupHeight(group)"
                   :class="['mb-group-resize-handle', { 'resizing': isGroupHeightResizing && groupHeightResizeState.groupUuid === group.uuid }]"
                   role="separator"
                   aria-orientation="horizontal"
@@ -3783,6 +3901,16 @@
         @dragenter.prevent="dropManager.handleDragEnterVerticalZone($event)"
         @dragleave="dropManager.handleDragLeaveVerticalZone($event)">
       <div class="verticalDropZoneIndicator"></div>
+      <div v-if="groupColumnIndex < getGroupColumns().length - 1 && isManualGroupColumnWidthEnabled()"
+           :class="['groupColumnResizeHandle', { 'resizing': isGroupColumnResizing && groupColumnResizeState.leftColumn === colIndex }]"
+           role="separator"
+           aria-orientation="vertical"
+           :title="getTranslation('group.resizeWidth') || 'Drag to resize group column width'"
+           @mousedown.stop.prevent="startGroupColumnResize($event, colIndex, getGroupColumns()[groupColumnIndex + 1])">
+        <span v-if="isGroupColumnResizing && groupColumnResizeState.leftColumn === colIndex" class="groupColumnResizeReadout">
+          {{ getGroupColumnWidthLabel(colIndex) }}
+        </span>
+      </div>
     </td>
     </template>
     </tr>
@@ -4156,6 +4284,8 @@
                     <option value="keyword-selected-text">{{ getTranslation('css.visual.selectedKeywordText') || 'Selected Keyword Text' }}</option>
                     <option value="keywords-hierarchical">{{ getTranslation('css.visual.keywordsHierarchical') || 'Keywords (Hierarchisch)' }}</option>
                     <option value="keyword-by-name">{{ getTranslation('css.visual.keywordByName') || 'Keyword nach Name' }}</option>
+                    <option value="keyword-suggestions">{{ getTranslation('css.visual.keywordSuggestions') || 'Keyword Suggestions List' }}</option>
+                    <option value="keyword-suggestion-item">{{ getTranslation('css.visual.keywordSuggestionItem') || 'Keyword Suggestion Item' }}</option>
                   </optgroup>
                 </select>
               </div>
@@ -5204,18 +5334,6 @@
               @keydown.tab="handleQuickKeywordTab($event)"
               @keydown.enter.prevent="submitKeywordQuickDialog"
             >
-            <div v-if="shouldShowQuickKeywordSuggestions" class="mb-keyword-suggestions">
-              <button
-                v-for="item in quickKeywordSuggestionList"
-                :key="'quick-kw-' + item.value"
-                type="button"
-                class="mb-keyword-suggestion"
-                @mousedown.prevent="applyQuickKeywordSuggestion(item)"
-                @click.prevent="applyQuickKeywordSuggestion(item)"
-              >
-                {{ item.label }}
-              </button>
-            </div>
           </div>
           <div class="form-text">{{ getTranslation('keywords.quick.help') || 'Separate multiple keywords with comma or semicolon.' }}</div>
         </div>
@@ -5241,6 +5359,9 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body mb-shortcut-manager-body">
+          <div class="alert alert-warning py-2 px-3 small mb-2" role="alert">
+            {{ getTranslation('shortcuts.manager.popupBlockerHint') || 'Browsers may block opening many tabs at once. If that happens, allow pop-ups for this site or trigger the shortcut/action again.' }}
+          </div>
           <div class="mb-shortcut-manager-section">
             <div class="mb-shortcut-manager-section-title">
               {{ getTranslation('shortcuts.manager.linkAssignments') || 'Defined link shortcuts' }}
@@ -6060,21 +6181,6 @@
                       :placeholder="field.placeholder"
                       :disabled="isFieldDisabled(sectionKey, fieldKey)"
                     >
-                    <div 
-                      v-if="isKeywordField(sectionKey, fieldKey) && isKeywordSuggestionField(sectionKey, fieldKey) && shouldShowKeywordSuggestions"
-                      class="mb-keyword-suggestions"
-                    >
-                      <button 
-                        v-for="item in keywordSuggestionList"
-                        :key="item.value"
-                        type="button"
-                        class="mb-keyword-suggestion"
-                        @mousedown.prevent="applyKeywordSuggestion(sectionKey, fieldKey, item)"
-                        @click.prevent="applyKeywordSuggestion(sectionKey, fieldKey, item)"
-                      >
-                        {{ item.label }}
-                      </button>
-                    </div>
                     <div v-if="field.helpText" class="form-text mb-edit-field-help">{{ getTranslation(field.helpText) }}</div>
                   </div>
                   
@@ -6259,6 +6365,40 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div
+    v-if="shouldShowKeywordSuggestions && keywordSuggestionStyle && keywordSuggestionField"
+    class="mb-keyword-suggestions mb-keyword-suggestions--overlay"
+    :style="keywordSuggestionStyle"
+  >
+    <button
+      v-for="item in keywordSuggestionList"
+      :key="item.value"
+      type="button"
+      class="mb-keyword-suggestion"
+      @mousedown.prevent="applyKeywordSuggestion(keywordSuggestionField.section, keywordSuggestionField.field, item)"
+      @click.prevent="applyKeywordSuggestion(keywordSuggestionField.section, keywordSuggestionField.field, item)"
+    >
+      {{ item.label }}
+    </button>
+  </div>
+
+  <div
+    v-if="shouldShowQuickKeywordSuggestions && quickKeywordSuggestionStyle"
+    class="mb-keyword-suggestions mb-keyword-suggestions--overlay"
+    :style="quickKeywordSuggestionStyle"
+  >
+    <button
+      v-for="item in quickKeywordSuggestionList"
+      :key="'quick-kw-overlay-' + item.value"
+      type="button"
+      class="mb-keyword-suggestion"
+      @mousedown.prevent="applyQuickKeywordSuggestion(item)"
+      @click.prevent="applyQuickKeywordSuggestion(item)"
+    >
+      {{ item.label }}
+    </button>
   </div>
 
   <!-- NC Folder Picker Modal -->
@@ -6605,8 +6745,12 @@
     // or defined separately and imported if using a module system.
     // Innerhalb deines <script type="module">
 
-    // Debug logging utility
-    const DEBUG_ENABLED = true; // Set to true to enable debug logging
+    // Debug logging utility (runtime-controlled via options)
+    let DEBUG_ENABLED = false; // Default: off
+
+    function setDebugEnabled(enabled) {
+      DEBUG_ENABLED = !!enabled;
+    }
     
     function debugLog(level, ...args) {
       if (!DEBUG_ENABLED) return;
@@ -6645,6 +6789,7 @@ const CONSTS = {
       INITIAL_LIMIT: 200, // Initial display limit
       GROUP_BODY_HEIGHT_DEFAULT: 360, // Default fixed group body height in px
       GROUP_BODY_HEIGHT_MIN: 45, // Minimum group body height in px
+      GROUP_COLUMN_WIDTH_MIN: 180, // Minimum width for group columns in px
 
       // Event Log
       EVENT_LOG_MAX_EVENTS: 500, // Maximum events to keep in log
@@ -6677,7 +6822,7 @@ const CONSTS = {
       DEFAULT_STORAGE_WARNING_MB: 4, // Show warning at 4MB localStorage usage
       MAX_STORAGE_MB: 5, // Maximum localStorage size (browser limit)
 
-  DEFAULT_URL_PREFIX: 'http://'
+  DEFAULT_URL_PREFIX: 'https://'
 };
 
 const DEFAULT_FAVICON_RULES = Object.freeze([
@@ -6781,7 +6926,7 @@ function getDefaultFaviconRules() {
         for (const pattern of patterns) {
           const result = pattern.detector(doc);
           if (result && result.confidence > 0.5) {
-            console.log(`[HTMLBookmarkParser] Using pattern: ${pattern.name} (confidence: ${result.confidence})`);
+            debugLog('log', `[HTMLBookmarkParser] Using pattern: ${pattern.name} (confidence: ${result.confidence})`);
             return pattern.extractor(doc, result.context);
           }
         }
@@ -6798,7 +6943,7 @@ function getDefaultFaviconRules() {
           const parser = new DOMParser();
           return parser.parseFromString(html, 'text/html');
         } catch (e) {
-          console.error('[HTMLBookmarkParser] Failed to parse HTML:', e);
+          debugLog('error', '[HTMLBookmarkParser] Failed to parse HTML:', e);
           return null;
         }
       }
@@ -12323,7 +12468,8 @@ function getDefaultFaviconRules() {
           language: 'en',
           pageTitle: 'My Bookmarks',
           searchAsYouType: false,
-          showKeywordQuickAddBadge: true,
+          manualGroupColumnWidth: false,
+          debugEnabled: false,
           confirmDeleteGroup: true,
         confirmDeleteLink: true,
         },
@@ -12331,6 +12477,8 @@ function getDefaultFaviconRules() {
           collapseGroupsOnStart: false,
           hoverExpandDelayMs: CONSTS.HOVER_EXPAND_DELAY_MS,
           hoverExpandEnabled: true,
+          autoAdjustHeightOnLinkChanges: false,
+          columnWidths: {},
           defaultGroupFormatting: '',
           defaultGroupTitleFormatting: '',
           defaultGroupLinkFormatting: '',
@@ -12358,13 +12506,14 @@ function getDefaultFaviconRules() {
           // Group quick-action buttons
           showAddLink: true,      // Show "Add link" button in group header
           showDeleteGroup: true,  // Show "Delete group" button in group header
+          showKeywordQuickAddBadge: true, // Show + badge for quick keyword assignment
           // Link quick-action buttons
           showCopyUrl: true,      // Show "Copy URL" button for links
           showQrCode: true,       // Show "QR Code" button for links
           showDeleteLink: true    // Show "Delete link" button for links
         },
         sharing: {
-          ntfyServerUrl: 'https://ntfy.sh',
+          ntfyServerUrl: 'https://ntfy.c5p.de',
           ntfyAuthToken: '',
           defaultTtl: 0,
           quickCodeTtlSec: CONSTS.QUICK_CODE_TTL_SEC,
@@ -12535,6 +12684,15 @@ function getDefaultFaviconRules() {
         // Group body resize
         isGroupHeightResizing: false,
         groupHeightResizeState: { groupUuid: null, startY: 0, startHeight: 0 },
+        // Group column resize
+        isGroupColumnResizing: false,
+        groupColumnResizeState: {
+          leftColumn: null,
+          rightColumn: null,
+          startX: 0,
+          startLeftWidth: 0,
+          startRightWidth: 0
+        },
         // Conflict Resolution UI
         showConflictNotification: false,
         conflictNotificationText: '',
@@ -12595,6 +12753,7 @@ function getDefaultFaviconRules() {
         // Keyword suggestion context for generic edit dialog
         keywordSuggestionContext: null,
         keywordSuggestionField: null,
+        keywordSuggestionStyle: null,
         // Design Tokens
         designTokens: [],
         // CSS Presets
@@ -12656,6 +12815,9 @@ function getDefaultFaviconRules() {
           '.mb-keyword',
           '.mb-group__keyword-badge',
           '.mb-link__keyword-badge',
+          '.mb-keyword-suggestions',
+          '.mb-keyword-suggestions--overlay',
+          '.mb-keyword-suggestion',
           '.mb-keywords-cloud',
           '.mb-keyword-label',
           '.keyword-container',
@@ -12834,7 +12996,9 @@ function getDefaultFaviconRules() {
           value: ''
         },
         keywordQuickSuggestionContext: null,
+        quickKeywordSuggestionStyle: null,
         shortcutManager: { linkFilter: '', globalDrafts: [] },
+        shortcutOpenQueue: null,
         
         // Info popup
         infoPopupContent: '',
@@ -12919,7 +13083,8 @@ function getDefaultFaviconRules() {
               pageTitle: { id: 'CommonPageTitle', type: 'text', translateKey: 'options.common.pageTitle', optionPath: 'common.pageTitle', helpText: 'options.common.pageTitle.help' },
               
               searchAsYouType: { id: 'SearchAsYouType', type: 'checkbox', translateKey: 'options.common.searchAsYouType', optionPath: 'common.searchAsYouType', helpText: 'options.common.searchAsYouType.help' },
-              showKeywordQuickAddBadge: { id: 'CommonShowKeywordQuickAddBadge', type: 'checkbox', translateKey: 'options.common.showKeywordQuickAddBadge', optionPath: 'common.showKeywordQuickAddBadge', helpText: 'options.common.showKeywordQuickAddBadge.help' },
+              manualGroupColumnWidth: { id: 'CommonManualGroupColumnWidth', type: 'checkbox', translateKey: 'options.common.manualGroupColumnWidth', optionPath: 'common.manualGroupColumnWidth', helpText: 'options.common.manualGroupColumnWidth.help' },
+              debugEnabled: { id: 'CommonDebugEnabled', type: 'checkbox', translateKey: 'options.common.debugEnabled', optionPath: 'common.debugEnabled', helpText: 'options.common.debugEnabled.help' },
               confirmDeleteGroup: { id: 'CommonConfirmDeleteGroup', type: 'checkbox', translateKey: 'options.common.confirmDeleteGroup', optionPath: 'common.confirmDeleteGroup', helpText: 'options.common.confirmDeleteGroup.help' },
               confirmDeleteLink: { id: 'CommonConfirmDeleteLink', type: 'checkbox', translateKey: 'options.common.confirmDeleteLink', optionPath: 'common.confirmDeleteLink', helpText: 'options.common.confirmDeleteLink.help' }
             }
@@ -12947,6 +13112,13 @@ function getDefaultFaviconRules() {
                 translateKey: 'options.groups.hoverExpandDelay',
                 optionPath: 'groups.hoverExpandDelayMs',
                 helpText: 'options.groups.hoverExpandDelay.help'
+              },
+              autoAdjustHeightOnLinkChanges: {
+                id: 'GroupsAutoAdjustHeightOnLinkChanges',
+                type: 'checkbox',
+                translateKey: 'options.groups.autoAdjustHeightOnLinkChanges',
+                optionPath: 'groups.autoAdjustHeightOnLinkChanges',
+                helpText: 'options.groups.autoAdjustHeightOnLinkChanges.help'
               },
               clearClosesAllGroups: {
                 id: 'GroupsClearClosesAll',
@@ -13062,6 +13234,14 @@ function getDefaultFaviconRules() {
                 translateKey: 'options.buttons.showDeleteGroup',
                 optionPath: 'buttons.showDeleteGroup',
                 helpText: 'options.buttons.showDeleteGroup.help',
+                defaultValue: true
+              },
+              showKeywordQuickAddBadge: {
+                id: 'ButtonsShowKeywordQuickAddBadge',
+                type: 'checkbox',
+                translateKey: 'options.buttons.showKeywordQuickAddBadge',
+                optionPath: 'buttons.showKeywordQuickAddBadge',
+                helpText: 'options.buttons.showKeywordQuickAddBadge.help',
                 defaultValue: true
               },
               showCopyUrl: {
@@ -13324,6 +13504,12 @@ function getDefaultFaviconRules() {
                 placeholder: 'group.shortcut.placeholder',
                 helpText: 'group.shortcut.help'
               },
+              manualHeightResizeOverride: {
+                id: 'GroupManualHeightResizeOverride',
+                type: 'checkbox',
+                translateKey: 'group.manualHeightResizeOverride',
+                helpText: 'group.manualHeightResizeOverride.help'
+              },
               infoHtml: {
                 type: 'textarea',
                 translateKey: 'group.infoHtml',
@@ -13433,9 +13619,9 @@ function getDefaultFaviconRules() {
             'carddav.username.help': 'Your CardDAV username',
             'carddav.password': 'App password',
             'carddav.password.help': 'Use an app-specific password if available',
-            'carddav.addressbookPath': 'Addressbook path (optional)',
+            'carddav.addressbookPath': 'Addressbook URL/path (optional)',
             'carddav.addressbookPath.help': 'Leave empty for auto-discovery, or set a full DAV path',
-            'carddav.createAddressbookIfMissing': 'Create addressbook if missing',
+            'carddav.createAddressbookIfMissing': 'Automatically create addressbook if missing',
             'carddav.createAddressbookIfMissing.help': 'Automatically create an addressbook named "MyBookmarks" if allowed',
             'carddav.syncInterval': 'Auto-sync interval',
             'carddav.syncInterval.help': 'How often to sync automatically (0 = manual only)',
@@ -13452,7 +13638,7 @@ function getDefaultFaviconRules() {
             'carddav.addressbookPathMissing': 'Please configure Server URL and Addressbook Path in Options',
             'carddav.testConnection': 'Test connection',
             'options.sync.engine': 'Sync Backend',
-            'options.sync.backend': 'Backend',
+            'options.sync.backend': 'Sync service',
             'options.sync.backend.help': 'Select sync provider',
             'options.sync.backend.carddav': 'CardDAV (DAV, experimental)',
             'options.sync.backend.nc': 'Nextcloud Bookmarks (REST, alpha)',
@@ -13463,17 +13649,17 @@ function getDefaultFaviconRules() {
             'bookmarks.username.help': 'Your Nextcloud username',
             'bookmarks.password': 'App password',
             'bookmarks.password.help': 'Use an app-specific password',
-            'bookmarks.rootFolderId': 'Root Folder ID',
+            'bookmarks.rootFolderId': 'Sync root folder',
             'bookmarks.rootFolderId.help': '0 = all folders; set a specific folder ID to limit sync',
             'bookmarks.autoCreate': 'Auto-create folders from groups',
             'bookmarks.autoCreate.help': 'Create missing Nextcloud folders for local groups',
-            'bookmarks.autoRename': 'Auto-rename folders on group rename',
+            'bookmarks.autoRename': 'Rename folders when groups are renamed',
             'bookmarks.autoRename.help': 'Rename Nextcloud folders when group names change',
             'bookmarks.chooseFolder': 'Choose Folder',
             'bookmarks.pickFolder': 'Select a Nextcloud folder',
             'bookmarks.refresh': 'Refresh',
             'bookmarks.select': 'Select',
-            'sync.resetBindings': 'Reset Sync Bindings',
+            'sync.resetBindings': 'Reset Nextcloud mapping bindings',
             'sync.resetBindings.help': 'Remove all stored Nextcloud folder/bookmark IDs from your groups and links. Useful to resync fresh.',
             'sync.resetBindings.confirm': 'This will remove all Nextcloud sync bindings (folder and bookmark IDs) from all groups and links. Your bookmarks stay, but re-sync will recreate mappings. Continue?',
             'sync.resetBindings.done': 'Sync bindings cleared',
@@ -13497,20 +13683,24 @@ function getDefaultFaviconRules() {
             'options.common.pageTitle.help': 'Set the page title',
             'options.common.identityName': 'Your display name',
             'options.common.identityName.help': 'This name is shown to other members and contacts',
+            'options.common.manualGroupColumnWidth': 'Allow manual group column widths',
+            'options.common.manualGroupColumnWidth.help': 'Allow dragging vertical separators to resize group columns and persist the widths.',
             'options.groups': 'Groups',
             'options.groups.collapseGroupsOnStart': 'Collapse groups on start',
             'options.groups.collapseGroupsOnStart.help': 'Collapse all groups on start',
-            'options.groups.hoverExpandEnabled': 'Enable auto-expand on link hover',
+            'options.groups.hoverExpandEnabled': 'Auto-open collapsed groups while dragging links',
             'options.groups.hoverExpandEnabled.help': 'When dragging a link, hovering a collapsed group expands it after the delay',
-            'options.groups.hoverExpandDelay': 'Auto-expand delay on link hover',
+            'options.groups.hoverExpandDelay': 'Auto-open delay while dragging links',
             'options.groups.hoverExpandDelay.help': 'Time to hover a collapsed group with a dragged link before it expands (milliseconds)',
-            'options.common.searchAsYouType': 'Search as you type',
+            'options.groups.autoAdjustHeightOnLinkChanges': 'Automatically adjust group height when links are added/removed',
+            'options.groups.autoAdjustHeightOnLinkChanges.help': 'Automatically fit group height after adding/removing links if content would otherwise require scrolling. Disables manual height resize unless overridden per group.',
+            'options.common.searchAsYouType': 'Instant search while typing',
             'options.common.searchAsYouType.help': 'You can start typing a search term without clicking in the search text field, unless you have focused on another input field',
-            'options.common.showKeywordQuickAddBadge': 'Show + badge for keywords on hover',
-            'options.common.showKeywordQuickAddBadge.help': 'Show a round + badge next to group and link keywords on mouseover to add keywords quickly',
-            'options.common.confirmDeleteGroup': 'Confirm before deleting groups',
+            'options.common.debugEnabled': 'Enable diagnostic logging',
+            'options.common.debugEnabled.help': 'Show debug logs in the browser console',
+            'options.common.confirmDeleteGroup': 'Confirm group deletion',
             'options.common.confirmDeleteGroup.help': 'Ask for confirmation when deleting a group',
-            'options.common.confirmDeleteLink': 'Confirm before deleting links',
+            'options.common.confirmDeleteLink': 'Confirm link deletion',
             'options.common.confirmDeleteLink.help': 'Ask for confirmation when deleting a link',
             'confirm.deleteGroup': 'Delete group "%s" and all its links?',
             'confirm.deleteLink': 'Delete this link?',
@@ -13526,13 +13716,13 @@ function getDefaultFaviconRules() {
             'options.groups.defaultLinkCountFormatting.help': 'Formatting for link count display in newly created groups',
             'options.links.defaultLinkFormatting': 'Default link formatting',
             'options.links.defaultLinkFormatting.help': 'Default formatting for individual links',
-            'options.links.defaultUrlPrefix': 'Default URL prefix',
+            'options.links.defaultUrlPrefix': 'Automatic URL prefix',
             'options.links.defaultUrlPrefix.help': 'Prefix to add when a URL has no scheme (e.g., https://). Leave empty to add nothing.',
-            'options.groups.clearClosesAllGroups': 'Clear search collapses all groups',
+            'options.groups.clearClosesAllGroups': 'Collapse all groups when clearing search',
             'options.groups.clearClosesAllGroups.help': 'On Clear, collapse all groups for privacy',
-            'options.groups.keywordClickExpandsAll': 'Keyword click expands all groups',
+            'options.groups.keywordClickExpandsAll': 'Expand all groups on keyword click',
             'options.groups.keywordClickExpandsAll.help': 'When clicking a keyword chip, expand all groups',
-            'options.groups.searchAutoExpandFound': 'Auto-expand matched groups while searching',
+            'options.groups.searchAutoExpandFound': 'Auto-expand matching groups during search',
             'options.groups.searchAutoExpandFound.help': 'Expand groups that match the current search text',
             'options.colors.generalSection': 'General Website Colors',
             'options.colors.globalFormatting': 'Global Formatting',
@@ -13667,7 +13857,8 @@ function getDefaultFaviconRules() {
             'css.visual.selectedKeywordText': 'Selected Keyword Text',
             'css.visual.keywordsHierarchical': 'Keywords (Hierarchical)',
             'css.visual.keywordByName': 'Keyword by Name',
-            'css.visual.copy': 'Copy',
+            'css.visual.keywordSuggestions': 'Keyword Suggestions List',
+            'css.visual.keywordSuggestionItem': 'Keyword Suggestion Item',
             'css.visual.apply': 'Apply',
             'css.visual.save': 'Save',
             'css.visual.migrationNotice': 'Note: Your existing Custom CSS has been imported. You can edit or delete it above as a "Legacy CSS" rule.',
@@ -13706,19 +13897,19 @@ function getDefaultFaviconRules() {
             'options.colors.add': 'Add Color',
             'options.links': 'Links',
             'options.sharing': 'Sharing',
-            'options.sync': 'Synchronization',
+            'options.sync': 'NTFY Synchronization',
             // Role badges
             'sync.role.all': 'All',
             'sync.role.owner': 'Owner',
             'sync.role.member': 'Member',
             // Conflict notification settings
-            'options.sync.conflictNotificationLevel': 'Conflict Notifications',
+            'options.sync.conflictNotificationLevel': 'Sync conflict notifications',
             'options.sync.conflictNotificationLevel.help': 'How to display sync conflict resolutions (applies to everyone):\n• Silent - No notifications, conflicts resolved automatically\n• Important only - Show only critical conflicts that may affect your data\n• All conflicts - Show every conflict resolution for full transparency',
             'options.sync.conflictNotificationLevel.silent': 'Silent',
             'options.sync.conflictNotificationLevel.minimal': 'Important only',
             'options.sync.conflictNotificationLevel.verbose': 'All conflicts',
             // Auto sync interval
-            'options.sync.autoSyncInterval': 'Auto-Sync Interval',
+            'options.sync.autoSyncInterval': 'Automatic sync interval',
             'options.sync.autoSyncInterval.help': 'How often to check for updates (applies to everyone):\n• 5 minutes - For active collaboration, moderate battery usage\n• 10 minutes - Good balance between updates and resource usage\n• 30 minutes - Battery-friendly, suitable for less active groups\n• 1 hour - Minimal resource usage, for rarely changing content\n• Manual only - You control when to sync, no automatic updates',
             'options.sync.autoSyncInterval.5min': '5 minutes',
             'options.sync.autoSyncInterval.10min': '10 minutes',
@@ -13731,12 +13922,12 @@ function getDefaultFaviconRules() {
             'options.sync.offlineMode.optimistic': 'Show immediately',
             'options.sync.offlineMode.conservative': 'Wait for confirmation',
             // Owner-only settings
-            'options.sync.conflictResolution': 'Conflict Resolution Strategy',
+            'options.sync.conflictResolution': 'Conflict resolution strategy',
             'options.sync.conflictResolution.help': 'How to resolve editing conflicts (owner groups only):\n• Owner wins - Your changes as owner always take priority\n• Latest wins - Most recent change wins regardless of who made it\n• Ask me - Prompt for each conflict (may interrupt workflow)',
             'options.sync.conflictResolution.ownerWins': 'Owner wins',
             'options.sync.conflictResolution.lastWriteWins': 'Latest wins',
             'options.sync.conflictResolution.manual': 'Ask me',
-            'options.sync.memberRateLimit': 'Member Rate Limit',
+            'options.sync.memberRateLimit': 'Change limit per member (per minute)',
             'options.sync.memberRateLimit.help': 'Max changes per minute per member (0 = unlimited, owner groups only)',
             'options.sync.memberRateLimit.suffix': 'per min',
             'options.sync.validationLevel': 'Validation Level',
@@ -13745,38 +13936,38 @@ function getDefaultFaviconRules() {
             'options.sync.validationLevel.moderate': 'Moderate',
             'options.sync.validationLevel.permissive': 'Permissive',
             // Member-only settings
-            'options.sync.localCacheStrategy': 'Local Cache',
+            'options.sync.localCacheStrategy': 'Amount of data kept locally',
             'options.sync.localCacheStrategy.help': 'How much data to keep locally (member groups only):\n• Everything - Keep full history and all versions locally (uses more storage)\n• Current only - Keep only latest version (saves storage space)',
             'options.sync.localCacheStrategy.full': 'Everything',
             'options.sync.localCacheStrategy.minimal': 'Current only',
-            'options.sync.errorHandling': 'Error Handling',
+            'options.sync.errorHandling': 'Behavior on sync errors',
             'options.sync.errorHandling.help': 'How to handle sync errors (member groups only):\n• Auto-retry - Automatically retry failed operations (recommended)\n• Queue for later - Save failed changes to retry manually\n• Discard on error - Give up on failed changes (data may be lost)',
             'options.sync.errorHandling.retry': 'Auto-retry',
             'options.sync.errorHandling.queue': 'Queue for later',
             'options.sync.errorHandling.discard': 'Discard on error',
-            'options.sharing.ntfyServerUrl': 'ntfy Server URL',
+            'options.sharing.ntfyServerUrl': 'Notification server (ntfy) URL',
             'options.sharing.ntfyServerUrl.help': 'URL of the ntfy push notification server, Default: https://ntfy.c5p.de (high limits)',
             'options.sharing.ntfyAuthToken': 'Auth Token',
             'options.sharing.ntfyAuthToken.help': 'Optional Bearer token for authentication',
-            'options.sharing.defaultTtl': 'Default TTL',
+            'options.sharing.defaultTtl': 'Default message lifetime (TTL)',
             'options.sharing.defaultTtl.help': 'Time to live in seconds (0 = server default)',
-            'options.sharing.quickCodeTtl': 'Quick Code TTL',
+            'options.sharing.quickCodeTtl': 'Quick-Connect code lifetime (sec)',
             'options.sharing.quickCodeTtl.help': 'Validity of quick share codes in seconds',
-            'options.sharing.contactOnlineTimeout': 'Contact Online Timeout',
+            'options.sharing.contactOnlineTimeout': 'Contact online status timeout (sec)',
             'options.sharing.contactOnlineTimeout.help': 'How long a contact is shown as online without response (in seconds)',
             'options.links.openInNewTab': 'Open links in new tab',
             'options.links.openInNewTab.help': 'If enabled, clicking a link opens it in a new browser tab',
-            'options.links.progressiveLoadingThreshold': 'Progressive loading threshold',
+            'options.links.progressiveLoadingThreshold': 'Initial link count before "Show more"',
             'options.links.progressiveLoadingThreshold.help': 'Number of links to show initially per group (show more button appears above this limit)',
-            'options.links.addViaDialog': 'Add links via dialog (top-right button)',
+            'options.links.addViaDialog': 'Add links via dialog',
             'options.links.addViaDialog.help': 'Show an add button in the group header and hide inline inputs',
-            'options.links.autoFetchTitle': 'Auto-fetch page title on add',
+            'options.links.autoFetchTitle': 'Automatically fetch page title on add',
             'options.links.autoFetchTitle.help': 'Try to fetch the web page title and prefill link title (best-effort)',
-            'options.links.autoFetchFavicon': 'Show site favicon (via URL)',
+            'options.links.autoFetchFavicon': 'Automatically fetch website icon (favicon)',
             'options.links.autoFetchFavicon.help': 'Use a favicon service URL to render the icon before the link',
             'options.links.showLinkBadges': 'Show link keyword badges',
             'options.links.showLinkBadges.help': 'Display keyword badges next to links',
-            'options.links.showLinkPopover': 'Show link detail popover',
+            'options.links.showLinkPopover': 'Show link info popover on hover',
             'options.links.showLinkPopover.help': 'Display a multi-line popover with metadata when hovering or focusing a link',
             'css.visual.popoverLevel': 'Link Popover',
             'css.visual.linkPopover': 'Popover container',
@@ -13790,21 +13981,24 @@ function getDefaultFaviconRules() {
             'css.visual.linkPopoverKeywords': 'Popover keywords container',
             'css.visual.linkPopoverBadge': 'Popover keyword badge',
             'css.visual.linkPopoverFavicon': 'Popover favicon',
-            'options.links.copyUrlFormat': 'Copy URL format',
+            'options.links.copyUrlFormat': 'Format for "Copy URL"',
             'options.links.copyUrlFormat.help': 'Format for copying links. Available placeholders: {title}, {url}, {keywords}, {date}, {time}',
             'options.buttons': 'Quick Action Buttons',
-            'options.buttons.showAddLink': 'Show "Add Link" button',
+            'options.buttons.showAddLink': 'Show quick action "Add link"',
             'options.buttons.showAddLink.help': 'Display the add link button in group headers',
-            'options.buttons.showDeleteGroup': 'Show "Delete Group" button',
+            'options.buttons.showDeleteGroup': 'Show quick action "Delete group"',
             'options.buttons.showDeleteGroup.help': 'Display the delete button in group headers',
-            'options.buttons.showCopyUrl': 'Show "Copy URL" button',
+            'options.buttons.showKeywordQuickAddBadge': 'Show "+" keyword badge on hover',
+            'options.buttons.showKeywordQuickAddBadge.help': 'Show a round + badge next to group and link keywords on mouseover to add keywords quickly',
+            'options.buttons.showCopyUrl': 'Show quick action "Copy URL"',
             'options.buttons.showCopyUrl.help': 'Display the copy URL button for links',
-            'options.buttons.showQrCode': 'Show "QR Code" button',
+            'options.buttons.showQrCode': 'Show quick action "QR code"',
             'options.buttons.showQrCode.help': 'Display the QR code button for links',
-            'options.buttons.showDeleteLink': 'Show "Delete Link" button',
+            'options.buttons.showDeleteLink': 'Show quick action "Delete link"',
             'options.buttons.showDeleteLink.help': 'Display the delete button for links',
             'groups.openAll': 'Open all',
             'groups.closeAll': 'Close all',
+            'toolbar.equalizeGroupColumns': 'Equalize group column widths',
             'group.toggleGroupCollapse': 'Toggle group collapse',
             'group.moveGroupLeft': 'Move group left',
             'group.moveGroupRight': 'Move group right',
@@ -13935,8 +14129,8 @@ function getDefaultFaviconRules() {
             'group.keywords.help': 'Keywords for searching and filtering (separate with comma or semicolon)',
             'group.shortcut.placeholder': 'Focus field and press e.g. Ctrl+Alt+G',
             'group.shortcut.help': 'Press the key combination here to open all links in this group at once.',
-            'group.infoHtml.placeholder': 'Enter HTML content to display in info tooltip...',
-            'group.infoHtml.help': 'This HTML will be displayed when hovering over the info icon.',
+            'group.manualHeightResizeOverride': 'Allow manual height resize for this group',
+            'group.manualHeightResizeOverride.help': 'Overrides the global auto-height setting for this group. When enabled, you can resize this group manually.',
             'group.color': 'Color',
             'group.backgroundFormatting': 'Background Formatting',
             'group.titleFormatting': 'Title Formatting',
@@ -13974,6 +14168,8 @@ function getDefaultFaviconRules() {
             'link.shortcut.invalid': 'Please use Ctrl/Alt/Cmd plus a key (e.g. Ctrl+Alt+M).',
             'link.shortcut.reserved': 'This shortcut is reserved by the browser/system.',
             'link.shortcut.opened': 'Opened {count} link(s) via shortcut.',
+            'link.shortcut.openedPartial': 'Only opened {opened} of {total} link(s). Popup blocker may have blocked the rest.',
+            'link.shortcut.batchRemaining': 'Opened {opened} of {total} link(s). {remaining} remaining. Trigger the same shortcut/action again to continue.',
             'link.shortcut.confirmMany': 'Open {count} links at once?',
             'shortcuts.manage': 'Shortcut Manager',
             'shortcuts.manager.title': 'Shortcut Manager',
@@ -13999,6 +14195,7 @@ function getDefaultFaviconRules() {
             'shortcuts.manager.invalidCombo': 'Please define a valid shortcut in row {row}.',
             'shortcuts.manager.invalidTargets': 'Please select at least one link or group in row {row}.',
             'shortcuts.manager.saved': 'Saved {count} global shortcuts.',
+            'shortcuts.manager.popupBlockerHint': 'Browsers may block opening many tabs at once. If that happens, allow pop-ups for this site or trigger the shortcut/action again.',
             'shortcut.notice.globalDefined': 'Global shortcut "{combo}" is already defined and opens {count} URL(s).',
             'shortcut.notice.groupDefined': 'Group "{group}" already has shortcut "{combo}".',
             'shortcut.notice.groupInGlobal': 'Group "{group}" is already part of global shortcut "{combo}".',
@@ -14201,11 +14398,11 @@ function getDefaultFaviconRules() {
             
             // Event-Log & Sync Settings
             , 'options.eventlog.title': 'Event-Log & Sync'
-            , 'options.eventlog.snapshotInterval': 'Snapshot after events'
+            , 'options.eventlog.snapshotInterval': 'Snapshot every X events'
             , 'options.eventlog.snapshotInterval.help': 'Create snapshot after this many events (reduces memory usage)'
-            , 'options.eventlog.maxEvents': 'Max events to keep'
+            , 'options.eventlog.maxEvents': 'Maximum number of events'
             , 'options.eventlog.maxEvents.help': 'Maximum events before forced cleanup (hard limit)'
-            , 'options.eventlog.syncStrategy': 'Sync strategy'
+            , 'options.eventlog.syncStrategy': 'Conflict strategy during sync'
             , 'options.eventlog.syncStrategy.help': 'How to handle conflicts when syncing'
             , 'options.eventlog.syncStrategy.ownerLeads': 'Owner leads (recommended)'
             , 'options.eventlog.syncStrategy.allEqual': 'All members equal'
@@ -14276,18 +14473,12 @@ function getDefaultFaviconRules() {
             , 'css.resetAll': 'Reset All'
             
             // Visual CSS Editor translations
-            , 'css.visual.title': 'Visual CSS Editor'
-            , 'css.visual.templates': 'CSS Templates'
-            , 'css.visual.rules': 'CSS Rules'
-            , 'css.visual.generated': 'Generated CSS'
             , 'css.visual.addRule': 'Add New CSS Rule'
             , 'css.visual.deleteRule': 'Delete Rule'
             , 'css.visual.element': 'Element'
             , 'css.visual.selectElement': '-- Select Element --'
             , 'css.visual.group': 'Group'
-            , 'css.visual.selectGroup': '-- Select Group --'
             , 'css.visual.link': 'Link'
-            , 'css.visual.selectLink': '-- Select Link --'
             , 'css.visual.properties': 'CSS Properties'
             , 'css.visual.addProperty': '+ Add Property...'
             , 'css.visual.colors': 'Colors'
@@ -14310,7 +14501,6 @@ function getDefaultFaviconRules() {
             , 'css.bottomRight': 'bottom right'
             , 'css.visual.layout': 'Layout'
             , 'css.visual.effects': 'Effects'
-            , 'css.visual.importantHint': 'Force this style to override others (!important)'
 
             // Generic button translations
             , 'apply': 'Apply'
@@ -14363,9 +14553,9 @@ function getDefaultFaviconRules() {
             'carddav.username.help': 'Dein CardDAV-Benutzername',
             'carddav.password': 'App-Passwort',
             'carddav.password.help': 'Falls möglich App-Passwort verwenden',
-            'carddav.addressbookPath': 'Adressbuch-Pfad (optional)',
+            'carddav.addressbookPath': 'Adressbuch-URL/Pfad (optional)',
             'carddav.addressbookPath.help': 'Leer lassen für Auto-Discovery oder vollständigen DAV-Pfad angeben',
-            'carddav.createAddressbookIfMissing': 'Adressbuch anlegen, falls nicht vorhanden',
+            'carddav.createAddressbookIfMissing': 'Adressbuch automatisch erstellen, falls nicht vorhanden',
             'carddav.createAddressbookIfMissing.help': 'Adressbuch "MyBookmarks" automatisch anlegen, sofern erlaubt',
             'carddav.syncInterval': 'Auto-Sync-Intervall',
             'carddav.syncInterval.help': 'Wie oft automatisch synchronisiert wird (0 = nur manuell)',
@@ -14382,7 +14572,7 @@ function getDefaultFaviconRules() {
             'carddav.addressbookPathMissing': 'Bitte Server-URL und Adressbuch-Pfad in den Optionen konfigurieren',
             'carddav.testConnection': 'Verbindung testen',
             'options.sync.engine': 'Sync-Backend',
-            'options.sync.backend': 'Backend',
+            'options.sync.backend': 'Sync-Dienst',
             'options.sync.backend.help': 'Sync-Anbieter wählen',
             'options.sync.backend.carddav': 'CardDAV (experimentell)',
             'options.sync.backend.nc': 'Nextcloud Bookmarks (REST)',
@@ -14393,17 +14583,17 @@ function getDefaultFaviconRules() {
             'bookmarks.username.help': 'Dein Nextcloud-Benutzername',
             'bookmarks.password': 'App-Passwort',
             'bookmarks.password.help': 'App-spezifisches Passwort verwenden',
-            'bookmarks.rootFolderId': 'Root-Ordner-ID',
+            'bookmarks.rootFolderId': 'Sync-Startordner',
             'bookmarks.rootFolderId.help': '0 = alle Ordner; eine Ordner-ID setzen, um zu begrenzen',
             'bookmarks.autoCreate': 'Ordner aus Gruppen automatisch anlegen',
             'bookmarks.autoCreate.help': 'Nicht vorhandene Nextcloud-Ordner für lokale Gruppen anlegen',
-            'bookmarks.autoRename': 'Ordner bei Gruppen-Umbenennung anpassen',
+            'bookmarks.autoRename': 'Ordnernamen bei Gruppen-Umbenennung mitziehen',
             'bookmarks.autoRename.help': 'Nextcloud-Ordnernamen aktualisieren, wenn Gruppen umbenannt werden',
             'bookmarks.chooseFolder': 'Ordner wählen',
             'bookmarks.pickFolder': 'Nextcloud-Ordner auswählen',
             'bookmarks.refresh': 'Aktualisieren',
             'bookmarks.select': 'Auswählen',
-            'sync.resetBindings': 'Sync-Verknüpfungen zurücksetzen',
+            'sync.resetBindings': 'Zuordnungen zu Nextcloud zurücksetzen',
             'sync.resetBindings.help': 'Entfernt alle gespeicherten Nextcloud Ordner-/Bookmark-IDs aus Gruppen und Links. Nützlich für einen frischen Neuabgleich.',
             'sync.resetBindings.confirm': 'Dies entfernt ALLE Nextcloud-Sync-Verknüpfungen (Ordner- und Bookmark-IDs) aus allen Gruppen und Links. Deine Bookmarks bleiben erhalten, aber beim nächsten Sync werden die Verknüpfungen neu erstellt. Fortfahren?',
             'sync.resetBindings.done': 'Sync-Verknüpfungen wurden entfernt',
@@ -14427,20 +14617,24 @@ function getDefaultFaviconRules() {
             'options.common.pageTitle.help': 'Setze den Seitentitel',
             'options.common.identityName': 'Ihr Anzeigename',
             'options.common.identityName.help': 'Dieser Name wird anderen Mitgliedern und Kontakten angezeigt',
+            'options.common.manualGroupColumnWidth': 'Manuelle Spaltenbreite für Gruppen aktivieren',
+            'options.common.manualGroupColumnWidth.help': 'Erlaubt das Ziehen der vertikalen Trenner zur Breitenanpassung der Gruppenspalten und speichert die Breiten.',
             'options.groups': 'Gruppen',
             'options.groups.collapseGroupsOnStart': 'Gruppen beim Start einklappen',
             'options.groups.collapseGroupsOnStart.help': 'Klappe alle Gruppen beim Start ein',
-            'options.groups.hoverExpandEnabled': 'Auto-Öffnen beim Link-Hover aktivieren',
+            'options.groups.hoverExpandEnabled': 'Eingeklappte Gruppen beim Link-Ziehen automatisch öffnen',
             'options.groups.hoverExpandEnabled.help': 'Beim Ziehen eines Links öffnet sich eine eingeklappte Gruppe nach der Wartezeit',
-            'options.groups.hoverExpandDelay': 'Auto-Öffnen Verzögerung (Link-Hover)',
+            'options.groups.hoverExpandDelay': 'Verzögerung fürs Auto-Öffnen beim Link-Ziehen (ms)',
             'options.groups.hoverExpandDelay.help': 'Zeit in Millisekunden, die ein gezogener Link über einer eingeklappten Gruppe schweben muss, um sie zu öffnen',
-            'options.common.searchAsYouType': 'Suche während des Tippens',
+            'options.groups.autoAdjustHeightOnLinkChanges': 'Gruppenhöhe beim Hinzufügen/Entfernen automatisch anpassen',
+            'options.groups.autoAdjustHeightOnLinkChanges.help': 'Passt die Gruppenhöhe nach dem Hinzufügen/Entfernen von Links automatisch an, wenn sonst gescrollt werden müsste. Deaktiviert manuelles Höhen-Resizing, außer bei Gruppen-Override.',
+            'options.common.searchAsYouType': 'Sofortsuche beim Tippen',
             'options.common.searchAsYouType.help': 'Du kannst anfangen, einen Suchbegriff einzugeben, ohne in das Suchfeld zu klicken, es sei denn, du hast ein anderes Eingabefeld fokussiert',
-            'options.common.showKeywordQuickAddBadge': '+-Badge für Keywords bei Mouseover anzeigen',
-            'options.common.showKeywordQuickAddBadge.help': 'Zeigt bei Mouseover neben Gruppen- und Link-Keywords ein rundes +-Badge zum schnellen Hinzufügen',
-            'options.common.confirmDeleteGroup': 'Vor dem Löschen von Gruppen nachfragen',
+            'options.common.debugEnabled': 'Diagnose-Protokoll aktivieren',
+            'options.common.debugEnabled.help': 'Zeigt Debug-Ausgaben in der Browser-Konsole',
+            'options.common.confirmDeleteGroup': 'Löschen von Gruppen bestätigen',
             'options.common.confirmDeleteGroup.help': 'Beim Löschen einer Gruppe eine Bestätigung anzeigen',
-            'options.common.confirmDeleteLink': 'Vor dem Löschen von Links nachfragen',
+            'options.common.confirmDeleteLink': 'Löschen von Links bestätigen',
             'options.common.confirmDeleteLink.help': 'Beim Löschen eines Links eine Bestätigung anzeigen',
             'confirm.deleteGroup': 'Gruppe "%s" und alle enthaltenen Links löschen?',
             'confirm.deleteLink': 'Diesen Link löschen?',
@@ -14456,11 +14650,11 @@ function getDefaultFaviconRules() {
             'options.groups.defaultLinkCountFormatting.help': 'Formatierung für Link-Anzahl-Anzeige in neu erstellten Gruppen',
             'options.links.defaultLinkFormatting': 'Standard-Link-Formatierung',
             'options.links.defaultLinkFormatting.help': 'Standardformatierung für einzelne Links',
-            'options.groups.clearClosesAllGroups': 'Clear klappt alle Gruppen ein',
+            'options.groups.clearClosesAllGroups': 'Beim Löschen der Suche alle Gruppen einklappen',
             'options.groups.clearClosesAllGroups.help': 'Beim Clear alle Gruppen einklappen (Datensicherheit)',
-            'options.groups.keywordClickExpandsAll': 'Keyword-Klick klappt alle Gruppen aus',
+            'options.groups.keywordClickExpandsAll': 'Klick auf Keyword öffnet alle Gruppen',
             'options.groups.keywordClickExpandsAll.help': 'Beim Klick auf ein Keyword alle Gruppen ausklappen',
-            'options.groups.searchAutoExpandFound': 'Gefundene Gruppen während Suche ausklappen',
+            'options.groups.searchAutoExpandFound': 'Treffergruppen während der Suche automatisch öffnen',
             'options.groups.searchAutoExpandFound.help': 'Passende Gruppen bei aktiver Suche automatisch ausklappen',
             'options.colors': 'Darstellung & Farben',
             'options.colors.generalSection': 'Allgemeine Website-Farben',
@@ -14543,29 +14737,29 @@ function getDefaultFaviconRules() {
             'options.colors.add': 'Farbe hinzufügen',
             'options.links': 'Links',
             'options.sharing': 'Teilen',
-            'options.sharing.ntfyServerUrl': 'ntfy Server URL',
+            'options.sharing.ntfyServerUrl': 'Benachrichtigungsserver (ntfy) URL',
             'options.sharing.ntfyServerUrl.help': 'URL des ntfy Push-Benachrichtigungsservers',
             'options.sharing.ntfyAuthToken': 'Authentifizierungs-Token',
             'options.sharing.ntfyAuthToken.help': 'Optionales Bearer-Token für die Authentifizierung',
-            'options.sharing.defaultTtl': 'Standard-TTL',
+            'options.sharing.defaultTtl': 'Standard-Gültigkeitsdauer (TTL)',
             'options.sharing.defaultTtl.help': 'Gültigkeitsdauer in Sekunden (0 = Server-Standard)',
-            'options.sharing.quickCodeTtl': 'Quick-Code TTL',
+            'options.sharing.quickCodeTtl': 'Gültigkeit von Quick-Connect-Codes (Sek.)',
             'options.sharing.quickCodeTtl.help': 'Gültigkeit von Quick-Share-Codes in Sekunden',
-            'options.sharing.contactOnlineTimeout': 'Kontakt Online-Timeout',
+            'options.sharing.contactOnlineTimeout': 'Online-Status-Timeout für Kontakte (Sek.)',
             'options.sharing.contactOnlineTimeout.help': 'Wie lange ein Kontakt als online angezeigt wird, ohne zu antworten (in Sekunden)',
             'options.links.openInNewTab': 'Links in neuem Tab öffnen',
             'options.links.openInNewTab.help': 'Wenn aktiviert, öffnet ein Klick auf einen Link einen neuen Browser-Tab',
-            'options.links.progressiveLoadingThreshold': 'Schwellenwert für schrittweises Laden',
+            'options.links.progressiveLoadingThreshold': 'Anzahl Links vor „Mehr anzeigen“',
             'options.links.progressiveLoadingThreshold.help': 'Anzahl der Links, die anfangs pro Gruppe angezeigt werden ("Weitere anzeigen"-Button erscheint oberhalb dieses Limits)',
-            'options.links.addViaDialog': 'Links per Dialog hinzufügen (oben rechts)',
+            'options.links.addViaDialog': 'Links über Dialog hinzufügen',
             'options.links.addViaDialog.help': 'Zeige oben rechts einen Hinzufügen-Button und blende die Inline-Eingaben aus',
-            'options.links.autoFetchTitle': 'Titel der Webseite automatisch holen',
+            'options.links.autoFetchTitle': 'Seitentitel beim Hinzufügen automatisch laden',
             'options.links.autoFetchTitle.help': 'Versuche, den Seitentitel zu laden und das Titelfeld vorzufüllen (Best-Effort)',
-            'options.links.autoFetchFavicon': 'Favicon über URL anzeigen',
+            'options.links.autoFetchFavicon': 'Website-Icon (Favicon) automatisch laden',
             'options.links.autoFetchFavicon.help': 'Verwende eine Favicon-Service-URL, um das Icon vor dem Link anzuzeigen',
             'options.links.showLinkBadges': 'Link-Keyword-Badges anzeigen',
             'options.links.showLinkBadges.help': 'Zeige Keyword-Badges neben Links an',
-            'options.links.showLinkPopover': 'Link-Detail-Popover anzeigen',
+            'options.links.showLinkPopover': 'Link-Infobox bei Hover anzeigen',
             'options.links.showLinkPopover.help': 'Zeigt beim Überfahren oder Fokussieren eines Links ein Popover mit wichtigsten Metadaten an',
             'css.visual.popoverLevel': 'Link-Popover',
             'css.visual.linkPopover': 'Popover-Container',
@@ -14579,23 +14773,26 @@ function getDefaultFaviconRules() {
             'css.visual.linkPopoverKeywords': 'Popover-Keywords',
             'css.visual.linkPopoverBadge': 'Popover-Keyword-Badge',
             'css.visual.linkPopoverFavicon': 'Popover-Favicon',
-            'options.links.copyUrlFormat': 'URL-Kopierformat',
+            'options.links.copyUrlFormat': 'Format für „URL kopieren“',
             'options.links.copyUrlFormat.help': 'Format zum Kopieren von Links. Verfügbare Platzhalter: {title}, {url}, {keywords}, {date}, {time}',
-            'options.links.defaultUrlPrefix': 'Standard-URL-Präfix',
+            'options.links.defaultUrlPrefix': 'Automatisches URL-Präfix',
             'options.links.defaultUrlPrefix.help': 'Präfix, das ergänzt wird, wenn eine URL kein Schema hat (z. B. https://). Leer lassen, um nichts zu ergänzen.',
             'options.buttons': 'Schnellaktions-Schaltflächen',
-            'options.buttons.showAddLink': '"Link hinzufügen" anzeigen',
+            'options.buttons.showAddLink': 'Quick-Action „Link hinzufügen“ anzeigen',
             'options.buttons.showAddLink.help': 'Zeigt die Schaltfläche zum Hinzufügen von Links in Gruppenkopfzeilen',
-            'options.buttons.showDeleteGroup': '"Gruppe löschen" anzeigen',
+            'options.buttons.showDeleteGroup': 'Quick-Action „Gruppe löschen“ anzeigen',
             'options.buttons.showDeleteGroup.help': 'Zeigt die Löschen-Schaltfläche in Gruppenkopfzeilen',
-            'options.buttons.showCopyUrl': '"URL kopieren" anzeigen',
+            'options.buttons.showKeywordQuickAddBadge': '„+“-Keyword-Badge bei Hover anzeigen',
+            'options.buttons.showKeywordQuickAddBadge.help': 'Zeigt bei Mouseover neben Gruppen- und Link-Keywords ein rundes +-Badge zum schnellen Hinzufügen',
+            'options.buttons.showCopyUrl': 'Quick-Action „URL kopieren“ anzeigen',
             'options.buttons.showCopyUrl.help': 'Zeigt die URL-Kopieren-Schaltfläche für Links',
-            'options.buttons.showQrCode': '"QR-Code" anzeigen',
+            'options.buttons.showQrCode': 'Quick-Action „QR-Code“ anzeigen',
             'options.buttons.showQrCode.help': 'Zeigt die QR-Code-Schaltfläche für Links',
-            'options.buttons.showDeleteLink': '"Link löschen" anzeigen',
+            'options.buttons.showDeleteLink': 'Quick-Action „Link löschen“ anzeigen',
             'options.buttons.showDeleteLink.help': 'Zeigt die Löschen-Schaltfläche für Links',
             'groups.openAll': 'Alle öffnen',
             'groups.closeAll': 'Alle schließen',
+            'toolbar.equalizeGroupColumns': 'Gruppenspalten gleichmäßig breit machen',
             'group.toggleGroupCollapse': 'Gruppe ein-/ausklappen',
             'group.moveGroupLeft': 'Gruppe nach links verschieben',
             'group.moveGroupRight': 'Gruppe nach rechts verschieben',
@@ -14708,19 +14905,19 @@ function getDefaultFaviconRules() {
             'sync.conflict.linkDelete': 'Link-Löschkonflikt gelöst',
             'sync.conflict.generic': 'Sync-Konflikt automatisch gelöst',
             // Sync-Einstellungen
-            'options.sync': 'Synchronisation',
+            'options.sync': 'NTFY-Synchronisation',
             // Rollen-Badges
             'sync.role.all': 'Alle',
             'sync.role.owner': 'Besitzer',
             'sync.role.member': 'Mitglied',
             // Konflikt-Benachrichtigungen
-            'options.sync.conflictNotificationLevel': 'Konflikt-Benachrichtigungen',
+            'options.sync.conflictNotificationLevel': 'Benachrichtigungen bei Sync-Konflikten',
             'options.sync.conflictNotificationLevel.help': 'Wie Sync-Konflikte angezeigt werden (gilt für alle):\n• Stumm - Keine Benachrichtigungen, Konflikte werden automatisch gelöst\n• Nur wichtige - Zeigt nur kritische Konflikte die Ihre Daten betreffen könnten\n• Alle Konflikte - Zeigt jede Konfliktlösung für volle Transparenz',
             'options.sync.conflictNotificationLevel.silent': 'Stumm',
             'options.sync.conflictNotificationLevel.minimal': 'Nur wichtige',
             'options.sync.conflictNotificationLevel.verbose': 'Alle Konflikte',
             // Auto-Sync Intervall
-            'options.sync.autoSyncInterval': 'Auto-Sync Intervall',
+            'options.sync.autoSyncInterval': 'Automatisches Sync-Intervall',
             'options.sync.autoSyncInterval.help': 'Wie oft nach Updates gesucht wird (gilt für alle):\n• 5 Minuten - Für aktive Zusammenarbeit, moderater Akkuverbrauch\n• 10 Minuten - Gute Balance zwischen Updates und Ressourcenverbrauch\n• 30 Minuten - Akkuschonend, geeignet für weniger aktive Gruppen\n• 1 Stunde - Minimaler Ressourcenverbrauch, für selten ändernde Inhalte\n• Nur manuell - Sie kontrollieren wann synchronisiert wird',
             'options.sync.autoSyncInterval.5min': '5 Minuten',
             'options.sync.autoSyncInterval.10min': '10 Minuten',
@@ -14733,12 +14930,12 @@ function getDefaultFaviconRules() {
             'options.sync.offlineMode.optimistic': 'Sofort anzeigen',
             'options.sync.offlineMode.conservative': 'Auf Bestätigung warten',
             // Nur für Besitzer
-            'options.sync.conflictResolution': 'Konfliktauflösung',
+            'options.sync.conflictResolution': 'Strategie zur Konfliktauflösung',
             'options.sync.conflictResolution.help': 'Wie Bearbeitungskonflikte gelöst werden (nur Besitzer-Gruppen):\n• Besitzer gewinnt - Ihre Änderungen als Besitzer haben immer Vorrang\n• Neueste gewinnt - Die aktuellste Änderung gewinnt, egal von wem\n• Nachfragen - Bei jedem Konflikt nachfragen (kann Workflow unterbrechen)',
             'options.sync.conflictResolution.ownerWins': 'Besitzer gewinnt',
             'options.sync.conflictResolution.lastWriteWins': 'Neueste gewinnt',
             'options.sync.conflictResolution.manual': 'Nachfragen',
-            'options.sync.memberRateLimit': 'Mitglieder-Ratelimit',
+            'options.sync.memberRateLimit': 'Änderungslimit pro Mitglied (pro Minute)',
             'options.sync.memberRateLimit.help': 'Max. Änderungen pro Minute pro Mitglied (0 = unbegrenzt, nur Besitzer-Gruppen)',
             'options.sync.memberRateLimit.suffix': 'pro Min',
             'options.sync.validationLevel': 'Validierungsstufe',
@@ -14747,11 +14944,11 @@ function getDefaultFaviconRules() {
             'options.sync.validationLevel.moderate': 'Moderat',
             'options.sync.validationLevel.permissive': 'Nachsichtig',
             // Nur für Mitglieder
-            'options.sync.localCacheStrategy': 'Lokaler Cache',
+            'options.sync.localCacheStrategy': 'Lokal gespeicherte Datenmenge',
             'options.sync.localCacheStrategy.help': 'Wie viele Daten lokal gespeichert werden (nur Mitglieder-Gruppen):\n• Alles - Vollständige Historie und alle Versionen lokal (mehr Speicher)\n• Nur aktuell - Nur neueste Version behalten (spart Speicherplatz)',
             'options.sync.localCacheStrategy.full': 'Alles',
             'options.sync.localCacheStrategy.minimal': 'Nur aktuell',
-            'options.sync.errorHandling': 'Fehlerbehandlung',
+            'options.sync.errorHandling': 'Verhalten bei Sync-Fehlern',
             'options.sync.errorHandling.help': 'Wie Sync-Fehler behandelt werden (nur Mitglieder-Gruppen):\n• Auto-Wiederholen - Fehlgeschlagene Operationen automatisch wiederholen (empfohlen)\n• Für später aufheben - Fehlgeschlagene Änderungen für manuellen Retry speichern\n• Bei Fehler verwerfen - Fehlgeschlagene Änderungen aufgeben (Datenverlust möglich)',
             'options.sync.errorHandling.retry': 'Auto-Wiederholen',
             'options.sync.errorHandling.queue': 'Für später aufheben',
@@ -14826,8 +15023,8 @@ function getDefaultFaviconRules() {
             'group.keywords.help': 'Schlagwörter für Suche und Filterung (mit Komma oder Semikolon trennen)',
             'group.shortcut.placeholder': 'Feld fokussieren und z. B. Strg+Alt+G drücken',
             'group.shortcut.help': 'Die Tastenkombination hier drücken, um alle Links der Gruppe gleichzeitig zu öffnen.',
-            'group.infoHtml.placeholder': 'HTML-Inhalt für Info-Tooltip eingeben...',
-            'group.infoHtml.help': 'Dieser HTML-Inhalt wird beim Überfahren des Info-Symbols angezeigt.',
+            'group.manualHeightResizeOverride': 'Manuelles Höhen-Resizing für diese Gruppe erlauben',
+            'group.manualHeightResizeOverride.help': 'Überschreibt die globale Auto-Höhenanpassung für diese Gruppe. Wenn aktiv, kann die Gruppenhöhe manuell geändert werden.',
             'group.color': 'Farbe',
             'group.backgroundFormatting': 'Hintergrundformatierung',
             'group.titleFormatting': 'Titelformatierung',
@@ -14891,6 +15088,8 @@ function getDefaultFaviconRules() {
             'link.shortcut.invalid': 'Bitte Strg/Alt/Cmd plus eine Taste verwenden (z. B. Strg+Alt+M).',
             'link.shortcut.reserved': 'Diese Tastenkombination ist vom Browser/System reserviert.',
             'link.shortcut.opened': '{count} Link(s) per Shortcut geöffnet.',
+            'link.shortcut.openedPartial': 'Nur {opened} von {total} Link(s) geöffnet. Der Popup-Blocker hat den Rest möglicherweise blockiert.',
+            'link.shortcut.batchRemaining': '{opened} von {total} Link(s) geöffnet. {remaining} verbleibend. Gleichen Shortcut/Aktion erneut ausführen, um fortzufahren.',
             'link.shortcut.confirmMany': '{count} Links gleichzeitig öffnen?',
             'shortcuts.manage': 'Shortcut-Manager',
             'shortcuts.manager.title': 'Shortcut-Manager',
@@ -14916,6 +15115,7 @@ function getDefaultFaviconRules() {
             'shortcuts.manager.invalidCombo': 'Bitte in Zeile {row} einen gültigen Shortcut definieren.',
             'shortcuts.manager.invalidTargets': 'Bitte in Zeile {row} mindestens einen Link oder eine Gruppe auswählen.',
             'shortcuts.manager.saved': '{count} globale Shortcuts gespeichert.',
+            'shortcuts.manager.popupBlockerHint': 'Browser können das gleichzeitige Öffnen vieler Tabs blockieren. Falls das passiert, Pop-ups für diese Seite erlauben oder den Shortcut/die Aktion erneut ausführen.',
             'shortcut.notice.globalDefined': 'Globaler Shortcut "{combo}" ist bereits definiert und öffnet {count} URL(s).',
             'shortcut.notice.groupDefined': 'Die Gruppe "{group}" hat bereits den Shortcut "{combo}".',
             'shortcut.notice.groupInGlobal': 'Die Gruppe "{group}" ist bereits Teil des globalen Shortcuts "{combo}".',
@@ -14988,17 +15188,9 @@ function getDefaultFaviconRules() {
             , 'bookmarklet.step.drag': 'Ziehe den Button unten in die Lesezeichenleiste.'
             , 'bookmarklet.step.clickAnyPage': 'Klicke das Bookmarklet auf einer beliebigen Seite, um URL und Titel in die Zwischenablage zu kopieren.'
             , 'bookmarklet.step.switchBack': 'Wechsle zurück zu dieser App und klicke „Aus Zwischenablage einfügen“, um den Link hinzuzufügen.'
-            , 'clipboard.paste': 'Aus Zwischenablage einfügen'
             , 'clipboard.pastePrompt': 'Füge den Inhalt der Zwischenablage hier ein (JSON oder URL):'
-            , 'clipboard.empty': 'Zwischenablage ist leer.'
             , 'clipboard.invalid': 'Der Inhalt ist keine gültige URL oder kein gültiges JSON.'
-            , 'clipboard.noPermission': 'Zwischenablage konnte nicht gelesen werden. Bitte manuell einfügen, wenn gefragt.'
-            , 'clipboard.modalTitle': 'Aus Zwischenablage hinzufügen'
-            , 'clipboard.instructions': 'Klicke „Aus Zwischenablage lesen“ oder füge JSON {url,title} bzw. eine URL unten ein.'
-            , 'clipboard.read': 'Aus Zwischenablage lesen'
             , 'clipboard.add': 'Hinzufügen'
-            , 'clipboard.cancel': 'Abbrechen'
-            , 'clipboard.placeholder': 'Füge JSON {"url":"https://…","title":"…"} oder eine URL ein'
             // Einladungsdialog Übersetzungen
             , 'invitation.groupTitle': 'Einladung zur geteilten Gruppe'
             , 'invitation.linkTitle': 'Geteilte Links erhalten'
@@ -15050,11 +15242,11 @@ function getDefaultFaviconRules() {
             
             // Event-Log & Sync Einstellungen
             , 'options.eventlog.title': 'Event-Log & Sync'
-            , 'options.eventlog.snapshotInterval': 'Snapshot nach Events'
+            , 'options.eventlog.snapshotInterval': 'Snapshot alle X Ereignisse'
             , 'options.eventlog.snapshotInterval.help': 'Snapshot nach dieser Anzahl von Events erstellen (reduziert Speicherverbrauch)'
-            , 'options.eventlog.maxEvents': 'Max. Events behalten'
+            , 'options.eventlog.maxEvents': 'Maximale Anzahl Ereignisse'
             , 'options.eventlog.maxEvents.help': 'Maximale Events vor erzwungener Bereinigung (harte Grenze)'
-            , 'options.eventlog.syncStrategy': 'Sync-Strategie'
+            , 'options.eventlog.syncStrategy': 'Konfliktstrategie beim Synchronisieren'
             , 'options.eventlog.syncStrategy.help': 'Wie Konflikte beim Synchronisieren behandelt werden'
             , 'options.eventlog.syncStrategy.ownerLeads': 'Besitzer führt (empfohlen)'
             , 'options.eventlog.syncStrategy.allEqual': 'Alle Mitglieder gleich'
@@ -15125,10 +15317,6 @@ function getDefaultFaviconRules() {
             , 'css.resetAll': 'Alle zurücksetzen'
 
             // Visual CSS Editor Übersetzungen
-            , 'css.visual.title': 'Visueller CSS Editor'
-            , 'css.visual.templates': 'CSS Vorlagen'
-            , 'css.visual.rules': 'CSS Regeln'
-            , 'css.visual.generated': 'Generiertes CSS'
             , 'css.visual.designTokens': 'Design Tokens'
             , 'css.visual.addToken': 'Token hinzufügen'
             , 'css.visual.noTokens': 'Noch keine Tokens. Füge welche hinzu (z. B. brand-primary (ohne --), #3b82f6)'
@@ -15181,7 +15369,6 @@ function getDefaultFaviconRules() {
             , 'css.bottomRight': 'unten rechts'
             , 'css.visual.layout': 'Layout'
             , 'css.visual.effects': 'Effekte'
-            , 'css.visual.importantHint': 'Erzwinge diesen Style über andere (!important)'
             , 'css.visual.rule': 'Regel'
             , 'css.visual.doubleClickToEdit': 'Doppelklick zum Bearbeiten'
             , 'css.visual.copy': 'Kopie'
@@ -15216,9 +15403,10 @@ function getDefaultFaviconRules() {
             , 'css.visual.selectedKeywordText': 'Text selektierter Keywords'
             , 'css.visual.keywordsHierarchical': 'Keywords (Hierarchisch)'
             , 'css.visual.keywordByName': 'Keyword nach Name'
+            , 'css.visual.keywordSuggestions': 'Keyword-Vorschlagsliste'
+            , 'css.visual.keywordSuggestionItem': 'Keyword-Vorschlag'
             , 'css.visual.selectKeyword': '-- Alle Keywords --'
             , 'css.visual.keyword': 'Keyword'
-            , 'css.visual.copy': 'Kopieren'
             , 'css.visual.apply': 'Anwenden'
             , 'css.visual.save': 'Speichern'
             , 'css.visual.migrationNotice': 'Hinweis: Ihr bisheriges Custom CSS wurde importiert. Sie können es oben als "Legacy CSS" Regel bearbeiten oder löschen.'
@@ -15324,6 +15512,19 @@ function getDefaultFaviconRules() {
           } else {
             debugLog('log', "#app should now remove all dragging-* classes");
           }
+        },
+        'data.options.sync.backend'() {
+          try { this.scheduleCardDavAutoSync(); } catch {}
+        },
+        'data.options.carddav.syncIntervalSec'() {
+          try { this.scheduleCardDavAutoSync(); } catch {}
+        },
+        'data.options.bookmarks.syncIntervalSec'() {
+          try { this.scheduleCardDavAutoSync(); } catch {}
+        },
+        extensionAvailable(newValue, oldValue) {
+          if (newValue === oldValue) return;
+          try { this.scheduleCardDavAutoSync(); } catch {}
         }
       },
       computed: {
@@ -15342,7 +15543,7 @@ function getDefaultFaviconRules() {
               return result.value;
             }
           } catch (e) {
-            console.warn('Highlight.js error:', e);
+            debugLog('warn', 'Highlight.js error:', e);
           }
           // Fallback: escape HTML
           return this.customCssDraft
@@ -15351,76 +15552,27 @@ function getDefaultFaviconRules() {
             .replace(/>/g, '&gt;');
         },
         
-        settingsMatchesFilter() {
-          // Returns a function to check if a setting matches the filter
-          return (settingName, helpText) => {
-            if (!this.settingsFilterText) return true;
-            const filter = this.settingsFilterText.toLowerCase();
-            const nameTranslated = this.getTranslation(settingName) || settingName || '';
-            const helpTranslated = this.getTranslation(helpText) || helpText || '';
-            return nameTranslated.toLowerCase().includes(filter) || 
-                   helpTranslated.toLowerCase().includes(filter);
-          };
+        settingsMatchesFilter(settingName, helpText) {
+          if (!this.settingsFilterText) return true;
+          const filter = this.settingsFilterText.toLowerCase();
+          const nameTranslated = this.getTranslation(settingName) || settingName || '';
+          const helpTranslated = this.getTranslation(helpText) || helpText || '';
+          return nameTranslated.toLowerCase().includes(filter) ||
+                 helpTranslated.toLowerCase().includes(filter);
         },
         sectionHasVisibleSettings() {
           // Check if a section has any visible settings based on the filter
           return (section) => {
             if (!this.settingsFilterText) return true;
-            
-            // Check each section's settings
-            if (section === 'common') {
-              return this.settingsMatchesFilter(this.optionsDesign.common.language.translateKey, this.optionsDesign.common.language.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.common.pageTitle.translateKey, this.optionsDesign.common.pageTitle.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.common.searchAsYouType.translateKey, this.optionsDesign.common.searchAsYouType.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.common.showKeywordQuickAddBadge.translateKey, this.optionsDesign.common.showKeywordQuickAddBadge.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.common.confirmDeleteGroup.translateKey, this.optionsDesign.common.confirmDeleteGroup.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.common.confirmDeleteLink.translateKey, this.optionsDesign.common.confirmDeleteLink.helpText);
-            }
-            
-            if (section === 'appearanceColors' || section === 'colors') {
-              // Check all fields in appearanceColors section
-              if (this.optionsDesign.appearanceColors && this.optionsDesign.appearanceColors.fields) {
-                for (const [fieldKey, field] of Object.entries(this.optionsDesign.appearanceColors.fields)) {
-                  if (this.settingsMatchesFilter(field.translateKey, field.helpText)) {
-                    return true;
-                  }
-                }
-              }
-              return false;
-            }
-            
-            if (section === 'groups') {
-              return this.settingsMatchesFilter(this.optionsDesign.groups.collapseGroupsOnStart.translateKey, this.optionsDesign.groups.collapseGroupsOnStart.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.groups.hoverExpandEnabled.translateKey, this.optionsDesign.groups.hoverExpandEnabled.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.groups.hoverExpandDelay.translateKey, this.optionsDesign.groups.hoverExpandDelay.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.groups.clearClosesAllGroups.translateKey, this.optionsDesign.groups.clearClosesAllGroups.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.groups.keywordClickExpandsAll.translateKey, this.optionsDesign.groups.keywordClickExpandsAll.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.groups.searchAutoExpandFound.translateKey, this.optionsDesign.groups.searchAutoExpandFound.helpText);
-            }
-            
-            if (section === 'links') {
-              return this.settingsMatchesFilter(this.optionsDesign.links.openInNewTab.translateKey, this.optionsDesign.links.openInNewTab.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.links.addViaDialog.translateKey, this.optionsDesign.links.addViaDialog.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.links.defaultUrlPrefix.translateKey, this.optionsDesign.links.defaultUrlPrefix.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.links.autoFetchTitle.translateKey, this.optionsDesign.links.autoFetchTitle.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.links.autoFetchFavicon.translateKey, this.optionsDesign.links.autoFetchFavicon.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.links.showLinkBadges.translateKey, this.optionsDesign.links.showLinkBadges.helpText);
-            }
-            
-            if (section === 'sharing') {
-              return this.settingsMatchesFilter(this.optionsDesign.sharing.ntfyServerUrl.translateKey, this.optionsDesign.sharing.ntfyServerUrl.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.sharing.ntfyAuthToken.translateKey, this.optionsDesign.sharing.ntfyAuthToken.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.sharing.defaultTtl.translateKey, this.optionsDesign.sharing.defaultTtl.helpText) ||
-                     this.settingsMatchesFilter(this.optionsDesign.sharing.quickCodeTtlSec.translateKey, this.optionsDesign.sharing.quickCodeTtlSec.helpText);
-            }
-            
-            if (section === 'eventlog') {
-              return this.settingsMatchesFilter('options.eventlog.snapshotInterval', 'options.eventlog.snapshotInterval.help') ||
-                     this.settingsMatchesFilter('options.eventlog.maxEvents', 'options.eventlog.maxEvents.help') ||
-                     this.settingsMatchesFilter('options.eventlog.syncStrategy', 'options.eventlog.syncStrategy.help');
-            }
-            
-            return false;
+
+            const mappedSection = (section === 'appearanceColors' || section === 'colors') ? 'appearanceColors' : section;
+            const sectionConfig = this.optionsDesign?.[mappedSection];
+            if (!sectionConfig?.fields) return false;
+
+            return Object.values(sectionConfig.fields).some((field) => {
+              if (!field) return false;
+              return this.settingsMatchesFilter(field.translateKey, field.helpText);
+            });
           };
         },
         contextLink() {
@@ -15714,26 +15866,44 @@ function getDefaultFaviconRules() {
           this.loadDesignTokensCollapsed();
 
           // No wrapping of confirmShare; extend main confirmShare handler directly
-          window.addEventListener('keyup', (e) => {
-          if (e.key === 'Escape') {
-            this.dropManager.reset();
-            this.hideMenus();
-            this.cancelEditing(this.editGroup); // Cancel group editing
-            this.cancelEditing(this.editLink); // Cancel link editing
+          if (!this._onEscapeKeyup) {
+            this._onEscapeKeyup = (e) => {
+              if (e.key !== 'Escape') return;
+              if (this.dropManager && typeof this.dropManager.reset === 'function') {
+                this.dropManager.reset();
+              }
+              this.hideMenus();
+              this.cancelEditing(this.editGroup); // Cancel group editing
+              this.cancelEditing(this.editLink); // Cancel link editing
+            };
           }
-        });
-        // Global click listener to hide menus
-        window.addEventListener('click', this.handleGlobalClick, true); // Use capture phase
-        document.addEventListener('keydown', this.handleGlobalKeyDown); // Search-as-you-type
+          window.addEventListener('keyup', this._onEscapeKeyup);
+          // Global click listener to hide menus
+          window.addEventListener('click', this.handleGlobalClick, true); // Use capture phase
+          document.addEventListener('keydown', this.handleGlobalKeyDown); // Search-as-you-type
+          window.addEventListener('resize', this.handleKeywordSuggestionViewportChange);
+          window.addEventListener('scroll', this.handleKeywordSuggestionViewportChange, true);
       },
       beforeDestroy() {
         // Clean up global listeners
+        if (this._onEscapeKeyup) {
+          window.removeEventListener('keyup', this._onEscapeKeyup);
+        }
+        if (this._onExtensionReady) {
+          window.removeEventListener('mybookmarks-extension-ready', this._onExtensionReady);
+        }
         window.removeEventListener('click', this.handleGlobalClick, true);
         document.removeEventListener('keydown', this.handleGlobalKeyDown);
+        window.removeEventListener('resize', this.handleKeywordSuggestionViewportChange);
+        window.removeEventListener('scroll', this.handleKeywordSuggestionViewportChange, true);
         document.removeEventListener('mousemove', this.handleGroupHeightResize);
         document.removeEventListener('mouseup', this.endGroupHeightResize);
         document.body.classList.remove('mb-group-resizing');
         this.isGroupHeightResizing = false;
+        document.removeEventListener('mousemove', this.handleGroupColumnResize);
+        document.removeEventListener('mouseup', this.endGroupColumnResize);
+        document.body.classList.remove('mb-group-column-resizing');
+        this.isGroupColumnResizing = false;
         
         // Clean up all timers to prevent memory leaks
         this.clearExpandHoverTimers();
@@ -15753,6 +15923,13 @@ function getDefaultFaviconRules() {
         // Clean up any debounced save timer
         if (this._debouncedSave && this._debouncedSave.cancel) {
           this._debouncedSave.cancel();
+        }
+        if (this._debouncedStorageUsage && this._debouncedStorageUsage.cancel) {
+          this._debouncedStorageUsage.cancel();
+        }
+        if (this.carddavTimer) {
+          clearInterval(this.carddavTimer);
+          this.carddavTimer = null;
         }
       },
       mounted() { // Example placement
@@ -15968,20 +16145,24 @@ function getDefaultFaviconRules() {
           debugLog('log', 'Initializing browser extension support...');
 
           // Listen for extension ready event
-          window.addEventListener('mybookmarks-extension-ready', (event) => {
-            debugLog('log', 'MyBookmarks Extension is ready!', event.detail);
-            this.extensionAvailable = true;
-            this.extensionVersion = event.detail.version;
+          if (!this._onExtensionReady) {
+            this._onExtensionReady = (event) => {
+              debugLog('log', 'MyBookmarks Extension is ready!', event.detail);
+              this.extensionAvailable = true;
+              this.extensionVersion = event.detail.version;
 
-            // Enrich existing links with favicons when extension becomes available
-            if (this.data.options?.links?.autoFetchFavicon) {
-              debugLog('log', 'Extension ready - enriching existing links with favicons');
-              this.enrichExistingLinksWithFavicons();
-            }
+              // Enrich existing links with favicons when extension becomes available
+              if (this.data.options?.links?.autoFetchFavicon) {
+                debugLog('log', 'Extension ready - enriching existing links with favicons');
+                this.enrichExistingLinksWithFavicons();
+              }
 
-            // Schedule CardDAV auto-sync if configured
-            try { this.scheduleCardDavAutoSync(); } catch {}
-          });
+              // Schedule CardDAV auto-sync if configured
+              try { this.scheduleCardDavAutoSync(); } catch {}
+            };
+          }
+          window.removeEventListener('mybookmarks-extension-ready', this._onExtensionReady);
+          window.addEventListener('mybookmarks-extension-ready', this._onExtensionReady);
 
           // Check if extension is available on load with a delay
           setTimeout(() => {
@@ -16530,7 +16711,7 @@ function getDefaultFaviconRules() {
           results.push(rep);
 
           const lines = results.map(x=>`${x.step}: ${x.status||''} ${x.error||''} ${x.count!==undefined?('items='+x.count):''} ${x.www?('WWW-Auth='+x.www):''} url=${x.url}`);
-          console.log('[CardDAV][Test]', results);
+          debugLog('log', '[CardDAV][Test]', results);
           alert(lines.join('\n'));
         } catch (e) {
           alert('Test fehlgeschlagen: ' + (e?.message||String(e)));
@@ -16925,7 +17106,7 @@ function getDefaultFaviconRules() {
             
             return styles;
           } catch (e) {
-            console.warn('Error extracting keyword color from CSS:', e);
+            debugLog('warn', 'Error extracting keyword color from CSS:', e);
             return null;
           }
         },
@@ -17116,7 +17297,7 @@ function getDefaultFaviconRules() {
             // Remove duplicates while preserving order
             return [...new Set(colors)];
           } catch (e) {
-            console.warn('Error collecting keyword colors:', e);
+            debugLog('warn', 'Error collecting keyword colors:', e);
             return [];
           }
         },
@@ -17142,7 +17323,7 @@ function getDefaultFaviconRules() {
               return `background: ${gradient} !important`;
             }
           } catch (e) {
-            console.warn('Error creating keyword gradient:', e);
+            debugLog('warn', 'Error creating keyword gradient:', e);
             return '';
           }
         },
@@ -17207,7 +17388,7 @@ function getDefaultFaviconRules() {
               this.insertTextAtCursor(textToCopy);
             }
           } catch (e) {
-            console.warn('Failed to copy UUID:', e);
+            debugLog('warn', 'Failed to copy UUID:', e);
           }
         },
         
@@ -17238,7 +17419,7 @@ function getDefaultFaviconRules() {
               this.insertTextAtCursor(textToCopy);
             }
           } catch (e) {
-            console.warn('Failed to copy UUID:', e);
+            debugLog('warn', 'Failed to copy UUID:', e);
           }
         },
         
@@ -17526,6 +17707,8 @@ function getDefaultFaviconRules() {
             { value: '.mb-keywords-cloud', label: 'Keywords Cloud', supportsGroup: false, supportsLink: false },
             { value: '.mb-keywords-cloud .mb-keyword.mb-keyword-active', label: 'Selected Keywords (Keyword Bar)', supportsGroup: false, supportsLink: false },
             { value: '.mb-keywords-cloud .mb-keyword.mb-keyword-active .mb-keyword-text', label: 'Selected Keyword Text', supportsGroup: false, supportsLink: false },
+            { value: '.mb-keyword-suggestions, .mb-keyword-suggestions--overlay', label: 'Keyword Suggestions List', supportsGroup: false, supportsLink: false },
+            { value: '.mb-keyword-suggestion', label: 'Keyword Suggestions Item', supportsGroup: false, supportsLink: false },
             { value: '.mb-groups-container', label: 'Groups Container', supportsGroup: false, supportsLink: false },
             { value: '.mb-group', label: 'Group', supportsGroup: true, supportsLink: false },
             { value: '.mb-group__header', label: 'Group Header', supportsGroup: true, supportsLink: false },
@@ -17600,7 +17783,7 @@ function getDefaultFaviconRules() {
                 const parsedRules = JSON.parse(storedRules);
                 loadedRules = Array.isArray(parsedRules) ? parsedRules : [];
               } catch (e) {
-                console.error('Failed to parse stored visual CSS rules:', e);
+                debugLog('error', 'Failed to parse stored visual CSS rules:', e);
                 loadedRules = [];
               }
             }
@@ -17873,9 +18056,9 @@ function getDefaultFaviconRules() {
           // Ensure selector is an object
           const selectorObj = this.getRuleSelector(rule);
 
-          console.log('generateCssSelector - rule:', JSON.stringify(rule));
-          console.log('generateCssSelector - selectorObj:', JSON.stringify(selectorObj));
-          console.log('generateCssSelector - groupId type:', typeof selectorObj.groupId, 'value:', selectorObj.groupId);
+          debugLog('log', 'generateCssSelector - rule:', JSON.stringify(rule));
+          debugLog('log', 'generateCssSelector - selectorObj:', JSON.stringify(selectorObj));
+          debugLog('log', 'generateCssSelector - groupId type:', typeof selectorObj.groupId, 'value:', selectorObj.groupId);
 
           // Map base selector to actual CSS selector
           const baseSelectorMap = {
@@ -17937,6 +18120,8 @@ function getDefaultFaviconRules() {
             'keywords-selected': '.mb-keywords-cloud .mb-keyword.mb-keyword-active',
             'keyword-selected-text': '.mb-keywords-cloud .mb-keyword.mb-keyword-active .mb-keyword-text',
             'keywords-hierarchical': '.keyword-badge',  // All keyword badges (common class)
+            'keyword-suggestions': '.mb-keyword-suggestions, .mb-keyword-suggestions--overlay',
+            'keyword-suggestion-item': '.mb-keyword-suggestion',
             'body': 'body'
           };
 
@@ -18223,8 +18408,8 @@ function getDefaultFaviconRules() {
 
         saveVisualCss() {
           this.normalizeAllVisualRules();
-          console.log('Saving Visual CSS Rules:', JSON.stringify(this.visualCssRules));
-          console.log('Selected Template:', this.selectedVisualTemplate);
+          debugLog('log', 'Saving Visual CSS Rules:', JSON.stringify(this.visualCssRules));
+          debugLog('log', 'Selected Template:', this.selectedVisualTemplate);
 
           // Keep localStorage and exportable options in sync
           this.syncVisualCssStateToOptions(false);
@@ -18309,7 +18494,7 @@ function getDefaultFaviconRules() {
           navigator.clipboard.writeText(css).then(() => {
             alert('CSS wurde in die Zwischenablage kopiert!');
           }).catch(err => {
-            console.error('Failed to copy CSS:', err);
+            debugLog('error', 'Failed to copy CSS:', err);
             alert('Fehler beim Kopieren des CSS');
           });
         },
@@ -18481,7 +18666,7 @@ function getDefaultFaviconRules() {
           // Don't show group selector for global selectors
           const canSelect = groupSupportingSelectors.includes(selector.base);
 
-          console.log('canSelectGroup:', {
+          debugLog('log', 'canSelectGroup:', {
             base: selector.base,
             canSelect: canSelect,
             supportingSelectors: groupSupportingSelectors
@@ -19268,6 +19453,8 @@ function getDefaultFaviconRules() {
             'keywords-selected': '.mb-keywords-cloud .mb-keyword.mb-keyword-active',
             'keyword-selected-text': '.mb-keywords-cloud .mb-keyword.mb-keyword-active .mb-keyword-text',
             'keywords-hierarchical': '.keyword-badge',
+            'keyword-suggestions': '.mb-keyword-suggestions, .mb-keyword-suggestions--overlay',
+            'keyword-suggestion-item': '.mb-keyword-suggestion',
             'keyword-by-name': '.mb-keyword',
             'body': 'body',
             // Additional mappings for better template matching
@@ -19345,7 +19532,7 @@ function getDefaultFaviconRules() {
           // Merge aggregated template properties into the rule
           // If the rule already has user properties, keep them and only add missing ones
           if (Object.keys(aggregatedProperties).length > 0) {
-            console.log('Loading template properties for', selector.base, ':', aggregatedProperties);
+            debugLog('log', 'Loading template properties for', selector.base, ':', aggregatedProperties);
 
             if (!rule.properties || Object.keys(rule.properties).length === 0) {
               // No user props yet: take the template defaults fully
@@ -19387,7 +19574,7 @@ function getDefaultFaviconRules() {
             }
           }
 
-          console.log('updateRuleGroupId - Raw value:', rawValue, 'Type:', typeof rawValue, 'Parsed groupId:', groupId, 'Type after parse:', typeof groupId);
+          debugLog('log', 'updateRuleGroupId - Raw value:', rawValue, 'Type:', typeof rawValue, 'Parsed groupId:', groupId, 'Type after parse:', typeof groupId);
 
           // Ensure selector is an object
           const selector = this.getRuleSelector(rule);
@@ -19400,7 +19587,7 @@ function getDefaultFaviconRules() {
           rule.groupId = groupId;
           rule.linkId = null;
 
-          console.log('Group updated:', {
+          debugLog('log', 'Group updated:', {
             ruleId: rule.id,
             groupId: groupId,
             selector: selector,
@@ -19478,7 +19665,7 @@ function getDefaultFaviconRules() {
         getKeywordsForRule(rule) {
           const selector = this.getRuleSelector(rule);
 
-          console.log('getKeywordsForRule - selector:', JSON.stringify(selector));
+          debugLog('log', 'getKeywordsForRule - selector:', JSON.stringify(selector));
 
           // For keyword-by-name, return all keywords
           if (selector.base === 'keyword-by-name') {
@@ -19507,7 +19694,7 @@ function getDefaultFaviconRules() {
                 );
 
                 if (link && link.keywords) {
-                  console.log('getKeywordsForRule - Returning keywords for specific link:', link.text);
+                  debugLog('log', 'getKeywordsForRule - Returning keywords for specific link:', link.text);
                   return this.parseKeywords(link.keywords).sort((a, b) =>
                     a.toLowerCase().localeCompare(b.toLowerCase())
                   );
@@ -19531,20 +19718,20 @@ function getDefaultFaviconRules() {
 
                 // Add group's own keywords
                 if (group.keywords) {
-                  console.log('getKeywordsForRule - Adding group keywords:', group.keywords);
+                  debugLog('log', 'getKeywordsForRule - Adding group keywords:', group.keywords);
                   this.parseKeywords(group.keywords).forEach(k => set.add(k));
                 }
 
                 // Add keywords from all links in this group
                 (group.links || []).forEach(l => {
                   if (!l.deleted && l.keywords) {
-                    console.log('getKeywordsForRule - Adding link keywords:', l.text, l.keywords);
+                    debugLog('log', 'getKeywordsForRule - Adding link keywords:', l.text, l.keywords);
                     this.parseKeywords(l.keywords).forEach(k => set.add(k));
                   }
                 });
 
                 const result = Array.from(set).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-                console.log('getKeywordsForRule - Total keywords for group:', result);
+                debugLog('log', 'getKeywordsForRule - Total keywords for group:', result);
                 return result;
               }
               return [];
@@ -19636,24 +19823,24 @@ function getDefaultFaviconRules() {
                 )
               );
 
-              console.log('getKeywordsForRule - Looking for group:', selector.groupId);
-              console.log('getKeywordsForRule - Found group:', group ? group.name : 'NOT FOUND');
+              debugLog('log', 'getKeywordsForRule - Looking for group:', selector.groupId);
+              debugLog('log', 'getKeywordsForRule - Found group:', group ? group.name : 'NOT FOUND');
 
               if (group) {
-                console.log('getKeywordsForRule - Group has keywords:', group.keywords);
-                console.log('getKeywordsForRule - Group has', (group.links || []).length, 'links');
+                debugLog('log', 'getKeywordsForRule - Group has keywords:', group.keywords);
+                debugLog('log', 'getKeywordsForRule - Group has', (group.links || []).length, 'links');
 
                 const set = new Set();
                 (group.links || []).forEach(l => {
-                  console.log('getKeywordsForRule - Checking link:', l.text, 'deleted:', l.deleted, 'keywords:', l.keywords);
+                  debugLog('log', 'getKeywordsForRule - Checking link:', l.text, 'deleted:', l.deleted, 'keywords:', l.keywords);
                   if (!l.deleted && l.keywords) {
                     const keywords = this.parseKeywords(l.keywords);
-                    console.log('getKeywordsForRule - Parsed link keywords:', l.text, keywords);
+                    debugLog('log', 'getKeywordsForRule - Parsed link keywords:', l.text, keywords);
                     keywords.forEach(k => set.add(k));
                   }
                 });
                 const result = Array.from(set).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-                console.log('getKeywordsForRule - Final keywords for links in group:', result);
+                debugLog('log', 'getKeywordsForRule - Final keywords for links in group:', result);
                 return result;
               }
               return [];
@@ -19872,6 +20059,51 @@ function getDefaultFaviconRules() {
                   'background-color': '#3a5f7d',
                   'color': '#e0e0e0',
                   'border': '1px solid #4a7f9d'
+                }
+              },
+              {
+                id: Date.now() + 11_1,
+                enabled: true,
+                selector: '.mb-keyword-suggestions, .mb-keyword-suggestions--overlay',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': '#252b33',
+                  'border': '1px solid #4a5565',
+                  'color': '#e6e8eb',
+                  'box-shadow': '0 12px 24px rgba(0, 0, 0, 0.45)'
+                }
+              },
+              {
+                id: Date.now() + 11_2,
+                enabled: true,
+                selector: '.mb-keyword-suggestion',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': 'transparent',
+                  'color': '#e6e8eb'
+                }
+              },
+              {
+                id: Date.now() + 11_21,
+                enabled: true,
+                selector: '.mb-keyword-suggestion + .mb-keyword-suggestion',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'border-top': '1px solid #465063'
+                }
+              },
+              {
+                id: Date.now() + 11_3,
+                enabled: true,
+                selector: '.mb-keyword-suggestion:hover, .mb-keyword-suggestion:focus',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': '#3a424f',
+                  'color': '#ffffff'
                 }
               },
               // Buttons
@@ -21884,6 +22116,60 @@ footer a:hover {
                 }
               },
               {
+                id: Date.now() + 515_1,
+                enabled: true,
+                selector: '#shortcutManagerModal .mb-shortcut-manager-section',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': '#2b323c',
+                  'border-color': '#4a5565',
+                  'color': '#e6e8eb'
+                }
+              },
+              {
+                id: Date.now() + 515_2,
+                enabled: true,
+                selector: '#shortcutManagerModal .mb-shortcut-global-card',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': '#242a32',
+                  'border-color': '#4a5565'
+                }
+              },
+              {
+                id: Date.now() + 515_3,
+                enabled: true,
+                selector: '#shortcutManagerModal .mb-shortcut-target-tree',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': '#242a32',
+                  'border-color': '#4a5565'
+                }
+              },
+              {
+                id: Date.now() + 515_4,
+                enabled: true,
+                selector: '#shortcutManagerModal .mb-shortcut-target-group',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'border-top-color': '#4a5565'
+                }
+              },
+              {
+                id: Date.now() + 515_5,
+                enabled: true,
+                selector: '#shortcutManagerModal .mb-shortcut-manager-section .border-top',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'border-top-color': '#4a5565 !important'
+                }
+              },
+              {
                 id: Date.now() + 516,
                 enabled: true,
                 selector: '.form-control',
@@ -22949,6 +23235,51 @@ footer a:hover {
                   'border': '1px solid #dee2e6'
                 }
               },
+              {
+                id: Date.now() + 6_1,
+                enabled: true,
+                selector: '.mb-keyword-suggestions, .mb-keyword-suggestions--overlay',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': '#ffffff',
+                  'border': '1px solid #d9dee6',
+                  'color': '#1f2933',
+                  'box-shadow': '0 10px 20px rgba(31, 41, 51, 0.12)'
+                }
+              },
+              {
+                id: Date.now() + 6_2,
+                enabled: true,
+                selector: '.mb-keyword-suggestion',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': 'transparent',
+                  'color': '#1f2933'
+                }
+              },
+              {
+                id: Date.now() + 6_21,
+                enabled: true,
+                selector: '.mb-keyword-suggestion + .mb-keyword-suggestion',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'border-top': '1px solid #d9dee6'
+                }
+              },
+              {
+                id: Date.now() + 6_3,
+                enabled: true,
+                selector: '.mb-keyword-suggestion:hover, .mb-keyword-suggestion:focus',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': '#eef3fa',
+                  'color': '#111827'
+                }
+              },
               // Footer kompakt
               {
                 id: Date.now() + 7,
@@ -23755,6 +24086,52 @@ footer a:hover {
                   'transition': 'all 0.2s ease'
                 }
               },
+              {
+                id: Date.now() + 10_1,
+                enabled: true,
+                selector: '.mb-keyword-suggestions, .mb-keyword-suggestions--overlay',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background': 'rgba(255, 255, 255, 0.96)',
+                  'border': '1px solid rgba(102, 126, 234, 0.25)',
+                  'color': '#2d3561',
+                  'box-shadow': '0 14px 30px rgba(95, 111, 255, 0.22)',
+                  'backdrop-filter': 'blur(10px) saturate(140%)'
+                }
+              },
+              {
+                id: Date.now() + 10_2,
+                enabled: true,
+                selector: '.mb-keyword-suggestion',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background-color': 'transparent',
+                  'color': '#2d3561'
+                }
+              },
+              {
+                id: Date.now() + 10_21,
+                enabled: true,
+                selector: '.mb-keyword-suggestion + .mb-keyword-suggestion',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'border-top': '1px solid rgba(102, 126, 234, 0.22)'
+                }
+              },
+              {
+                id: Date.now() + 10_3,
+                enabled: true,
+                selector: '.mb-keyword-suggestion:hover, .mb-keyword-suggestion:focus',
+                groupId: null,
+                linkId: null,
+                properties: {
+                  'background': 'linear-gradient(135deg, rgba(102, 126, 234, 0.16) 0%, rgba(118, 75, 162, 0.16) 100%)',
+                  'color': '#1f244a'
+                }
+              },
               // Buttons mit Gradient
               {
                 id: Date.now() + 11,
@@ -23991,7 +24368,7 @@ footer a:hover {
               try {
                 this.customRuleSets = JSON.parse(saved);
               } catch (e) {
-                console.error('Failed to load custom rule sets:', e);
+                debugLog('error', 'Failed to load custom rule sets:', e);
                 this.customRuleSets = {};
               }
             } else {
@@ -24085,7 +24462,7 @@ footer a:hover {
           
           // Show success notification
           // Template saved
-          console.log('CSS Template saved:', newTemplate.name);
+          debugLog('log', 'CSS Template saved:', newTemplate.name);
         },
         
         loadCssTemplate() {
@@ -24103,7 +24480,7 @@ footer a:hover {
             this.applyCustomCss(template.css);
             
             // Log template loading
-            console.log('CSS Template loaded:', template.name);
+            debugLog('log', 'CSS Template loaded:', template.name);
           }
         },
         
@@ -24397,7 +24774,7 @@ footer a:hover {
               this.syncScroll();
               
               // Selector already exists
-              console.log(this.getTranslation('css.selectorExists') || 'CSS selector already exists! Jumped to line.');
+              debugLog('log', this.getTranslation('css.selectorExists') || 'CSS selector already exists! Jumped to line.');
             }
             
             // Reset dropdown
@@ -24533,7 +24910,7 @@ footer a:hover {
               textarea.setSelectionRange(newPosition, newPosition);
             });
           } catch (e) {
-            console.warn('Error inserting color:', e);
+            debugLog('warn', 'Error inserting color:', e);
           }
         },
         
@@ -24593,7 +24970,7 @@ footer a:hover {
                 try { await sharing.sendToGroup(g, Object.assign({ groupId: g.groupId }, env)); } catch {}
               }
             }
-          } catch(e) { try { console.warn('identity migrate broadcast failed', e); } catch {} }
+          } catch(e) { try { debugLog('warn', 'identity migrate broadcast failed', e); } catch {} }
         },
         
         async transferOwnership(group, newOwnerUuid) {
@@ -24603,7 +24980,7 @@ footer a:hover {
             const env = { v:1, type:'owner-transfer', ts:Date.now(), from, groupId: group.groupId, newOwnerUuid, msgId:(Math.random().toString(36).slice(2)+Date.now()) };
             await sharing.sendToGroup(group, env);
             // NOTE: Do not apply locally yet; wait for new owner's acceptance and roster broadcast
-          } catch(e) { try { console.warn('owner transfer failed', e); } catch {} }
+          } catch(e) { try { debugLog('warn', 'owner transfer failed', e); } catch {} }
         },
         // --- Conflict Resolution UI Methods ---
         showConflictResolutionNotification(message, duration = 5000) {
@@ -25711,7 +26088,7 @@ footer a:hover {
             // In German: "15. Januar 2024 14:30"
             return m.format('LLL');
           } catch (e) {
-            console.error('Error formatting date:', e);
+            debugLog('error', 'Error formatting date:', e);
             return '';
           }
         },
@@ -25729,7 +26106,7 @@ footer a:hover {
             // Use time format (HH:mm:ss)
             return m.format('LTS');
           } catch (e) {
-            console.error('Error formatting message time:', e);
+            debugLog('error', 'Error formatting message time:', e);
             return '';
           }
         },
@@ -26687,11 +27064,11 @@ footer a:hover {
                     `HTML (${parsedGroups.length} groups, ${totalLinks} links)` :
                     `HTML (${totalLinks} links)`;
                   this.parsedGroups = parsedGroups;
-                  console.log(`[Import] HTMLBookmarkParser found ${parsedGroups.length} groups with ${totalLinks} links`);
+                  debugLog('log', `[Import] HTMLBookmarkParser found ${parsedGroups.length} groups with ${totalLinks} links`);
                 }
               }
             } catch (e) {
-              console.error('[Import] HTMLBookmarkParser failed:', e);
+              debugLog('error', '[Import] HTMLBookmarkParser failed:', e);
               // Will fall through to other parsers
             }
           }
@@ -28386,7 +28763,11 @@ footer a:hover {
           return (group.links || []).some(link => this.groupOrLinkKeywordsContainAll(group, link, required));
         },
         isKeywordQuickAddBadgeEnabled() {
-          return this.data?.options?.common?.showKeywordQuickAddBadge !== false;
+          const buttonSetting = this.data?.options?.buttons?.showKeywordQuickAddBadge;
+          if (typeof buttonSetting === 'boolean') return buttonSetting;
+          const legacySetting = this.data?.options?.common?.showKeywordQuickAddBadge;
+          if (typeof legacySetting === 'boolean') return legacySetting;
+          return true;
         },
         shouldShowGroupKeywordQuickAddBadge(group) {
           if (!this.isKeywordQuickAddBadgeEnabled()) return false;
@@ -28468,6 +28849,7 @@ footer a:hover {
             value: ''
           };
           this.keywordQuickSuggestionContext = null;
+          this.quickKeywordSuggestionStyle = null;
           const modalElement = document.getElementById('keywordQuickAddModal');
           if (!modalElement) return;
           const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
@@ -28486,6 +28868,7 @@ footer a:hover {
             value: ''
           };
           this.keywordQuickSuggestionContext = null;
+          this.quickKeywordSuggestionStyle = null;
           const modalElement = document.getElementById('keywordQuickAddModal');
           if (!modalElement) return;
           const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
@@ -28503,6 +28886,7 @@ footer a:hover {
             value: ''
           };
           this.keywordQuickSuggestionContext = null;
+          this.quickKeywordSuggestionStyle = null;
         },
         submitKeywordQuickDialog() {
           const mode = this.keywordQuickDialog?.mode;
@@ -28573,14 +28957,23 @@ footer a:hover {
         updateQuickKeywordContext(event) {
           const input = event?.target || this.$refs.keywordQuickInput;
           if (!input) return;
-          this.keywordQuickSuggestionContext = this.extractKeywordContext(
+          const context = this.extractKeywordContext(
             input.value || '',
             input.selectionStart,
             input.selectionEnd
           );
+          this.keywordQuickSuggestionContext = context;
+          if (!context) {
+            this.quickKeywordSuggestionStyle = null;
+            return;
+          }
+          this.$nextTick(() => {
+            this.updateQuickKeywordSuggestionPosition(input);
+          });
         },
         clearQuickKeywordContext() {
           this.keywordQuickSuggestionContext = null;
+          this.quickKeywordSuggestionStyle = null;
         },
         applyQuickKeywordSuggestion(suggestion) {
           if (!suggestion) return;
@@ -28596,6 +28989,7 @@ footer a:hover {
               if (typeof input.focus === 'function') input.focus();
             }
             this.keywordQuickSuggestionContext = null;
+            this.quickKeywordSuggestionStyle = null;
           });
         },
         handleQuickKeywordTab(event) {
@@ -28607,6 +29001,9 @@ footer a:hover {
           if (!context) return;
 
           this.keywordQuickSuggestionContext = context;
+          this.$nextTick(() => {
+            this.updateQuickKeywordSuggestionPosition(input);
+          });
           const candidates = this.quickKeywordSuggestionList || [];
           if (!candidates.length) return;
 
@@ -28962,6 +29359,160 @@ footer a:hover {
             .replace('{links}', String(linksCount))
             .replace('{urls}', String(urlsCount));
         },
+        openUrlInNewTab(url) {
+          const popup = window.open(url, '_blank');
+          if (popup) {
+            try { popup.opener = null; } catch {}
+            return true;
+          }
+          return false;
+        },
+        openUrlsWithTabPriming(urls) {
+          const uniqueUrls = [...new Set((Array.isArray(urls) ? urls : [])
+            .map(url => String(url || '').trim())
+            .filter(Boolean))];
+          if (!uniqueUrls.length) return 0;
+
+          const primedTabs = [];
+          let openedCount = 0;
+
+          uniqueUrls.forEach((url) => {
+            let popup = null;
+            try {
+              popup = window.open('about:blank', '_blank');
+            } catch {}
+
+            if (popup) {
+              primedTabs.push({ popup, url });
+              return;
+            }
+
+            if (this.openUrlInNewTab(url)) openedCount += 1;
+          });
+
+          primedTabs.forEach(({ popup, url }) => {
+            try { popup.opener = null; } catch {}
+            try {
+              popup.location.replace(url);
+              openedCount += 1;
+              return;
+            } catch {}
+            try {
+              popup.location.href = url;
+              openedCount += 1;
+              return;
+            } catch {}
+            try { popup.close(); } catch {}
+            if (this.openUrlInNewTab(url)) openedCount += 1;
+          });
+
+          return openedCount;
+        },
+        openShortcutUrls(urls, openInNewTab, queueKey = '') {
+          const uniqueUrls = [...new Set((Array.isArray(urls) ? urls : [])
+            .map(url => String(url || '').trim())
+            .filter(Boolean))];
+          if (!uniqueUrls.length) {
+            this.shortcutOpenQueue = null;
+            return { total: 0, opened: 0, openedTotal: 0, remaining: 0, queued: false };
+          }
+
+          const normalizedQueueKey = String(queueKey || '').trim();
+
+          const forceNewTabs = uniqueUrls.length > 1 || openInNewTab;
+          if (!forceNewTabs && uniqueUrls[0]) {
+            this.shortcutOpenQueue = null;
+            window.location.href = uniqueUrls[0];
+            return { total: 1, opened: 1, openedTotal: 1, remaining: 0, queued: false };
+          }
+
+          const batchSize = 8;
+          const existingQueue = this.shortcutOpenQueue && typeof this.shortcutOpenQueue === 'object'
+            ? this.shortcutOpenQueue
+            : null;
+          const canResumeQueue = !!(
+            normalizedQueueKey
+            && existingQueue
+            && existingQueue.key === normalizedQueueKey
+            && Array.isArray(existingQueue.remainingUrls)
+            && existingQueue.remainingUrls.length > 0
+          );
+
+          let total = uniqueUrls.length;
+          let openedBefore = 0;
+          let pendingUrls = uniqueUrls;
+
+          if (canResumeQueue) {
+            pendingUrls = [...existingQueue.remainingUrls];
+            openedBefore = Number(existingQueue.opened) || 0;
+            total = Number(existingQueue.total) || (openedBefore + pendingUrls.length);
+          } else {
+            this.shortcutOpenQueue = null;
+          }
+
+          const currentBatch = pendingUrls.slice(0, batchSize);
+          const remainingUrls = pendingUrls.slice(batchSize);
+          const opened = currentBatch.length > 1
+            ? this.openUrlsWithTabPriming(currentBatch)
+            : (this.openUrlInNewTab(currentBatch[0]) ? 1 : 0);
+          const openedTotal = openedBefore + opened;
+
+          if (remainingUrls.length > 0 && normalizedQueueKey) {
+            this.shortcutOpenQueue = {
+              key: normalizedQueueKey,
+              total,
+              opened: openedTotal,
+              remainingUrls: remainingUrls
+            };
+          } else {
+            this.shortcutOpenQueue = null;
+          }
+
+          return {
+            total,
+            opened,
+            openedTotal,
+            remaining: remainingUrls.length,
+            queued: remainingUrls.length > 0
+          };
+        },
+        showShortcutOpenResultToast(result) {
+          const total = Number(result?.total) || 0;
+          if (!total) return;
+          const opened = Number(result?.openedTotal ?? result?.opened) || 0;
+          const remaining = Number(result?.remaining) || 0;
+
+          if (remaining > 0) {
+            const template = this.getTranslation('link.shortcut.batchRemaining')
+              || 'Opened {opened} of {total} link(s). {remaining} remaining. Trigger the same shortcut/action again to continue.';
+            this.showToast(
+              template
+                .replace('{opened}', String(opened))
+                .replace('{total}', String(total))
+                .replace('{remaining}', String(remaining)),
+              'warning'
+            );
+            return;
+          }
+
+          if (opened < total) {
+            const template = this.getTranslation('link.shortcut.openedPartial')
+              || 'Only opened {opened} of {total} link(s). Popup blocker may have blocked the rest.';
+            this.showToast(
+              template
+                .replace('{opened}', String(opened))
+                .replace('{total}', String(total)),
+              'warning'
+            );
+            return;
+          }
+
+          this.showToast(
+            (this.getTranslation('link.shortcut.opened') || 'Opened {count} link(s) via shortcut.')
+              .replace('{count}', String(opened)),
+            'info'
+          );
+        },
         openUrlsFromShortcutGroup(group) {
           if (!group || !Array.isArray(group.urls) || group.urls.length === 0) return;
           const uniqueUrls = [...new Set(group.urls)];
@@ -28969,22 +29520,15 @@ footer a:hover {
           if (uniqueUrls.length > confirmThreshold) {
             const confirmText = (this.getTranslation('link.shortcut.confirmMany') || 'Open {count} links at once?')
               .replace('{count}', uniqueUrls.length);
-            if (!confirm(confirmText)) return;
-          }
-          const openInNewTab = this.data?.options?.links?.openInNewTab !== false;
-          const forceNewTabs = uniqueUrls.length > 1 || openInNewTab;
-          uniqueUrls.forEach((url, index) => {
-            if (!forceNewTabs && index === 0) {
-              window.location.href = url;
+            if (!confirm(confirmText)) {
+              this.shortcutOpenQueue = null;
               return;
             }
-            window.open(url, '_blank', 'noopener,noreferrer');
-          });
-          this.showToast(
-            (this.getTranslation('link.shortcut.opened') || 'Opened {count} link(s) via shortcut.')
-              .replace('{count}', uniqueUrls.length),
-            'info'
-          );
+          }
+          const openInNewTab = this.data?.options?.links?.openInNewTab !== false;
+          const queueKey = `group:${String(group.combo || '').trim() || 'adhoc'}`;
+          const result = this.openShortcutUrls(uniqueUrls, openInNewTab, queueKey);
+          this.showShortcutOpenResultToast(result);
         },
         saveShortcutManagerDialog() {
           const drafts = Array.isArray(this.shortcutManager.globalDrafts) ? this.shortcutManager.globalDrafts : [];
@@ -29219,13 +29763,15 @@ footer a:hover {
         // All styling is now handled via CSS variables and classes
         // Style functions have been removed - use CSS classes and variables instead
         
-        calculateStorageUsage() {
+        calculateStorageUsage(precomputedDataString = null) {
           try {
             let totalSize = 0;
             
             // Calculate size of the main data object (stored in IndexedDB)
             if (this.data) {
-              const dataString = JSON.stringify(this.data);
+              const dataString = (typeof precomputedDataString === 'string')
+                ? precomputedDataString
+                : JSON.stringify(this.data);
               // Each character in JavaScript strings is typically 2 bytes (UTF-16)
               // But JSON.stringify creates UTF-8, so we use the actual byte length
               totalSize = new Blob([dataString]).size;
@@ -29254,6 +29800,12 @@ footer a:hover {
             this.storageUsed = 0;
           }
         },
+        scheduleStorageUsageRecalc(precomputedDataString = null) {
+          if (!this._debouncedStorageUsage) {
+            this._debouncedStorageUsage = debounce(this.calculateStorageUsage, 500).bind(this);
+          }
+          this._debouncedStorageUsage(precomputedDataString);
+        },
 
         // Schedule/clear CardDAV auto-sync timer based on options
         scheduleCardDavAutoSync() {
@@ -29263,6 +29815,10 @@ footer a:hover {
           let sec = 0;
           if (backend === 'carddav') sec = Number(this.data.options?.carddav?.syncIntervalSec || 0);
           if (backend === 'nc-bookmarks') sec = Number(this.data.options?.bookmarks?.syncIntervalSec || 0);
+          if (!sec || sec <= 0) {
+            sec = Number(this.data.options?.sync?.autoSyncInterval || 0);
+          }
+          if (!Number.isFinite(sec)) sec = 0;
           if (!sec || sec <= 0) return;
           this.carddavTimer = setInterval(() => {
             try { this.syncNowGeneric(); } catch (e) { debugLog('warn', '[SYNC] auto-sync error', e); }
@@ -29352,7 +29908,7 @@ footer a:hover {
           this.scheduleExpandGroup(group);
         },
         handleGroupDragLeave(group) {
-          const t = this.expandHoverTimers[group?.id];
+          const t = this.expandHoverTimers[group?.uuid];
           if (t) {
             clearTimeout(t);
             this.$delete(this.expandHoverTimers, group.uuid);
@@ -29509,6 +30065,8 @@ footer a:hover {
 
           const oldColumn = draggedGroup.column;
           const oldIndex = draggedGroup.index;
+          const sourceColumnGroupCount = this.data.groups.filter(g => g.column === oldColumn).length;
+          const isOnlyGroupInSourceColumn = sourceColumnGroupCount === 1;
 
           // Get all existing columns sorted
           const existingColumns = this.getGroupColumns();
@@ -29520,9 +30078,7 @@ footer a:hover {
             // The dropzone after column X has targetColumnIndex = X + 1
             // So if we're dropping on the dropzone right after our current column, it's a no-op
             if (oldColumn === targetColumnIndex || oldColumn === targetColumnIndex - 1) {
-              // Check if this group is alone in its column
-              const groupsInOldColumn = this.data.groups.filter(g => g.column === oldColumn);
-              if (groupsInOldColumn.length === 1) {
+              if (isOnlyGroupInSourceColumn) {
                 debugLog('log', 'Group is alone in its column and dropping in adjacent position - no move needed');
                 this.dropManager.reset();
                 return;
@@ -29530,11 +30086,23 @@ footer a:hover {
             }
           }
 
+          let insertedColumnWidth = CONSTS.GROUP_COLUMN_WIDTH_MIN;
+          if (this.isManualGroupColumnWidthEnabled()) {
+            this.ensureGroupColumnWidthsInitialized(existingColumns);
+            if (isOnlyGroupInSourceColumn) {
+              const sourceWidth = this.normalizeGroupColumnWidth(this.getCurrentGroupColumnWidth(oldColumn));
+              insertedColumnWidth = Number.isFinite(sourceWidth) ? sourceWidth : CONSTS.GROUP_COLUMN_WIDTH_MIN;
+            }
+          }
           let newColumnIndex;
 
           if (targetColumnIndex === -1) {
             // Drop before first column - all columns shift right
             newColumnIndex = 0;
+            this.shiftGroupColumnWidthsRight(0);
+            if (this.isManualGroupColumnWidthEnabled()) {
+              this.setGroupColumnWidth(newColumnIndex, insertedColumnWidth);
+            }
 
             // Shift all groups to the right (except the dragged one)
             this.data.groups.forEach(g => {
@@ -29548,6 +30116,10 @@ footer a:hover {
 
             // The new column should be created at this exact position
             newColumnIndex = targetColumnIndex;
+            this.shiftGroupColumnWidthsRight(newColumnIndex);
+            if (this.isManualGroupColumnWidthEnabled()) {
+              this.setGroupColumnWidth(newColumnIndex, insertedColumnWidth);
+            }
 
             debugLog('log', `Creating new column at position ${newColumnIndex}`);
 
@@ -29602,6 +30174,9 @@ footer a:hover {
               g.column = newCol;
             }
           });
+
+          this.remapGroupColumnWidths(columnMapping);
+          this.ensureGroupColumnWidthsWithinViewport(this.getGroupColumns());
 
           debugLog('log', 'Column normalization complete. Final columns:', this.getGroupColumns());
         },
@@ -30027,51 +30602,6 @@ footer a:hover {
             this.showToast((this.getTranslation('sync.resetBindings.failed') || 'Failed to clear sync bindings') + ': ' + (e?.message||String(e)), 'error');
           }
         },
-        parseNetscapeHtml(html) {
-          const doc = new DOMParser().parseFromString(html, 'text/html');
-          const result = [];
-          const walkDL = (dl, currentGroupName) => {
-            const groupLinks = [];
-            const groups = [];
-            const nodes = Array.from(dl.children || []);
-            for (let i = 0; i < nodes.length; i++) {
-              const el = nodes[i];
-              if (el.tagName === 'DT') {
-                const a = el.querySelector('a');
-                const h3 = el.querySelector('h3');
-                if (a) {
-                  groupLinks.push({
-                    text: a.textContent || (a.getAttribute('href') || 'Link'),
-                    url: a.getAttribute('href') || null,
-                    keywords: '',
-                    shortcut: '',
-                  });
-                } else if (h3) {
-                  const name = h3.textContent || 'Folder';
-                  // Next sibling DL contains its children
-                  let next = el.nextElementSibling;
-                  while (next && next.tagName !== 'DL') next = next.nextElementSibling;
-                  if (next && next.tagName === 'DL') {
-                    const sub = walkDL(next, name);
-                    groups.push(...sub);
-                    // skip handled DL in loop
-                  } else {
-                    groups.push({ name, links: [] });
-                  }
-                }
-              }
-            }
-            if (currentGroupName) {
-              groups.unshift({ name: currentGroupName, links: groupLinks });
-            } else if (groupLinks.length) {
-              groups.unshift({ name: 'Imported', links: groupLinks });
-            }
-            return groups;
-          };
-          const topDL = doc.querySelector('dl');
-          const groups = topDL ? walkDL(topDL, null) : [];
-          return groups.map(g => ({ name: g.name, links: g.links || [] }));
-        },
         exportAndDownload() {
           // Prepare export selection data
           this.exportSelection = this.data.groups.map(group => ({
@@ -30297,8 +30827,23 @@ footer a:hover {
           const defaultOptions = initialData.options;
           this.data.options = this.data.options || {};
           this.data.options.common = Object.assign({}, defaultOptions.common, this.data.options.common);
+          this.data.options.common.manualGroupColumnWidth = !!this.data.options.common.manualGroupColumnWidth;
+          this.data.options.common.debugEnabled = !!this.data.options.common.debugEnabled;
+          setDebugEnabled(this.data.options.common.debugEnabled);
           this.data.options.groups = Object.assign({}, defaultOptions.groups, this.data.options.groups);
+          this.data.options.groups.autoAdjustHeightOnLinkChanges = !!this.data.options.groups.autoAdjustHeightOnLinkChanges;
+          if (!this.data.options.groups.columnWidths || typeof this.data.options.groups.columnWidths !== 'object' || Array.isArray(this.data.options.groups.columnWidths)) {
+            this.$set(this.data.options.groups, 'columnWidths', {});
+          }
           this.data.options.links = Object.assign({}, defaultOptions.links || {}, this.data.options.links || {});
+          const hasButtonsKeywordQuickAddBadge = !!(this.data.options.buttons && Object.prototype.hasOwnProperty.call(this.data.options.buttons, 'showKeywordQuickAddBadge'));
+          const legacyKeywordQuickAddBadge = (this.data.options.common && Object.prototype.hasOwnProperty.call(this.data.options.common, 'showKeywordQuickAddBadge'))
+            ? this.data.options.common.showKeywordQuickAddBadge
+            : undefined;
+          this.data.options.buttons = Object.assign({}, defaultOptions.buttons || {}, this.data.options.buttons || {});
+          if (!hasButtonsKeywordQuickAddBadge && typeof legacyKeywordQuickAddBadge === 'boolean') {
+            this.$set(this.data.options.buttons, 'showKeywordQuickAddBadge', legacyKeywordQuickAddBadge);
+          }
           if (typeof this.data.options.links.defaultUrlPrefix !== 'string') {
             this.$set(this.data.options.links, 'defaultUrlPrefix', CONSTS.DEFAULT_URL_PREFIX);
           } else {
@@ -30324,6 +30869,7 @@ footer a:hover {
           
           // Sync defaults - sensible defaults for good user experience
           this.data.options.sync = Object.assign({}, {
+            backend: '',
             // Good defaults for all users
             conflictNotificationLevel: 'minimal', // Show important conflicts only
             autoSyncInterval: '600', // 10 minutes - good balance
@@ -30336,6 +30882,23 @@ footer a:hover {
             localCacheStrategy: 'full', // Keep everything for offline access
             errorHandling: 'retry' // Auto-retry is user-friendly
           }, this.data.options.sync || {});
+          const syncOptions = this.data.options.sync;
+          const normalizeEnum = (value, allowed, fallback) => allowed.includes(value) ? value : fallback;
+          syncOptions.backend = normalizeEnum(syncOptions.backend, ['', 'carddav', 'nc-bookmarks'], '');
+          syncOptions.conflictNotificationLevel = normalizeEnum(syncOptions.conflictNotificationLevel, ['silent', 'minimal', 'verbose'], 'minimal');
+          syncOptions.offlineMode = normalizeEnum(syncOptions.offlineMode, ['optimistic', 'conservative'], 'optimistic');
+          syncOptions.conflictResolution = normalizeEnum(syncOptions.conflictResolution, ['owner-wins', 'last-write-wins', 'manual'], 'last-write-wins');
+          syncOptions.validationLevel = normalizeEnum(syncOptions.validationLevel, ['strict', 'moderate', 'permissive'], 'moderate');
+          syncOptions.localCacheStrategy = normalizeEnum(syncOptions.localCacheStrategy, ['full', 'minimal'], 'full');
+          syncOptions.errorHandling = normalizeEnum(syncOptions.errorHandling, ['retry', 'queue', 'discard'], 'retry');
+          const normalizedAutoSyncInterval = String(syncOptions.autoSyncInterval ?? '600').trim();
+          syncOptions.autoSyncInterval = ['0', '300', '600', '1800', '3600'].includes(normalizedAutoSyncInterval)
+            ? normalizedAutoSyncInterval
+            : '600';
+          const normalizedRateLimit = Number(syncOptions.memberRateLimit);
+          syncOptions.memberRateLimit = Number.isFinite(normalizedRateLimit)
+            ? Math.max(0, Math.min(100, Math.floor(normalizedRateLimit)))
+            : 30;
 
           // Performance defaults
           this.data.options.performance = Object.assign({}, defaultOptions.performance || {
@@ -30405,6 +30968,7 @@ footer a:hover {
         },
         updateSettings() { // Applies settings to the UI
           this.fixOptions(); // Ensure options are valid before using them
+          setDebugEnabled(!!this.data.options?.common?.debugEnabled);
           this.title = this.data.options.common.pageTitle || initialData.options.common.pageTitle;
           document.title = this.title; // Update browser tab title
           const normalizedGlobalShortcuts = this.normalizeGlobalShortcutList(this.data?.options?.links?.globalShortcuts || [], { ensureId: true });
@@ -30424,18 +30988,21 @@ footer a:hover {
             // Ensure keywords property exists
             if (g.keywords === undefined) this.$set(g, 'keywords', '');
             if (g.shortcut === undefined) this.$set(g, 'shortcut', '');
+            if (g.manualHeightResizeOverride === undefined) this.$set(g, 'manualHeightResizeOverride', false);
             (g.links || []).forEach(l => {
               if (l.keywords === undefined) this.$set(l, 'keywords', '');
               if (l.shortcut === undefined) this.$set(l, 'shortcut', '');
             });
             // Ensure opacity property exists (use global default if available)
           });
+          const existingGroupColumns = [...new Set((this.data.groups || []).map(g => g.column))];
+          this.pruneGroupColumnWidths(existingGroupColumns);
           // Populate missing faviconUrl for existing links when option is enabled
           // Removed - no fallback favicon URL needed anymore
         },
         // Generic Edit Dialog Methods
         openGenericEditDialog(type, data, design, title, saveCallback, context = {}) {
-          console.log('openGenericEditDialog called with type:', type);
+          debugLog('log', 'openGenericEditDialog called with type:', type);
           debugLog('log', 'openGenericEditDialog called with type:', type);
           this.genericEditConfig = {
             title: title,
@@ -30448,21 +31015,32 @@ footer a:hover {
           // Deep clone the data for editing
           this.genericEditData = JSON.parse(JSON.stringify(data));
           this.keywordSuggestionContext = null;
+          this.keywordSuggestionField = null;
+          this.keywordSuggestionStyle = null;
           this.genericFilterText = '';
           this.genericExpandedSections = {};
           
           debugLog('log', 'Looking for modal element: genericEditModal');
-          console.log('Looking for modal element: genericEditModal');
+          debugLog('log', 'Looking for modal element: genericEditModal');
           // Open the modal
           const modalElement = document.getElementById('genericEditModal');
-          console.log('Modal element:', modalElement);
+          debugLog('log', 'Modal element:', modalElement);
           if (modalElement) {
             debugLog('log', 'Modal element found, creating instance');
-            console.log('Modal element found, creating Bootstrap instance');
+            debugLog('log', 'Modal element found, creating Bootstrap instance');
             try {
               const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
-              console.log('Modal instance:', modalInstance);
+              debugLog('log', 'Modal instance:', modalInstance);
               modalInstance.show();
+
+              if (!modalElement.dataset.keywordSuggestionCleanupAttached) {
+                modalElement.addEventListener('hidden.bs.modal', () => {
+                  this.keywordSuggestionContext = null;
+                  this.keywordSuggestionField = null;
+                  this.keywordSuggestionStyle = null;
+                });
+                modalElement.dataset.keywordSuggestionCleanupAttached = '1';
+              }
               
               // Ensure focus is set when modal is shown
               modalElement.addEventListener('shown.bs.modal', () => {
@@ -30476,14 +31054,14 @@ footer a:hover {
               }, { once: true });
               
               debugLog('log', 'Modal show called');
-              console.log('Modal show() called successfully');
+              debugLog('log', 'Modal show() called successfully');
             } catch (error) {
-              console.error('Error creating/showing modal:', error);
+              debugLog('error', 'Error creating/showing modal:', error);
               debugLog('error', 'Error creating/showing modal:', error);
             }
           } else {
             debugLog('error', 'Modal element genericEditModal not found!');
-            console.error('Modal element genericEditModal not found in DOM!');
+            debugLog('error', 'Modal element genericEditModal not found in DOM!');
           }
         },
         
@@ -30813,6 +31391,7 @@ footer a:hover {
             if (this.isKeywordSuggestionField(sectionKey, fieldKey)) {
               this.keywordSuggestionField = null;
               this.keywordSuggestionContext = null;
+              this.keywordSuggestionStyle = null;
             }
             return;
           }
@@ -30826,7 +31405,130 @@ footer a:hover {
           if (this.isKeywordSuggestionField(sectionKey, fieldKey)) {
             this.keywordSuggestionContext = null;
             this.keywordSuggestionField = null;
+            this.keywordSuggestionStyle = null;
           }
+        },
+        handleKeywordSuggestionViewportChange() {
+          if (!this.shouldShowKeywordSuggestions && !this.shouldShowQuickKeywordSuggestions) return;
+          this.$nextTick(() => {
+            if (this.shouldShowKeywordSuggestions) {
+              this.updateKeywordSuggestionPosition();
+            }
+            if (this.shouldShowQuickKeywordSuggestions) {
+              this.updateQuickKeywordSuggestionPosition();
+            }
+          });
+        },
+        updateKeywordSuggestionPosition(inputEl = null) {
+          if (!this.shouldShowKeywordSuggestions) {
+            this.keywordSuggestionStyle = null;
+            return;
+          }
+
+          let input = inputEl;
+          if (!input) {
+            const section = this.keywordSuggestionField?.section;
+            const field = this.keywordSuggestionField?.field;
+            if (section && field) {
+              const selector = `input.mb-edit-text-input[data-section="${section}"][data-field="${field}"]`;
+              const modalElement = document.getElementById('genericEditModal');
+              if (modalElement) input = modalElement.querySelector(selector);
+            }
+          }
+          if (!input || typeof input.getBoundingClientRect !== 'function') {
+            this.keywordSuggestionStyle = null;
+            return;
+          }
+
+          const rect = input.getBoundingClientRect();
+          if (!rect || rect.width <= 0) {
+            this.keywordSuggestionStyle = null;
+            return;
+          }
+
+          const viewportPadding = 8;
+          const minHeight = 80;
+          const maxHeight = 220;
+          const minWidth = 180;
+
+          let width = Math.max(minWidth, rect.width);
+          if (width > window.innerWidth - (viewportPadding * 2)) {
+            width = Math.max(minWidth, window.innerWidth - (viewportPadding * 2));
+          }
+
+          let left = rect.left;
+          if (left + width > window.innerWidth - viewportPadding) {
+            left = window.innerWidth - viewportPadding - width;
+          }
+          left = Math.max(viewportPadding, left);
+
+          const preferredTop = rect.bottom + 4;
+          const spaceBelow = window.innerHeight - preferredTop - viewportPadding;
+          const spaceAbove = rect.top - viewportPadding - 4;
+          const placeAbove = spaceBelow < 120 && spaceAbove > spaceBelow;
+          const availableHeight = placeAbove ? spaceAbove : spaceBelow;
+          const dropdownHeight = Math.max(minHeight, Math.min(maxHeight, availableHeight));
+          const top = placeAbove
+            ? Math.max(viewportPadding, rect.top - dropdownHeight - 4)
+            : preferredTop;
+
+          this.keywordSuggestionStyle = {
+            left: `${Math.round(left)}px`,
+            top: `${Math.round(top)}px`,
+            width: `${Math.round(width)}px`,
+            maxHeight: `${Math.round(dropdownHeight)}px`
+          };
+        },
+        updateQuickKeywordSuggestionPosition(inputEl = null) {
+          if (!this.shouldShowQuickKeywordSuggestions) {
+            this.quickKeywordSuggestionStyle = null;
+            return;
+          }
+
+          const input = inputEl || this.$refs.keywordQuickInput;
+          if (!input || typeof input.getBoundingClientRect !== 'function') {
+            this.quickKeywordSuggestionStyle = null;
+            return;
+          }
+
+          const rect = input.getBoundingClientRect();
+          if (!rect || rect.width <= 0) {
+            this.quickKeywordSuggestionStyle = null;
+            return;
+          }
+
+          const viewportPadding = 8;
+          const minHeight = 80;
+          const maxHeight = 220;
+          const minWidth = 180;
+
+          let width = Math.max(minWidth, rect.width);
+          if (width > window.innerWidth - (viewportPadding * 2)) {
+            width = Math.max(minWidth, window.innerWidth - (viewportPadding * 2));
+          }
+
+          let left = rect.left;
+          if (left + width > window.innerWidth - viewportPadding) {
+            left = window.innerWidth - viewportPadding - width;
+          }
+          left = Math.max(viewportPadding, left);
+
+          const preferredTop = rect.bottom + 4;
+          const spaceBelow = window.innerHeight - preferredTop - viewportPadding;
+          const spaceAbove = rect.top - viewportPadding - 4;
+          const placeAbove = spaceBelow < 120 && spaceAbove > spaceBelow;
+          const availableHeight = placeAbove ? spaceAbove : spaceBelow;
+          const dropdownHeight = Math.max(minHeight, Math.min(maxHeight, availableHeight));
+          const top = placeAbove
+            ? Math.max(viewportPadding, rect.top - dropdownHeight - 4)
+            : preferredTop;
+
+          this.quickKeywordSuggestionStyle = {
+            left: `${Math.round(left)}px`,
+            top: `${Math.round(top)}px`,
+            width: `${Math.round(width)}px`,
+            maxHeight: `${Math.round(dropdownHeight)}px`
+          };
         },
         applyKeywordSuggestion(sectionKey, fieldKey, suggestion) {
           if (!this.isKeywordField(sectionKey, fieldKey) || !suggestion) return;
@@ -30854,12 +31556,14 @@ footer a:hover {
             }
             this.keywordSuggestionContext = null;
             this.keywordSuggestionField = null;
+            this.keywordSuggestionStyle = null;
           });
         },
         updateKeywordSuggestionContext(value, inputEl = null) {
           if (!['link', 'group'].includes(this.genericEditConfig?.type)) {
             this.keywordSuggestionContext = null;
             this.keywordSuggestionField = null;
+            this.keywordSuggestionStyle = null;
             return;
           }
           const stringValue = value != null ? String(value) : '';
@@ -30869,7 +31573,12 @@ footer a:hover {
           this.keywordSuggestionContext = context;
           if (!context) {
             this.keywordSuggestionField = null;
+            this.keywordSuggestionStyle = null;
+            return;
           }
+          this.$nextTick(() => {
+            this.updateKeywordSuggestionPosition(inputEl);
+          });
         },
         extractKeywordContext(rawValue, selectionStart, selectionEnd = selectionStart) {
           const value = typeof rawValue === 'string' ? rawValue : (rawValue ?? '').toString();
@@ -31552,8 +32261,8 @@ footer a:hover {
         // Remember current identity name to detect changes on save
         this.prevIdentityName = this.data.identity?.name || '';
           
-          console.log('this.optionsDesign:', this.optionsDesign);
-          console.log('this.data.options:', this.data.options);
+          debugLog('log', 'this.optionsDesign:', this.optionsDesign);
+          debugLog('log', 'this.data.options:', this.data.options);
           debugLog('log', 'Opening generic dialog with:', {
             type: 'options',
             design: this.optionsDesign,
@@ -31571,7 +32280,13 @@ footer a:hover {
           this.getTranslation('options'),
             (editedData) => {
               // Apply the edited options
+              const wasAutoHeightOnLinkChanges = !!this.data.options?.groups?.autoAdjustHeightOnLinkChanges;
+              const wasManualGroupColumnWidth = !!this.data.options?.common?.manualGroupColumnWidth;
               Object.assign(this.data.options, editedData);
+              this.fixOptions();
+              const isAutoHeightOnLinkChanges = !!this.data.options?.groups?.autoAdjustHeightOnLinkChanges;
+              const isManualGroupColumnWidth = !!this.data.options?.common?.manualGroupColumnWidth;
+              setDebugEnabled(!!this.data.options?.common?.debugEnabled);
               // Normalize and ensure identity name
               try {
                 let newIdentityName = this.data.options?.common?.identityName || '';
@@ -31590,6 +32305,7 @@ footer a:hover {
               } catch {}
               this.saveData();
               this.applyCustomColors();
+              try { this.scheduleCardDavAutoSync(); } catch {}
               
               // Update page title if changed
               if (this.data.options.common.pageTitle !== this.title) {
@@ -31607,6 +32323,21 @@ footer a:hover {
                       }
                     });
                   }
+                });
+              }
+
+              if (isAutoHeightOnLinkChanges && !wasAutoHeightOnLinkChanges) {
+                this.autoAdjustAllGroupHeightsForAutoMode();
+              }
+              if (!isManualGroupColumnWidth && wasManualGroupColumnWidth) {
+                this.endGroupColumnResize();
+              }
+              if (isManualGroupColumnWidth && !wasManualGroupColumnWidth) {
+                this.$nextTick(() => {
+                  const columns = this.getGroupColumns();
+                  this.ensureGroupColumnWidthsInitialized(columns);
+                  this.ensureGroupColumnWidthsWithinViewport(columns);
+                  this.saveData();
                 });
               }
             }
@@ -31802,6 +32533,7 @@ footer a:hover {
             // Progressive loading state
             linksExpanded: false, // Start with limited links for performance
             bodyHeight: CONSTS.GROUP_BODY_HEIGHT_DEFAULT,
+            manualHeightResizeOverride: false,
             // If true, disable colored background and use neutral styling
             shared: false,
             members: [ { uuid: this.data.identity?.uuid || '', name: this.data.identity?.name || '', role: 'owner' } ],
@@ -32069,6 +32801,304 @@ footer a:hover {
           }
           this.hideMenus();
         },
+        normalizeGroupColumnWidth(value) {
+          const parsed = Number(value);
+          if (!Number.isFinite(parsed)) return null;
+          const rounded = Math.round(parsed);
+          return Math.max(CONSTS.GROUP_COLUMN_WIDTH_MIN, rounded);
+        },
+        isManualGroupColumnWidthEnabled() {
+          return !!this.data?.options?.common?.manualGroupColumnWidth;
+        },
+        ensureGroupColumnWidthStore() {
+          if (!this.data?.options) this.$set(this.data, 'options', {});
+          if (!this.data.options.groups) this.$set(this.data.options, 'groups', {});
+          if (!this.data.options.groups.columnWidths || typeof this.data.options.groups.columnWidths !== 'object' || Array.isArray(this.data.options.groups.columnWidths)) {
+            this.$set(this.data.options.groups, 'columnWidths', {});
+          }
+          return this.data.options.groups.columnWidths;
+        },
+        getStoredGroupColumnWidth(columnIndex) {
+          if (columnIndex === undefined || columnIndex === null) return null;
+          if (!this.isManualGroupColumnWidthEnabled()) return null;
+          const widths = this.ensureGroupColumnWidthStore();
+          const normalized = this.normalizeGroupColumnWidth(widths[String(columnIndex)]);
+          return Number.isFinite(normalized) ? normalized : null;
+        },
+        setGroupColumnWidth(columnIndex, width) {
+          if (columnIndex === undefined || columnIndex === null) return;
+          const normalized = this.normalizeGroupColumnWidth(width);
+          if (!Number.isFinite(normalized)) return;
+          const widths = this.ensureGroupColumnWidthStore();
+          const key = String(columnIndex);
+          if (widths[key] !== normalized) {
+            this.$set(widths, key, normalized);
+          }
+        },
+        getMeasuredGroupColumnWidth(columnIndex) {
+          if (columnIndex === undefined || columnIndex === null) return null;
+          if (typeof document === 'undefined') return null;
+          const cell = document.querySelector(`.groupCell[data-column-index="${columnIndex}"]`);
+          if (!cell) return null;
+          const measured = this.normalizeGroupColumnWidth(cell.getBoundingClientRect().width);
+          return Number.isFinite(measured) ? measured : null;
+        },
+        getCurrentGroupColumnWidth(columnIndex) {
+          return this.getStoredGroupColumnWidth(columnIndex) ?? this.getMeasuredGroupColumnWidth(columnIndex);
+        },
+        getGroupColumnCellStyle(columnIndex) {
+          if (!this.isManualGroupColumnWidthEnabled()) return null;
+          const width = this.getStoredGroupColumnWidth(columnIndex);
+          if (!Number.isFinite(width)) {
+            return {
+              minWidth: `${CONSTS.GROUP_COLUMN_WIDTH_MIN}px`
+            };
+          }
+          return {
+            width: `${width}px`,
+            minWidth: `${width}px`,
+            maxWidth: `${width}px`
+          };
+        },
+        getGroupColumnWidthLabel(columnIndex) {
+          const width = this.getCurrentGroupColumnWidth(columnIndex);
+          if (!Number.isFinite(width)) return '0px';
+          return `${Math.round(width)}px`;
+        },
+        equalizeGroupColumnWidths() {
+          if (!this.isManualGroupColumnWidthEnabled()) return;
+          const columns = this.getGroupColumns();
+          if (!columns.length) return;
+          const minWidth = CONSTS.GROUP_COLUMN_WIDTH_MIN;
+          const availableWidth = this.getAvailableGroupColumnWidthSpace(columns);
+          let baseWidth = minWidth;
+          let remainder = 0;
+
+          if (Number.isFinite(availableWidth) && availableWidth > 0) {
+            baseWidth = Math.max(minWidth, Math.floor(availableWidth / columns.length));
+            const used = baseWidth * columns.length;
+            remainder = Math.max(0, availableWidth - used);
+          }
+
+          columns.forEach((col, idx) => {
+            const extra = idx < remainder ? 1 : 0;
+            this.setGroupColumnWidth(col, baseWidth + extra);
+          });
+
+          const changedByFit = this.ensureGroupColumnWidthsWithinViewport(columns);
+          this.saveData();
+          if (changedByFit) this.$forceUpdate();
+        },
+        ensureGroupColumnWidthsInitialized(columns = null) {
+          if (!this.isManualGroupColumnWidthEnabled()) return;
+          const cols = Array.isArray(columns) ? columns : this.getGroupColumns();
+          const widths = this.ensureGroupColumnWidthStore();
+          cols.forEach(col => {
+            const key = String(col);
+            const existing = this.normalizeGroupColumnWidth(widths[key]);
+            if (Number.isFinite(existing)) {
+              if (widths[key] !== existing) this.$set(widths, key, existing);
+              return;
+            }
+            const measured = this.getMeasuredGroupColumnWidth(col);
+            if (Number.isFinite(measured)) {
+              this.$set(widths, key, measured);
+            }
+          });
+        },
+        shiftGroupColumnWidthsRight(fromColumnIndex) {
+          const widths = this.ensureGroupColumnWidthStore();
+          const entries = Object.entries(widths)
+            .map(([k, v]) => ({ col: Number(k), width: this.normalizeGroupColumnWidth(v) }))
+            .filter(entry => Number.isFinite(entry.col) && Number.isFinite(entry.width))
+            .sort((a, b) => b.col - a.col);
+
+          entries.forEach(({ col, width }) => {
+            if (col >= fromColumnIndex) {
+              this.$set(widths, String(col + 1), width);
+              this.$delete(widths, String(col));
+            }
+          });
+        },
+        remapGroupColumnWidths(columnMapping) {
+          const widths = this.ensureGroupColumnWidthStore();
+          const remapped = {};
+          Object.entries(columnMapping || {}).forEach(([oldCol, newCol]) => {
+            const width = this.normalizeGroupColumnWidth(widths[String(oldCol)]);
+            if (!Number.isFinite(width) || newCol === undefined || newCol === null) return;
+            remapped[String(newCol)] = width;
+          });
+          this.$set(this.data.options.groups, 'columnWidths', remapped);
+        },
+        pruneGroupColumnWidths(validColumns = null) {
+          const widths = this.ensureGroupColumnWidthStore();
+          const valid = new Set((validColumns || this.getGroupColumns()).map(col => String(col)));
+          Object.keys(widths).forEach(key => {
+            if (!valid.has(key)) this.$delete(widths, key);
+          });
+        },
+        getGroupColumnDropzoneWidthPx() {
+          if (typeof document === 'undefined') return 10;
+          const zone = document.querySelector('.groupsTable .verticalDropZone');
+          const measured = Number(zone?.getBoundingClientRect().width || 0);
+          if (Number.isFinite(measured) && measured > 0) return measured;
+          return 10;
+        },
+        getAvailableGroupColumnWidthSpace(columns = null) {
+          if (typeof document === 'undefined') return null;
+          const cols = Array.isArray(columns) ? columns : this.getGroupColumns();
+          if (!cols.length) return null;
+          const containerEl = document.querySelector('.mb-groups-links-container') || document.querySelector('.mainContainer');
+          if (!containerEl) return null;
+          const containerWidth = Number(containerEl.clientWidth || containerEl.getBoundingClientRect().width || 0);
+          if (!Number.isFinite(containerWidth) || containerWidth <= 0) return null;
+          let tablePaddingX = 0;
+          const tableEl = document.querySelector('.groupsTable');
+          if (tableEl && typeof window !== 'undefined' && typeof window.getComputedStyle === 'function') {
+            const styles = window.getComputedStyle(tableEl);
+            const leftPad = Number.parseFloat(styles.paddingLeft || '0');
+            const rightPad = Number.parseFloat(styles.paddingRight || '0');
+            tablePaddingX = (Number.isFinite(leftPad) ? leftPad : 0) + (Number.isFinite(rightPad) ? rightPad : 0);
+          }
+          const dropZoneWidth = this.getGroupColumnDropzoneWidthPx();
+          const dropZoneTotal = dropZoneWidth * (cols.length + 1);
+          const available = Math.floor(containerWidth - tablePaddingX - dropZoneTotal);
+          return Number.isFinite(available) && available > 0 ? available : null;
+        },
+        ensureGroupColumnWidthsWithinViewport(columns = null) {
+          if (!this.isManualGroupColumnWidthEnabled()) return false;
+          const cols = Array.isArray(columns) ? columns : this.getGroupColumns();
+          if (!cols.length) return false;
+          const widths = this.ensureGroupColumnWidthStore();
+          const minWidth = CONSTS.GROUP_COLUMN_WIDTH_MIN;
+          let changed = false;
+          const resolved = cols.map(col => {
+            const key = String(col);
+            let width = this.normalizeGroupColumnWidth(widths[key]);
+            if (!Number.isFinite(width)) {
+              const measured = this.getMeasuredGroupColumnWidth(col);
+              width = this.normalizeGroupColumnWidth(measured);
+            }
+            if (!Number.isFinite(width)) width = minWidth;
+            if (widths[key] !== width) {
+              this.$set(widths, key, width);
+              changed = true;
+            }
+            return { key, col, width };
+          });
+
+          const availableWidth = this.getAvailableGroupColumnWidthSpace(cols);
+          if (!Number.isFinite(availableWidth)) return changed;
+
+          let totalWidth = resolved.reduce((sum, entry) => sum + entry.width, 0);
+          if (!Number.isFinite(totalWidth) || totalWidth <= availableWidth) return changed;
+
+          let overflow = totalWidth - availableWidth;
+          while (overflow > 0) {
+            let largest = null;
+            resolved.forEach(entry => {
+              if (entry.width <= minWidth) return;
+              if (!largest || entry.width > largest.width) {
+                largest = entry;
+              }
+            });
+            if (!largest) break;
+            const reducible = Math.max(0, largest.width - minWidth);
+            if (reducible <= 0) break;
+            const reduceBy = Math.min(reducible, overflow);
+            largest.width = this.normalizeGroupColumnWidth(largest.width - reduceBy);
+            overflow -= reduceBy;
+          }
+
+          resolved.forEach(entry => {
+            if (widths[entry.key] !== entry.width) {
+              this.$set(widths, entry.key, entry.width);
+              changed = true;
+            }
+          });
+
+          if (overflow > 0) {
+            debugLog('warn', '[GROUP-COLUMNS] Remaining overflow after fitting to viewport', {
+              overflow,
+              availableWidth,
+              minWidth,
+              columns: cols.length
+            });
+          }
+          return changed;
+        },
+        startGroupColumnResize(event, leftColumn, rightColumn) {
+          if (!this.isManualGroupColumnWidthEnabled()) return;
+          if (event && event.button !== undefined && event.button !== 0) return;
+          if (leftColumn === undefined || leftColumn === null || rightColumn === undefined || rightColumn === null) return;
+          if (leftColumn === rightColumn) return;
+          if (this.isGroupHeightResizing) return;
+          const columns = this.getGroupColumns();
+          if (!columns.includes(leftColumn) || !columns.includes(rightColumn)) return;
+
+          this.ensureGroupColumnWidthsInitialized(columns);
+          const leftWidth = this.getCurrentGroupColumnWidth(leftColumn);
+          const rightWidth = this.getCurrentGroupColumnWidth(rightColumn);
+          if (!Number.isFinite(leftWidth) || !Number.isFinite(rightWidth)) return;
+
+          this.isGroupColumnResizing = true;
+          this.groupColumnResizeState = {
+            leftColumn,
+            rightColumn,
+            startX: event.clientX,
+            startLeftWidth: leftWidth,
+            startRightWidth: rightWidth
+          };
+          document.body.classList.add('mb-group-column-resizing');
+          document.addEventListener('mousemove', this.handleGroupColumnResize);
+          document.addEventListener('mouseup', this.endGroupColumnResize);
+        },
+        handleGroupColumnResize(event) {
+          if (!this.isGroupColumnResizing) return;
+          const state = this.groupColumnResizeState || {};
+          const leftColumn = state.leftColumn;
+          const rightColumn = state.rightColumn;
+          if (leftColumn === null || rightColumn === null) return;
+
+          const minWidth = CONSTS.GROUP_COLUMN_WIDTH_MIN;
+          const total = Number(state.startLeftWidth || 0) + Number(state.startRightWidth || 0);
+          if (!Number.isFinite(total) || total <= 0) return;
+
+          const deltaX = event.clientX - state.startX;
+          let nextLeft = Number(state.startLeftWidth || 0) + deltaX;
+          let nextRight = Number(state.startRightWidth || 0) - deltaX;
+
+          if (nextLeft < minWidth) {
+            nextLeft = minWidth;
+            nextRight = total - minWidth;
+          }
+          if (nextRight < minWidth) {
+            nextRight = minWidth;
+            nextLeft = total - minWidth;
+          }
+
+          nextLeft = this.normalizeGroupColumnWidth(nextLeft);
+          nextRight = this.normalizeGroupColumnWidth(nextRight);
+          if (!Number.isFinite(nextLeft) || !Number.isFinite(nextRight)) return;
+
+          this.setGroupColumnWidth(leftColumn, nextLeft);
+          this.setGroupColumnWidth(rightColumn, nextRight);
+        },
+        endGroupColumnResize() {
+          if (!this.isGroupColumnResizing) return;
+          this.isGroupColumnResizing = false;
+          this.groupColumnResizeState = {
+            leftColumn: null,
+            rightColumn: null,
+            startX: 0,
+            startLeftWidth: 0,
+            startRightWidth: 0
+          };
+          document.removeEventListener('mousemove', this.handleGroupColumnResize);
+          document.removeEventListener('mouseup', this.endGroupColumnResize);
+          document.body.classList.remove('mb-group-column-resizing');
+          this.saveData();
+        },
         getGroupColumns() {
           if (!this.data.groups || this.data.groups.length === 0) return [0]; // Default to one column if empty
           const columns = [...new Set(this.data.groups.map(g => g.column))];
@@ -32103,7 +33133,10 @@ footer a:hover {
         // Innerhalb von methods: { ... } der Vue-Instanz 'app'
         normalizeColumnNumbers() {
           const groups = this.data.groups;
-          if (!groups || groups.length === 0) return; // Nichts zu tun, wenn keine Gruppen da sind
+          if (!groups || groups.length === 0) {
+            this.pruneGroupColumnWidths([]);
+            return;
+          } // Nichts zu tun, wenn keine Gruppen da sind
 
           const currentColumns = this.getGroupColumns(); // Holt sortierte, eindeutige Spalten, z.B. [0, 2, 3]
           if (currentColumns.length === 0) return; // Sollte nicht passieren, aber sicher ist sicher
@@ -32135,9 +33168,13 @@ footer a:hover {
 
           if (changed) {
             debugLog('log', "Columns normalized. New mapping:", columnMapping);
+            this.remapGroupColumnWidths(columnMapping);
             this.$forceUpdate(); // Erzwinge UI-Update nach Spaltenänderung
             // Wichtig: saveData() wird in der aufrufenden Funktion (moveGroup/delGroup/onDrop) gemacht!
+          } else {
+            this.pruneGroupColumnWidths(currentColumns);
           }
+          this.ensureGroupColumnWidthsWithinViewport(this.getGroupColumns());
         },
         toggleGroupCollapse(group) {
           // 1. Toggle den Vue-Datenzustand (für Icon etc.)
@@ -32333,6 +33370,7 @@ footer a:hover {
           }
           
           this.saveData();
+          this.maybeAutoAdjustGroupHeightAfterLinkChange(group);
           // Broadcast to shared group (legacy for backward compatibility)
           try {
             if (group.shared && group.groupTopic && group.groupKey && !group.useEventLog) {
@@ -32426,6 +33464,7 @@ footer a:hover {
             }
             
             this.saveData();
+            this.maybeAutoAdjustGroupHeightAfterLinkChange(group);
             // Broadcast to shared group (legacy only)
             try {
               if (group.shared && group.groupTopic && group.groupKey && !group.useEventLog) {
@@ -32461,6 +33500,10 @@ footer a:hover {
             this.touchGroup(group, linkTs);
             if (sourceGroup && sourceGroup !== group) this.touchGroup(sourceGroup, nowTs);
             this.saveData();
+            if (sourceGroup && sourceGroup !== group) {
+              this.maybeAutoAdjustGroupHeightAfterLinkChange(group);
+              this.maybeAutoAdjustGroupHeightAfterLinkChange(sourceGroup);
+            }
           }
         },
 
@@ -32774,6 +33817,10 @@ footer a:hover {
             this.touchGroup(sourceGroup, moveTimestamp);
           }
           this.saveData();
+          if (isCrossGroup && sourceGroup) {
+            this.maybeAutoAdjustGroupHeightAfterLinkChange(group);
+            this.maybeAutoAdjustGroupHeightAfterLinkChange(sourceGroup);
+          }
           this.dropManager.reset();
         },
 
@@ -32882,6 +33929,7 @@ footer a:hover {
               this.reindexArr(group.links.filter(l => l.column === link.column)); // Reindex affected column
               this.touchGroup(group, nowTs);
               this.saveData();
+              this.maybeAutoAdjustGroupHeightAfterLinkChange(group);
               // Propagate delete to group members (legacy sync)
               try {
                 if (group.shared && group.groupTopic && group.groupKey) {
@@ -32984,8 +34032,87 @@ footer a:hover {
         getGroupBodyHeight(group) {
           return this.normalizeGroupBodyHeight(group?.bodyHeight);
         },
+        isAutoAdjustGroupHeightOnLinkChangesEnabled() {
+          return !!this.data?.options?.groups?.autoAdjustHeightOnLinkChanges;
+        },
+        isGroupManualHeightResizeOverride(group) {
+          return !!group?.manualHeightResizeOverride;
+        },
+        canManuallyResizeGroupHeight(group) {
+          if (!group || group.collapsed) return false;
+          if (!this.isAutoAdjustGroupHeightOnLinkChangesEnabled()) return true;
+          return this.isGroupManualHeightResizeOverride(group);
+        },
+        shouldAutoAdjustGroupHeightAfterLinkChange(group) {
+          if (!group || group.collapsed) return false;
+          if (!this.isAutoAdjustGroupHeightOnLinkChangesEnabled()) return false;
+          if (this.isGroupManualHeightResizeOverride(group)) return false;
+          return true;
+        },
+        measureGroupContentHeight(group) {
+          if (!group) return null;
+          const bodyEl = document.getElementById(`collapseGroup-${group.uuid}`);
+          if (!bodyEl) return null;
+          const prevHeight = bodyEl.style.height;
+          const prevOverflowY = bodyEl.style.overflowY;
+          bodyEl.style.height = 'auto';
+          bodyEl.style.overflowY = 'visible';
+          const contentHeight = Number(bodyEl.scrollHeight || bodyEl.getBoundingClientRect().height || 0);
+          bodyEl.style.height = prevHeight;
+          bodyEl.style.overflowY = prevOverflowY;
+          if (!Number.isFinite(contentHeight) || contentHeight <= 0) return null;
+          return contentHeight;
+        },
+        applyAutoAdjustedGroupHeight(group, { save = false } = {}) {
+          if (!group || group.collapsed) return false;
+          const contentHeight = this.measureGroupContentHeight(group);
+          if (!Number.isFinite(contentHeight)) return false;
+          const targetHeight = this.normalizeGroupBodyHeight(contentHeight + 2);
+          const currentHeight = this.getGroupBodyHeight(group);
+          const hasOverflow = contentHeight > currentHeight + 1;
+          const hasExtraSpace = contentHeight < currentHeight - 1;
+          const missingStoredHeight = group.bodyHeight === undefined || group.bodyHeight === null;
+          if (!hasOverflow && !hasExtraSpace && !missingStoredHeight) return false;
+          if (!missingStoredHeight && currentHeight === targetHeight) return false;
+          this.$set(group, 'bodyHeight', targetHeight);
+          if (save) this.saveData();
+          return true;
+        },
+        maybeAutoAdjustGroupHeightAfterLinkChange(group) {
+          if (!this.shouldAutoAdjustGroupHeightAfterLinkChange(group)) return;
+          this.$nextTick(() => {
+            const apply = () => {
+              if (this.applyAutoAdjustedGroupHeight(group)) {
+                this.saveData();
+              }
+            };
+            if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+              window.requestAnimationFrame(apply);
+            } else {
+              setTimeout(apply, 0);
+            }
+          });
+        },
+        autoAdjustAllGroupHeightsForAutoMode() {
+          this.$nextTick(() => {
+            const apply = () => {
+              let changed = false;
+              (this.data.groups || []).forEach(group => {
+                if (!this.shouldAutoAdjustGroupHeightAfterLinkChange(group)) return;
+                if (this.applyAutoAdjustedGroupHeight(group)) changed = true;
+              });
+              if (changed) this.saveData();
+            };
+            if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+              window.requestAnimationFrame(apply);
+            } else {
+              setTimeout(apply, 0);
+            }
+          });
+        },
         startGroupHeightResize(event, group) {
           if (!group || group.collapsed) return;
+          if (!this.canManuallyResizeGroupHeight(group)) return;
           if (event && event.button !== undefined && event.button !== 0) return;
           const currentHeight = this.getGroupBodyHeight(group);
           if (group.bodyHeight === undefined || group.bodyHeight === null) {
@@ -33019,6 +34146,7 @@ footer a:hover {
           this.saveData();
         },
         autoFitGroupHeight(group) {
+          if (!this.canManuallyResizeGroupHeight(group)) return;
           if (!group || group.collapsed) return;
           const bodyEl = document.getElementById(`collapseGroup-${group.uuid}`);
           let targetHeight = this.getGroupBodyHeight(group);
@@ -33782,6 +34910,7 @@ footer a:hover {
             }
 
             this.saveData();
+            this.maybeAutoAdjustGroupHeightAfterLinkChange(targetGroup);
 
             // Update version for sync tracking (only for shared groups)
             if (targetGroup.shared) {
@@ -33923,6 +35052,7 @@ footer a:hover {
                 }
 
                 this.saveData();
+                this.maybeAutoAdjustGroupHeightAfterLinkChange(targetGroup);
 
                 // Update version for sync tracking (only for shared groups)
                 if (targetGroup.shared) {
@@ -34501,6 +35631,7 @@ footer a:hover {
             if (groupData.emoji === undefined) groupData.emoji = '';
             if (groupData.keywords === undefined) groupData.keywords = '';
             if (groupData.shortcut === undefined) groupData.shortcut = '';
+            if (groupData.manualHeightResizeOverride === undefined) groupData.manualHeightResizeOverride = false;
             if (groupData.color === undefined) groupData.color = '';
             if (groupData.titleFormatting === undefined) groupData.titleFormatting = '';
             if (groupData.linkColor === undefined) groupData.linkColor = '';
@@ -34529,6 +35660,7 @@ footer a:hover {
 
                 // Save and sync
                 this.saveData();
+                this.maybeAutoAdjustGroupHeightAfterLinkChange(originalGroup);
                 
                 // Sync to group members if this is a shared/synced group with proper topic/key
                 try {
@@ -35185,7 +36317,7 @@ footer a:hover {
               );
               debugLog('log', `Copied to clipboard (fallback): ${clipboardText}`);
             } catch (fallbackErr) {
-              console.error('Failed to copy to clipboard:', fallbackErr);
+              debugLog('error', 'Failed to copy to clipboard:', fallbackErr);
               toastManager.error(
                 this.getTranslation('link.copyFailed') || 'Failed to copy URL',
                 this.getTranslation('link.copyError') || 'Could not access clipboard',
@@ -35410,24 +36542,16 @@ footer a:hover {
           if (uniqueUrls.length > confirmThreshold) {
             const confirmText = (this.getTranslation('link.shortcut.confirmMany') || 'Open {count} links at once?')
               .replace('{count}', uniqueUrls.length);
-            if (!confirm(confirmText)) return true;
+            if (!confirm(confirmText)) {
+              this.shortcutOpenQueue = null;
+              return true;
+            }
           }
 
           const openInNewTab = this.data?.options?.links?.openInNewTab !== false;
-          const forceNewTabs = uniqueUrls.length > 1 || openInNewTab;
-          uniqueUrls.forEach((url, index) => {
-            if (!forceNewTabs && index === 0) {
-              window.location.href = url;
-              return;
-            }
-            window.open(url, '_blank', 'noopener,noreferrer');
-          });
-
-          this.showToast(
-            (this.getTranslation('link.shortcut.opened') || 'Opened {count} link(s) via shortcut.')
-              .replace('{count}', uniqueUrls.length),
-            'info'
-          );
+          const queueKey = `combo:${combo}`;
+          const result = this.openShortcutUrls(uniqueUrls, openInNewTab, queueKey);
+          this.showShortcutOpenResultToast(result);
           return true;
         },
         handleGlobalKeyDown(event) {
@@ -35446,140 +36570,6 @@ footer a:hover {
             }
           }
         },
-        async saveOptionsDialog_OLD_REMOVED() {
-          debugLog('log', "saveOptionsDialog called");
-          try {
-            // Übernehme die Änderungen aus editableOptions in die Hauptdaten
-            // Stellen sicher, dass alle Werte korrekt übernommen werden
-            this.data.options.common.language = this.editableOptions.common.language;
-            this.data.options.common.pageTitle = this.editableOptions.common.pageTitle;
-            this.data.options.common.searchAsYouType = this.editableOptions.common.searchAsYouType;
-            this.data.options.common.confirmDeleteGroup = !!this.editableOptions.common.confirmDeleteGroup;
-            this.data.options.common.confirmDeleteLink = !!this.editableOptions.common.confirmDeleteLink;
-            this.data.options.groups.collapseGroupsOnStart = this.editableOptions.groups.collapseGroupsOnStart;
-            this.data.options.groups.hoverExpandEnabled = !!this.editableOptions.groups.hoverExpandEnabled;
-            this.data.options.groups.hoverExpandDelayMs = Math.max(0, Number(this.editableOptions.groups.hoverExpandDelayMs) || 0);
-            this.data.options.groups.defaultGroupFormatting = this.editableOptions.groups.defaultGroupFormatting || '';
-            this.data.options.groups.defaultGroupTitleFormatting = this.editableOptions.groups.defaultGroupTitleFormatting || '';
-            this.data.options.groups.defaultGroupLinkFormatting = this.editableOptions.groups.defaultGroupLinkFormatting || '';
-            this.data.options.groups.defaultGroupBadgeFormatting = this.editableOptions.groups.defaultGroupBadgeFormatting || '';
-            this.data.options.groups.defaultGroupPillFormatting = this.editableOptions.groups.defaultGroupPillFormatting || '';
-            this.data.options.groups.clearClosesAllGroups = !!this.editableOptions.groups.clearClosesAllGroups;
-            this.data.options.groups.keywordClickExpandsAll = !!this.editableOptions.groups.keywordClickExpandsAll;
-            this.data.options.groups.searchAutoExpandFound = !!this.editableOptions.groups.searchAutoExpandFound;
-            this.data.options.links.openInNewTab = !!this.editableOptions.links.openInNewTab;
-            this.data.options.links.addViaDialog = !!this.editableOptions.links.addViaDialog;
-            this.data.options.links.autoFetchTitle = !!this.editableOptions.links.autoFetchTitle;
-            this.data.options.links.autoFetchFavicon = !!this.editableOptions.links.autoFetchFavicon;
-            this.data.options.links.showLinkBadges = !!this.editableOptions.links.showLinkBadges;
-            this.data.options.links.showLinkPopover = this.editableOptions.links.showLinkPopover !== false;
-            this.data.options.links.defaultLinkFormatting = this.editableOptions.links.defaultLinkFormatting || '';
-            this.data.options.links.defaultUrlPrefix = (this.editableOptions.links.defaultUrlPrefix || '').trim();
-            this.data.options.links.copyUrlFormat = this.editableOptions.links.copyUrlFormat || '{title}: {url}';
-            if (!this.data.options.links.showLinkPopover) {
-              this.hideLinkPopover();
-            }
-            // Button visibility (default to true if undefined)
-            if (!this.data.options.buttons) this.data.options.buttons = {};
-            this.data.options.buttons.showAddLink = this.editableOptions.buttons?.showAddLink ?? true;
-            this.data.options.buttons.showDeleteGroup = this.editableOptions.buttons?.showDeleteGroup ?? true;
-            this.data.options.buttons.showCopyUrl = this.editableOptions.buttons?.showCopyUrl ?? true;
-            this.data.options.buttons.showQrCode = this.editableOptions.buttons?.showQrCode ?? true;
-            this.data.options.buttons.showDeleteLink = this.editableOptions.buttons?.showDeleteLink ?? true;
-            // Sharing
-            this.data.options.sharing.ntfyServerUrl = (this.editableOptions.sharing.ntfyServerUrl || '').trim();
-            this.data.options.sharing.ntfyAuthToken = (this.editableOptions.sharing.ntfyAuthToken || '').trim();
-            this.data.options.sharing.defaultTtl = Math.max(0, Number(this.editableOptions.sharing.defaultTtl || 0));
-            this.data.options.sharing.quickCodeTtlSec = Math.max(60, Number(this.editableOptions.sharing.quickCodeTtlSec || 180));
-            
-            // Colors
-            if (this.editableOptions.colors) {
-              this.data.options.colors = this.data.options.colors || {};
-              this.data.options.colors.background = this.editableOptions.colors.background || '';
-              this.data.options.colors.toolbarBackground = this.editableOptions.colors.toolbarBackground || '';
-              this.data.options.colors.titleBarBackground = this.editableOptions.colors.titleBarBackground || '';
-              this.data.options.colors.titleTextColor = this.editableOptions.colors.titleTextColor || '';
-              this.data.options.colors.keywordBackground = this.editableOptions.colors.keywordBackground || '';
-            }
-            
-            // Event-Log
-            if (this.editableOptions.eventlog) {
-              this.data.options.eventlog = this.data.options.eventlog || {};
-              this.data.options.eventlog.snapshotInterval = Math.max(10, Math.min(1000, Number(this.editableOptions.eventlog.snapshotInterval || 50)));
-              this.data.options.eventlog.maxEvents = Math.max(100, Math.min(10000, Number(this.editableOptions.eventlog.maxEvents || 1000)));
-              this.data.options.eventlog.syncStrategy = this.editableOptions.eventlog.syncStrategy || 'owner-leads';
-            }
-            
-            // Update EventLogManager with new settings
-            if (this.eventLogManager) {
-              this.eventLogManager.maxEvents = this.data.options.eventlog.maxEvents;
-              this.eventLogManager.snapshotInterval = this.data.options.eventlog.snapshotInterval;
-              debugLog('log', '[SETTINGS] Updated EventLogManager settings', this.data.options.eventlog);
-            }
-            
-            // Group sharing defaults
-            if (!this.data.options.groupSharing) this.$set(this.data.options,'groupSharing',{});
-            if (!this.data.options.groupSharing.topicPrefix) this.data.options.groupSharing.topicPrefix = 'mb-g-';
-            
-            // Save custom colors to options
-            if (!this.data.options.customColors) {
-              this.$set(this.data.options, 'customColors', {});
-            }
-            this.data.options.customColors = Object.assign({}, this.customColors);
-
-            debugLog('log', "app.data.options updated:", JSON.stringify(this.data.options));
-
-            this.updateSettings(); // Einstellungen anwenden (z.B. Titel)
-            debugLog('log', "app.updateSettings called.");
-
-            this.saveData(); // Speichert this.data (inkl. geänderter Optionen)
-            debugLog('log', "app.saveData called after saveOptionsDialog.");
-            if (sharing) sharing.applyConfig();
-
-            // Propagate identity name changes
-            try {
-              const newName = this.data.identity?.name || '';
-              const oldName = this.prevIdentityName || '';
-              if (newName && newName !== oldName) {
-                const from = { uuid: this.data.identity?.uuid, name: newName };
-                // Notify all contacts (pairwise)
-                for (const c of (this.data.contacts||[])) {
-                  try { await sharing.sendToContact(c.uuid, { v:1, type:'contact-update', ts:Date.now(), from }); } catch {}
-                }
-                // Update own name in group rosters and broadcast (owner only)
-                for (const g of (this.data.groups||[])) {
-                  try {
-                    const isOwner = (g?.members||[]).some(m=>m.role==='owner' && m.uuid===this.data.identity?.uuid) || (g.ownerUuid===this.data.identity?.uuid);
-                    if (Array.isArray(g.members)) {
-                      g.members = g.members.map(m => m.uuid===this.data.identity?.uuid ? Object.assign({}, m, { name: newName }) : m);
-                    }
-                    if (isOwner && g.shared && g.groupTopic && g.groupKey) {
-                      await sharing.sendToGroup(g, { v:1, type:'group-roster', ts:Date.now(), from, groupId: g.groupId, members: g.members||[] });
-                    }
-                  } catch (error) {
-                debugLog('error', '[Sharing] Error processing message headers:', error);
-              }
-                }
-                this.saveData();
-              }
-            } catch {}
-
-            // Schließe das Modal mit Bootstrap JS API
-            const modalElement = document.getElementById('optionsModal');
-            if (modalElement) {
-              const modalInstance = bootstrap.Modal.getInstance(modalElement);
-              if (modalInstance) {
-                debugLog('log', "Hiding modal...");
-                modalInstance.hide();
-              }
-            }
-            this.editableOptions = null; // Bearbeitungskopie löschen
-          } catch (err) {
-            debugLog('error', "Error during saveOptionsDialog:", err);
-            alert("An error occurred while saving options. Check the console.");
-          }
-        },
-
         // Debounced saving to reduce IndexedDB writes
         saveData() {
           if (!this._debouncedSave) {
@@ -35619,9 +36609,8 @@ footer a:hover {
               }
             }
             this.lastSavedJson = parsed;
-            this.$forceUpdate();
-            // Update storage usage after save
-            this.calculateStorageUsage();
+            // Update storage usage after save (debounced to reduce repeated JSON work)
+            this.scheduleStorageUsageRecalc(parsed);
           } catch (error) {
             debugLog('error', "Error saving data:", error);
           }
@@ -35639,7 +36628,7 @@ footer a:hover {
     let footer = new Vue({
       el: '#footer',
       data: {
-        version: '2026-02-18', // Updated version string
+        version: '2026-02-19', // Updated version string
       },
     });
   </script>
