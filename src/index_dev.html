@@ -3191,7 +3191,7 @@
     </button> -->
     
     <div class="title-bar mb-titlebar">
-      <h1 class="text-start">
+      <h1 class="text-start mb-titlebar__title">
         <!-- Placeholder favicon -->
         {{ title }}
       </h1>
@@ -3411,24 +3411,6 @@
             </button>
             <input type="text" class="form-control" v-model="filterText" :aria-label="getTranslation('search')"
               aria-describedby="search-addon" id="searchFilter">
-            <button class="btn btn-outline-secondary" type="button" @click="saveCurrentSearch"
-              :title="getTranslation('savedSearches.save')">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-floppy-fill" viewBox="0 0 16 16">
-                <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0H3v5.5A1.5 1.5 0 0 0 4.5 7h7A1.5 1.5 0 0 0 13 5.5V0h.086a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5H14v-5.5A1.5 1.5 0 0 0 12.5 9h-9A1.5 1.5 0 0 0 2 10.5V16h-.5A1.5 1.5 0 0 1 0 14.5z"/>
-                <path d="M3 16h10v-5.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5zm9-16H4v5.5a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5zM9 1h2v4H9z"/>
-              </svg>
-            </button>
-            <select class="form-select" v-model="selectedSavedSearch" @change="applySavedSearch"
-              style="max-width: 220px;">
-              <option value="">{{ getTranslation('savedSearches.placeholder') }}</option>
-              <option v-for="s in savedSearches" :key="'ss-'+s.id" :value="s.id">{{ s.name }}</option>
-            </select>
-            <button class="btn btn-outline-danger" type="button" :disabled="!selectedSavedSearch"
-              @click="deleteSavedSearch" :title="getTranslation('savedSearches.delete')">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash-fill" viewBox="0 0 16 16">
-                <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0"/>
-              </svg>
-            </button>
             
             <!-- Storage indicator (show used only) -->
             <div class="ms-2 me-2 d-flex align-items-center text-muted small mb-toolbar__storage" :title="getStorageTooltip()" style="min-width: auto;">
@@ -3560,7 +3542,7 @@
                               d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0M7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0M7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0" />
                           </svg>
                         </div>
-                        <h2 v-if="!group.editing" class="groupName mb-0 d-flex align-items-center"
+                        <h2 v-if="!group.editing" class="groupName mb-group__name mb-0 d-flex align-items-center"
                           @dblclick="startEditing(group)"
                           @mouseover="group.isMouseOver = true"
                           @mouseleave="group.isMouseOver = false">
@@ -3606,7 +3588,7 @@
                       </div>
                     </div>
                     <div
-                      :class="['col-auto', 'text-end', 'ps-2', 'groupActions', {'groupActionsVisibleOnMouseOver': group.isMouseOver}]" 
+                      :class="['col-auto', 'text-end', 'ps-2', 'groupActions', 'mb-group__actions', {'groupActionsVisibleOnMouseOver': group.isMouseOver}]" 
                       style="margin-left: auto;">
                       <!-- Add link button (dialog mode) -->
                       <svg v-if="data.options?.buttons?.showAddLink" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -3640,7 +3622,7 @@
                     </div>
                   </div>
                 </div>
-                <div :class="['collapse', 'linkContainer', 'mb-group__body', {'show': !group.collapsed}]"
+                <div :class="['collapse', 'linkContainer', 'mb-group__body', 'mb-links-container', {'show': !group.collapsed}]"
                   :id="'collapseGroup-' + group.uuid"
                   :style="group.collapsed ? null : { height: getGroupBodyHeight(group) + 'px' }">
                   <!-- Collapsible info section -->
@@ -3720,10 +3702,10 @@
                                         @click.stop>
                                         <img
                                           v-if="data.options?.links?.autoFetchFavicon && link.favicon"
-                                          :src="link.favicon" alt="" class="link-favicon" />
+                                          :src="link.favicon" alt="" class="link-favicon mb-link__icon" />
                                         <span
                                           v-else-if="data.options?.links?.autoFetchFavicon && link.faviconError"
-                                          class="link-favicon-error" title="Favicon konnte nicht geladen werden (Extension erforderlich)">⚠️</span>
+                                          class="link-favicon-error mb-link__icon" title="Favicon konnte nicht geladen werden (Extension erforderlich)">⚠️</span>
                                         <span v-html="sanitizeInlineNoAnchor(link.text || '')"></span>
                                       </a>
                                       <span v-else>
@@ -3763,7 +3745,7 @@
                                     @keyup.esc="cancelEditing(link)" v-focus="link.editing">
                                 </div>
                               <div
-                                :class="['groupActions', {'groupActionsVisibleOnMouseOver': link.isMouseOver && !link.editing}]" style="display: flex; align-items: center; gap: 2px; flex-shrink: 0;">
+                                :class="['groupActions', 'mb-link__actions', {'groupActionsVisibleOnMouseOver': link.isMouseOver && !link.editing}]" style="display: flex; align-items: center; gap: 2px; flex-shrink: 0;">
                                 <!-- Info button - shows HTML popup on hover -->
                                 <svg v-if="link.infoHtml" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" 
                                   class="bi bi-info-circle-fill text-info actionIcon" viewBox="0 0 16 16"
@@ -4614,7 +4596,6 @@
             <li><strong>Gruppen & Links:</strong> Erstellen Sie beliebig viele Gruppen, klappen Sie diese ein oder aus und verteilen Sie Links in mehreren Spalten pro Gruppe, damit auch große Sammlungen übersichtlich bleiben.</li>
             <li><strong>Drag & Drop:</strong> Ziehen Sie Gruppen an neue Positionen sowie Links innerhalb einer Spalte, in andere Spalten oder direkt in andere Gruppen. Visuelle Drop-Zonen zeigen die Einfügeposition.</li>
             <li><strong>Suche & Filter:</strong> Die Volltextsuche berücksichtigt u. a. Gruppentitel, Linktitel, URL und Keywords. Über die Keyword-Cloud können mehrere Keyword-Filter parallel aktiviert werden.</li>
-            <li><strong>Gespeicherte Suchen:</strong> Speichern Sie wiederkehrende Suchabfragen als Presets, wenden Sie diese per Dropdown an und entfernen Sie nicht mehr benötigte Einträge.</li>
             <li><strong>Import/Export:</strong> Import aus Datei, URL oder Zwischenablage. Unterstützte Formate: JSON, CSV und HTML (inkl. Netscape-Bookmarks). Vor dem Import gibt es eine selektierbare Vorschau.</li>
             <li><strong>Bookmarklet:</strong> Über den Bookmarklet-Dialog legen Sie einen Schnellzugriff in der Browserleiste an, um aktuelle Seiten mit URL/Titel direkt in MyBookmarks zu übernehmen.</li>
           </ul>
@@ -4705,7 +4686,6 @@
             <li><strong>Groups & Links:</strong> Create as many groups as needed, collapse/expand them, and distribute links across multiple columns to keep large collections readable.</li>
             <li><strong>Drag & Drop:</strong> Reorder groups and move links within a column, between columns, or across groups. Visual drop zones indicate the exact insertion point.</li>
             <li><strong>Search & Filters:</strong> Full-text search covers group titles, link titles, URLs, and keywords. Keyword cloud filters can be combined for precise narrowing.</li>
-            <li><strong>Saved Searches:</strong> Store recurring queries as presets, apply them from a dropdown, and remove obsolete presets when no longer needed.</li>
             <li><strong>Import/Export:</strong> Import from file, URL, or clipboard with support for JSON/CSV/HTML (including Netscape bookmarks), plus a selectable preview before applying.</li>
             <li><strong>Bookmarklet:</strong> Create a browser-bar shortcut that captures the current page (title + URL) and sends it back into MyBookmarks quickly.</li>
           </ul>
@@ -12456,7 +12436,6 @@ function getDefaultFaviconRules() {
 
     const initialData = {
       groups: [],
-      savedSearches: [],
       snapshots: [],
       schemaVersion: 1,
       identity: { uuid: '', name: '', pubKey: '', privKey: '' },
@@ -12986,8 +12965,6 @@ function getDefaultFaviconRules() {
         dragState: null, // Reactive state for drag & drop
         expandHoverTimers: {}, // timers for auto-expanding collapsed groups while dragging links
 
-        // Saved searches
-        savedSearches: [],
         keywordManager: { selected: '', newName: '' },
         keywordQuickDialog: {
           mode: '',
@@ -13019,7 +12996,6 @@ function getDefaultFaviconRules() {
           updatedAt: { full: '—', relative: '', raw: null }
         },
         linkPopoverHideTimer: null,
-        selectedSavedSearch: '',
         
         // JSON Inspector
         inspectedGroup: null,
@@ -13840,6 +13816,7 @@ function getDefaultFaviconRules() {
             'css.visual.selectTemplate': '-- Select Template --',
             'css.visual.defaultTemplates': 'Default Templates',
             'css.visual.appLevel': 'App Level',
+            'css.visual.uiPrimitives': 'UI Primitives',
             'css.visual.groupLevel': 'Group Level',
             'css.visual.linkLevel': 'Link Level',
             'css.visual.allGroups': 'All Groups',
@@ -14269,12 +14246,6 @@ function getDefaultFaviconRules() {
             'clear': 'Clear',
             'undo': 'Undo',
             'redo': 'Redo',
-            'savedSearches.placeholder': 'Saved searches…',
-            'savedSearches.save': 'Save search',
-            'savedSearches.delete': 'Delete saved search',
-            'savedSearches.delete.confirm': 'Delete the selected saved search?',
-            'savedSearches.promptName': 'Name for this search:',
-            'savedSearches.empty': 'Enter a search query first.',
             'duplicates.find': 'Find duplicates',
             'duplicates.title': 'Duplicate Links Found',
             'duplicates.description': 'The following links appear in multiple groups:',
@@ -15164,12 +15135,6 @@ function getDefaultFaviconRules() {
             'clear': 'Leeren',
             'undo': 'Rückgängig',
             'redo': 'Wiederholen',
-            'savedSearches.placeholder': 'Gespeicherte Suchen…',
-            'savedSearches.save': 'Suche speichern',
-            'savedSearches.delete': 'Gespeicherte Suche löschen',
-            'savedSearches.delete.confirm': 'Ausgewählte gespeicherte Suche löschen?',
-            'savedSearches.promptName': 'Name für diese Suche:',
-            'savedSearches.empty': 'Bitte zuerst einen Suchbegriff eingeben.',
             'duplicates.find': 'Duplikate finden',
             'duplicates.title': 'Gefundene Duplikate',
             'duplicates.description': 'Die folgenden Links erscheinen in mehreren Gruppen:',
@@ -15386,6 +15351,7 @@ function getDefaultFaviconRules() {
             , 'css.visual.selectTemplate': '-- Vorlage wählen --'
             , 'css.visual.defaultTemplates': 'Standard-Vorlagen'
             , 'css.visual.appLevel': 'App-Ebene'
+            , 'css.visual.uiPrimitives': 'UI-Bausteine'
             , 'css.visual.groupLevel': 'Gruppen-Ebene'
             , 'css.visual.linkLevel': 'Link-Ebene'
             , 'css.visual.allGroups': 'Alle Gruppen'
@@ -17716,7 +17682,7 @@ function getDefaultFaviconRules() {
             { value: '.mb-group__actions', label: 'Group Actions', supportsGroup: true, supportsLink: false },
             { value: '.mb-links-container', label: 'Links Container', supportsGroup: true, supportsLink: false },
             { value: '.mb-link', label: 'Link', supportsGroup: true, supportsLink: true },
-            { value: '.mb-link__url', label: 'Link URL', supportsGroup: true, supportsLink: true },
+            { value: '.link-url-preview', label: 'Link URL', supportsGroup: true, supportsLink: true },
             { value: '.mb-link__icon', label: 'Link Icon', supportsGroup: true, supportsLink: true },
             { value: '.mb-link__actions', label: 'Link Actions', supportsGroup: true, supportsLink: true },
             { value: '.link-detail-popover', label: 'Link Popover Container', supportsGroup: true, supportsLink: true },
@@ -18102,7 +18068,7 @@ function getDefaultFaviconRules() {
             'links': '.mb-link',
             'link-hover': '.mb-link:hover',
             'link-anchor': '.mb-link__anchor',
-            'link-url': '.mb-link__url',
+            'link-url': '.link-url-preview',
             'link-icon': '.mb-link__icon',
             'link-popover': '.link-detail-popover',
             'link-popover-title': '.link-detail-popover__title',
@@ -18319,6 +18285,27 @@ function getDefaultFaviconRules() {
 
         generateFullCss() {
           let css = '';
+          const declarationPattern = /^\s*([a-zA-Z_-][a-zA-Z0-9_-]*)\s*:\s*(.+?)\s*;?\s*$/;
+          const splitImportant = (rawValue) => {
+            const valueText = String(rawValue ?? '').trim();
+            const hasInlineImportant = /\s*!important\s*$/i.test(valueText);
+            const cleanValue = valueText.replace(/\s*!important\s*$/i, '').trim();
+            return { cleanValue, hasInlineImportant };
+          };
+          const appendDeclaration = (target, rawProperty, rawValue, options = {}) => {
+            const propertyName = String(rawProperty ?? '').trim();
+            if (!propertyName) return;
+            const { cleanValue, hasInlineImportant } = splitImportant(rawValue);
+            if (!cleanValue) return;
+            const useImportant = !!(options.forceImportant || options.explicitImportant || hasInlineImportant);
+            target.push(`  ${propertyName}: ${cleanValue}${useImportant ? ' !important' : ''};`);
+          };
+          const appendDeclarationLine = (target, line, options = {}) => {
+            const match = String(line || '').match(declarationPattern);
+            if (!match) return;
+            appendDeclaration(target, match[1], match[2], options);
+          };
+          const forceUserRuleImportant = !!this.selectedVisualTemplate;
 
           // Inject design tokens as CSS variables on :root
           if (this.designTokens && this.designTokens.length > 0) {
@@ -18345,9 +18332,7 @@ function getDefaultFaviconRules() {
               const properties = [];
 
               for (const [prop, value] of Object.entries(rule.properties)) {
-                if (value) {
-                  properties.push(`  ${prop}: ${value};`);
-                }
+                appendDeclaration(properties, prop, value);
               }
 
               if (properties.length > 0) {
@@ -18368,34 +18353,61 @@ function getDefaultFaviconRules() {
 
               const selector = this.generateCssSelector(rule);
               const properties = [];
+              let hasBackgroundColorOverride = false;
+              let hasExplicitBackgroundImage = false;
+              const trackBackgroundIntent = (rawProperty, rawValue) => {
+                const normalizedProperty = this.normalizeCssPropertyName(rawProperty);
+                if (!normalizedProperty) return;
+                const { cleanValue } = splitImportant(rawValue);
+                if (!cleanValue) return;
+                if (normalizedProperty === 'background-color') {
+                  hasBackgroundColorOverride = true;
+                } else if (normalizedProperty === 'background-image') {
+                  hasExplicitBackgroundImage = true;
+                }
+              };
 
               for (const [prop, value] of Object.entries(rule.properties)) {
                 if (!value) continue;
-                if (rule.disabled && rule.disabled[prop]) continue;
+                const normalizedProp = this.normalizeCssPropertyName(prop);
+                if (rule.disabled && (rule.disabled[prop] || (normalizedProp && rule.disabled[normalizedProp]))) continue;
                 if (prop === 'custom') {
                   // Treat as inline properties inside this selector (one per line)
                   const customLines = String(value).split('\n').filter(line => line.trim());
                   for (const line of customLines) {
-                    if (line.includes(':')) {
-                      properties.push(`  ${line.trim()}`);
+                    const customMatch = String(line || '').match(declarationPattern);
+                    if (customMatch) {
+                      trackBackgroundIntent(customMatch[1], customMatch[2]);
                     }
+                    appendDeclarationLine(properties, line, { forceImportant: forceUserRuleImportant });
                   }
                 } else {
-                  // Add !important if enabled for this property
-                  const important = rule.important && rule.important[prop] ? ' !important' : '';
-                  properties.push(`  ${prop}: ${value}${important};`);
+                  trackBackgroundIntent(normalizedProp || prop, value);
+                  const explicitImportant = !!(rule.important && (rule.important[prop] || (normalizedProp && rule.important[normalizedProp])));
+                  appendDeclaration(properties, prop, value, {
+                    forceImportant: forceUserRuleImportant,
+                    explicitImportant
+                  });
                 }
               }
 
-          // Add custom CSS properties if present (legacy support)
-          if (rule.customCss) {
-            const customLines = rule.customCss.split('\n').filter(line => line.trim());
-            for (const line of customLines) {
-              if (line.includes(':')) {
-                properties.push(`  ${line.trim()}`);
+              // Add custom CSS properties if present (legacy support)
+              if (rule.customCss) {
+                const customLines = rule.customCss.split('\n').filter(line => line.trim());
+                for (const line of customLines) {
+                  const customMatch = String(line || '').match(declarationPattern);
+                  if (customMatch) {
+                    trackBackgroundIntent(customMatch[1], customMatch[2]);
+                  }
+                  appendDeclarationLine(properties, line, { forceImportant: forceUserRuleImportant });
+                }
               }
-            }
-          }
+
+              // Dark template commonly sets gradient backgrounds via `background`.
+              // If user sets only background-color, clear inherited background images so color is visible.
+              if (this.selectedVisualTemplate && hasBackgroundColorOverride && !hasExplicitBackgroundImage) {
+                appendDeclaration(properties, 'background-image', 'none', { forceImportant: forceUserRuleImportant });
+              }
 
               if (properties.length > 0) {
                 css += `${selector} {\n${properties.join('\n')}\n}\n`;
@@ -18589,7 +18601,7 @@ function getDefaultFaviconRules() {
           // Check most specific targets first; body last
           const candidates = [
             { base: 'link-anchor', sel: '.mb-link__anchor' },
-            { base: 'link-url', sel: '.mb-link__url' },
+            { base: 'link-url', sel: '.link-url-preview' },
             { base: 'link-icon', sel: '.mb-link__icon' },
             { base: 'links', sel: '.mb-link' },
             { base: 'group-title', sel: '.mb-group__title' },
@@ -19436,7 +19448,7 @@ function getDefaultFaviconRules() {
             'links': '.mb-link',
             'link-hover': '.mb-link:hover',
             'link-anchor': '.mb-link__anchor',
-            'link-url': '.mb-link__url',
+            'link-url': '.link-url-preview',
             'link-icon': '.mb-link__icon',
             'link-popover': '.link-detail-popover',
             'link-popover-title': '.link-detail-popover__title',
@@ -25652,7 +25664,7 @@ footer a:hover {
             const qrCodeDiv = document.getElementById('qrCodeDiv');
             if (qrCodeDiv) { qrCodeDiv.innerHTML = ''; new QRCode(qrCodeDiv, { text: JSON.stringify(card), width: 256, height: 256 }); }
             const modalElement = document.getElementById('qrCodeModal');
-            if (modalElement) new bootstrap.Modal(modalElement).show();
+            if (modalElement) bootstrap.Modal.getOrCreateInstance(modalElement).show();
           } catch (e) { alert('QR error'); }
         },
         async addContactFromCardPaste() {
@@ -25818,8 +25830,8 @@ footer a:hover {
           };
           
           // Show the modal
-          const modal = new bootstrap.Modal(document.getElementById('removedFromGroupModal'));
-          modal.show();
+          const modalElement = document.getElementById('removedFromGroupModal');
+          if (modalElement) bootstrap.Modal.getOrCreateInstance(modalElement).show();
         },
         
         // Handle acknowledgment of removal
@@ -26200,7 +26212,7 @@ footer a:hover {
           this.invitationDialog.visible = true;
           this.$nextTick(() => {
             const el = document.getElementById('invitationModal');
-            if (el) new bootstrap.Modal(el).show();
+            if (el) bootstrap.Modal.getOrCreateInstance(el).show();
           });
         },
         
@@ -26665,37 +26677,6 @@ footer a:hover {
             }
           });
         },
-        // ---------- Saved Searches ----------
-        async saveCurrentSearch() {
-          const q = (this.filterText || '').trim();
-          if (!q) { alert(this.getTranslation('savedSearches.empty')); return; }
-          const name = prompt(this.getTranslation('savedSearches.promptName'), q);
-          if (!name) return;
-          const id = this.generateUUID(); // Use UUID for saved searches
-          const entry = { id, name: name.trim(), query: q };
-          this.savedSearches.push(entry);
-          if (!Array.isArray(this.data.savedSearches)) this.$set(this.data, 'savedSearches', []);
-          this.data.savedSearches.push(entry);
-          if (typeof this.saveDataImmediate === 'function') await this.saveDataImmediate(); else this.saveData();
-          this.selectedSavedSearch = id;
-        },
-        applySavedSearch() {
-          const id = this.selectedSavedSearch;
-          const s = (this.savedSearches || []).find(x => x.id == id);
-          if (s) this.filterText = s.query;
-        },
-        async deleteSavedSearch() {
-          const id = this.selectedSavedSearch;
-          if (!id) return;
-          if (!confirm(this.getTranslation('savedSearches.delete.confirm'))) return;
-          const idx = (this.data.savedSearches || []).findIndex(x => x.id == id);
-          if (idx >= 0) this.data.savedSearches.splice(idx, 1);
-          const idx2 = (this.savedSearches || []).findIndex(x => x.id == id);
-          if (idx2 >= 0) this.savedSearches.splice(idx2, 1);
-          this.selectedSavedSearch = '';
-          if (typeof this.saveDataImmediate === 'function') await this.saveDataImmediate(); else this.saveData();
-        },
-
         // ---------- History / Undo-Redo ----------
         undo() {
           if (!this.historyPast.length) return;
@@ -26718,7 +26699,6 @@ footer a:hover {
             const merged = Object.assign({}, JSON.parse(JSON.stringify(initialData)), snap);
             this.data.options = merged.options || this.data.options;
             this.data.groups = Array.isArray(merged.groups) ? merged.groups : [];
-            this.data.savedSearches = Array.isArray(merged.savedSearches) ? merged.savedSearches : [];
             this.fixOptions();
             (this.data.groups || []).forEach(g => {
               if (g.column === undefined || g.column === null) this.$set(g, 'column', 0);
@@ -26737,7 +26717,6 @@ footer a:hover {
               this.getLinkColumns(g.links).forEach(col => this.reindexArr(g.links.filter(l => l.column === col)));
             });
             this.getGroupColumns().forEach(col => this.reindexArr(this.data.groups.filter(g => g.column === col)));
-            this.savedSearches = Array.isArray(this.data.savedSearches) ? [...this.data.savedSearches] : [];
             if (typeof this.saveDataImmediate === 'function') await this.saveDataImmediate(); else this.saveData();
           } finally {
             this.historyLock = false;
@@ -27635,7 +27614,6 @@ footer a:hover {
                 if (this.fullExportData.identity) this.data.identity = this.fullExportData.identity;
                 if (this.fullExportData.contacts) this.data.contacts = this.fullExportData.contacts;
                 if (this.fullExportData.snapshots) this.data.snapshots = this.fullExportData.snapshots;
-                if (this.fullExportData.savedSearches) this.data.savedSearches = this.fullExportData.savedSearches;
                 if (this.fullExportData.inbox) this.data.inbox = this.fullExportData.inbox;
                 if (this.fullExportData.pendingNcDeletes) this.data.pendingNcDeletes = this.fullExportData.pendingNcDeletes;
                 if (this.fullExportData.schemaVersion) this.data.schemaVersion = this.fullExportData.schemaVersion;
@@ -30273,7 +30251,6 @@ footer a:hover {
             if (!Array.isArray(this.data.contacts)) this.$set(this.data, 'contacts', []);
             if (!Array.isArray(this.data.inbox)) this.$set(this.data, 'inbox', []);
             // Ensure auxiliary arrays exist
-            if (!Array.isArray(this.data.savedSearches)) this.$set(this.data, 'savedSearches', []);
             if (!Array.isArray(this.data.snapshots)) this.$set(this.data, 'snapshots', []);
 
             // Ensure all groups have required IDs and clean up shared status
@@ -30479,8 +30456,6 @@ footer a:hover {
             this.$nextTick(() => {
               debugLog('log', "Vue data processed. Template binding should set initial collapse state based on final group.collapsed values.");
               // Stelle sicher, dass setInitialCollapseStates HIER NICHT aufgerufen wird, wenn du Template Binding nutzt.
-              // Initialize saved searches and history baseline
-              this.savedSearches = Array.isArray(this.data.savedSearches) ? [...this.data.savedSearches] : [];
               try { this.lastSavedJson = JSON.stringify(this.getSavableData()); } catch { }
             });
             this.dataLoaded = true;
@@ -30496,7 +30471,6 @@ footer a:hover {
             this.data = JSON.parse(JSON.stringify(initialData));
             this.fixOptions();
             this.dataId = -1;
-            if (!Array.isArray(this.data.savedSearches)) this.$set(this.data, 'savedSearches', []);
             if (!Array.isArray(this.data.snapshots)) this.$set(this.data, 'snapshots', []);
             this.updateSettings();
             this.loadVisualCssRules();
@@ -30507,7 +30481,6 @@ footer a:hover {
             this.$nextTick(() => {
               debugLog('log', "Vue data processed after error/fallback.");
               // Stelle sicher, dass setInitialCollapseStates HIER NICHT aufgerufen wird.
-              this.savedSearches = Array.isArray(this.data.savedSearches) ? [...this.data.savedSearches] : [];
 
               try { this.lastSavedJson = JSON.stringify(this.getSavableData()); } catch { }
             });
@@ -30521,7 +30494,6 @@ footer a:hover {
             identity: this.data.identity,
             contacts: this.data.contacts,
             inbox: this.data.inbox,
-            savedSearches: this.data.savedSearches || [],
             snapshots: this.data.snapshots || [],
             pendingNcDeletes: this.data.pendingNcDeletes || []
           }));
