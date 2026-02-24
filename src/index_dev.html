@@ -429,18 +429,23 @@
       color: #6b7280;
       font-size: 0.85em;
       white-space: nowrap;
-      max-width: 300px;
+      max-width: clamp(110px, 34%, 260px);
       overflow: hidden;
       text-overflow: ellipsis;
       pointer-events: none;
       margin-left: 8px;
       margin-right: auto;
-      flex-shrink: 1;
+      flex: 0 1 clamp(110px, 34%, 260px);
       min-width: 0;
     }
     
     .linkContainerListItem:hover .link-url-preview {
       display: inline-block;
+    }
+
+    .linkContainerListItem:hover .linkText .text-truncate {
+      min-width: 8ch;
+      flex: 1 1 auto;
     }
     
     .linkText > span:first-child {
@@ -1298,6 +1303,20 @@
       flex: 1 1 auto;
     }
 
+    .mb-link-text-with-marker {
+      display: inline;
+    }
+
+    .mb-ref-marker {
+      font-size: 0.75em;
+      line-height: 1;
+      vertical-align: super;
+      margin-left: 0.02rem;
+      opacity: 0.55;
+      font-weight: 700;
+      user-select: none;
+    }
+
     .linkText .mb-link__badges {
       flex-shrink: 0;
       max-width: 45%;
@@ -1314,12 +1333,6 @@
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
-    }
-
-    @container (max-width: 620px) {
-      .linkContainerListItem .link-url-preview {
-        display: none !important;
-      }
     }
 
     @container (max-width: 420px) {
@@ -3684,7 +3697,7 @@
                             @mouseleave="link.isMouseOver = false; setLinkKeywordQuickAddBadgeHover(link, false); if (shouldShowLinkPopover()) queueHideLinkPopover()"
                             @focusin="if (shouldShowLinkPopover()) { cancelHideLinkPopover(); showLinkPopover($event, link); }"
                             @focusout="if (shouldShowLinkPopover()) queueHideLinkPopover()"
-                            @dblclick="startEditing(link)"
+                            @dblclick="onLinkRowDblClick(link)"
                             :draggable="!link.editing"
                             @mousedown="prepareForDrag($event, $event.currentTarget)"
                             @dragstart="hideLinkPopover(); dropManager.startDrag($event, group.links, link, 'link')"
@@ -3694,37 +3707,47 @@
                                 <div class="linkText mb-link__url">
                                   <template v-if="!link.editing">
                                     <span 
-                                      :class="[{'linkTextCategory': !link.url}, 'text-truncate']" style="min-width: 0; overflow: hidden;">
-                                      <a v-if="link.url" :href="link.url" :title="link.url"
+                                      :class="[{'linkTextCategory': !getEffectiveLinkUrl(link)}, 'text-truncate']" style="min-width: 0; overflow: hidden;">
+                                      <a v-if="getEffectiveLinkUrl(link)" :href="getEffectiveLinkUrl(link)" :title="getEffectiveLinkUrl(link)"
                                         :target="data.options?.links?.openInNewTab ? '_blank' : null"
                                         :rel="data.options?.links?.openInNewTab ? 'noopener noreferrer' : null"
                                         class="text-decoration-none linkanchor mb-link__anchor" draggable="false"
                                         @click.stop>
                                         <img
-                                          v-if="data.options?.links?.autoFetchFavicon && link.favicon"
-                                          :src="link.favicon" alt="" class="link-favicon mb-link__icon" />
+                                          v-if="data.options?.links?.autoFetchFavicon && getEffectiveLinkFavicon(link)"
+                                          :src="getEffectiveLinkFavicon(link)" alt="" class="link-favicon mb-link__icon" />
                                         <span
-                                          v-else-if="data.options?.links?.autoFetchFavicon && link.faviconError"
+                                          v-else-if="data.options?.links?.autoFetchFavicon && getEffectiveLinkFaviconError(link)"
                                           class="link-favicon-error mb-link__icon" title="Favicon konnte nicht geladen werden (Extension erforderlich)">⚠️</span>
-                                        <span v-html="sanitizeInlineNoAnchor(link.text || '')"></span>
+                                        <span class="mb-link-text-with-marker">
+                                          <span v-html="sanitizeInlineNoAnchor(getEffectiveLinkText(link) || '')"></span>
+                                          <span v-if="isReferenceLink(link) && data.options?.links?.showReferenceMarker !== false"
+                                            class="mb-ref-marker"
+                                            :title="getReferenceMarkerTitle(link)">*</span>
+                                        </span>
                                       </a>
                                       <span v-else>
-                                        <span v-html="sanitizeHtml(link.text || '')"></span>
+                                        <span class="mb-link-text-with-marker">
+                                          <span v-html="sanitizeHtml(getEffectiveLinkText(link) || '')"></span>
+                                          <span v-if="isReferenceLink(link) && data.options?.links?.showReferenceMarker !== false"
+                                            class="mb-ref-marker"
+                                            :title="getReferenceMarkerTitle(link)">*</span>
+                                        </span>
                                       </span>
                                     </span>
                                     <!-- URL preview on hover - moved before badges -->
-                                    <span v-if="link.url" class="link-url-preview">{{ link.url }}</span>
+                                    <span v-if="getEffectiveLinkUrl(link)" class="link-url-preview">{{ getEffectiveLinkUrl(link) }}</span>
                                     <!-- Link keyword badges - moved outside text-truncate to stay visible -->
-                                    <span v-if="data.options?.links?.showLinkBadges && (link.keywords || shouldShowLinkKeywordQuickAddBadge(group, link))" 
+                                    <span v-if="data.options?.links?.showLinkBadges && (getEffectiveLinkKeywords(link) || shouldShowLinkKeywordQuickAddBadge(group, link))" 
                                       class="margin-left ms-3 mb-link__badges">
                                       <span class="mb-link__badge-list">
-                                        <span v-for="kw in parseKeywords(link.keywords)" 
+                                        <span v-for="kw in parseKeywords(getEffectiveLinkKeywords(link))" 
                                           :key="'lkw-' + link.uuid + '-' + kw"
                                           :class="['badge','keyword-badge','mb-link__keyword-badge', keywordClass(kw)]" 
                                           :data-group-uuid="group.uuid"
                                           :data-group-name="keywordSlug(group.name)"
                                           :data-link-uuid="link.uuid"
-                                          :data-link-text="keywordSlug(link.text)"
+                                          :data-link-text="keywordSlug(getEffectiveLinkText(link))"
                                           :data-keyword="keywordSlug(kw)"
                                           @click.stop="onKeywordClick(kw)" role="button">{{ kw }}</span>
                                       </span>
@@ -3747,17 +3770,17 @@
                               <div
                                 :class="['groupActions', 'mb-link__actions', {'groupActionsVisibleOnMouseOver': link.isMouseOver && !link.editing}]" style="display: flex; align-items: center; gap: 2px; flex-shrink: 0;">
                                 <!-- Info button - shows HTML popup on hover -->
-                                <svg v-if="link.infoHtml" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" 
+                                <svg v-if="getEffectiveLinkInfoHtml(link)" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" 
                                   class="bi bi-info-circle-fill text-info actionIcon" viewBox="0 0 16 16"
                                   style="cursor: help;"
-                                  @mouseover="showInfoPopup($event, link.infoHtml)"
+                                  @mouseover="showInfoPopup($event, getEffectiveLinkInfoHtml(link))"
                                   @mouseleave="hideInfoPopup()">
                                   <title>{{ getTranslation('link.info') || 'Info' }}</title>
                                   <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/>
                                 </svg>
 
                                 <!-- Copy URL button -->
-                                <svg v-if="link.url && data.options?.buttons?.showCopyUrl" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                <svg v-if="getEffectiveLinkUrl(link) && data.options?.buttons?.showCopyUrl" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                   class="bi bi-clipboard actionIcon" viewBox="0 0 16 16" role="button"
                                   tabindex="0" @keydown.stop="onKeyActivate($event, () => copyLinkToClipboard(link))"
                                   @click.stop="copyLinkToClipboard(link)">
@@ -3767,10 +3790,10 @@
                                 </svg>
 
                                 <!-- QR code button -->
-                                <svg v-if="link.url && data.options?.buttons?.showQrCode" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                <svg v-if="getEffectiveLinkUrl(link) && data.options?.buttons?.showQrCode" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                   class="bi bi-qr-code actionIcon" viewBox="0 0 16 16" role="button"
-                                  tabindex="0" @keydown.stop="onKeyActivate($event, () => showQrCodeModal(link.url))"
-                                  @click.stop="showQrCodeModal(link.url)">
+                                  tabindex="0" @keydown.stop="onKeyActivate($event, () => showQrCodeModal(getEffectiveLinkUrl(link)))"
+                                  @click.stop="showQrCodeModal(getEffectiveLinkUrl(link))">
                                   <title>{{ getTranslation('link.qrCode') || 'Generate QR Code' }}</title>
                                   <path d="M2 2h2v2H2z"/>
                                   <path d="M6 0v6H0V0zM5 1H1v4h4zM4 12H2v2h2z"/>
@@ -5182,10 +5205,18 @@
         {{ getTranslation('menu.link.editLink') }}
         <span v-if="!canEdit(contextGroup)" class="text-muted"> ({{ getTranslation('permission.denied') || 'No permission' }})</span>
       </li>
-      <li v-if="hasNtfyUrl() && hasConnectedContacts() && contextLink.url" class="separator mb-context-menu-separator"></li>
-      <li v-if="hasNtfyUrl() && hasConnectedContacts() && contextLink.url" @click="shareLink(contextLink)">{{ getTranslation('menu.link.sendLink') }}</li>
-      <li class="separator mb-context-menu-separator" v-if="contextLink.url"></li>
-      <li @click="showQrCodeModal(contextLink.url)" v-if="contextLink.url">{{ getTranslation('menu.link.createQrCode') }}</li>
+      <li @click="!isReferenceLink(contextLink) ? createReferenceLinkFromContext(contextGroup, contextLink) : null"
+          :class="{ 'disabled': isReferenceLink(contextLink) }"
+          :title="isReferenceLink(contextLink) ? (getTranslation('link.ref.createFromRefDisabled') || 'Create ref link is only available for original links.') : ''">
+        {{ getTranslation('menu.link.createRefLink') || 'Create ref link…' }}
+      </li>
+      <li v-if="isReferenceLink(contextLink)" @click="editOriginalLinkFromReference(contextLink)">
+        {{ getTranslation('menu.link.editOriginalLink') || 'Edit original link…' }}
+      </li>
+      <li v-if="hasNtfyUrl() && hasConnectedContacts() && getEffectiveLinkUrl(contextLink)" class="separator mb-context-menu-separator"></li>
+      <li v-if="hasNtfyUrl() && hasConnectedContacts() && getEffectiveLinkUrl(contextLink)" @click="shareResolvedLink(contextLink)">{{ getTranslation('menu.link.sendLink') }}</li>
+      <li class="separator mb-context-menu-separator" v-if="getEffectiveLinkUrl(contextLink)"></li>
+      <li @click="showQrCodeModal(getEffectiveLinkUrl(contextLink))" v-if="getEffectiveLinkUrl(contextLink)">{{ getTranslation('menu.link.createQrCode') }}</li>
       <li class="separator mb-context-menu-separator"></li>
       <li class="submenu" tabindex="0">
         {{ getTranslation('menu.keywords') || 'Keywords' }}
@@ -5231,6 +5262,54 @@
         <span v-if="!canDelete(contextGroup)" class="text-muted"> ({{ getTranslation('permission.denied') || 'No permission' }})</span>
       </li>
     </ul>
+  </div>
+
+  <div class="modal fade" id="referenceAliasModal" tabindex="-1" aria-labelledby="referenceAliasModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content mb-modal mb-ref-alias-modal">
+        <div class="modal-header">
+          <h5 class="modal-title mb-edit-modal-title" id="referenceAliasModalLabel">
+            {{ getTranslation('link.ref.editDialog.title') || 'Edit reference link text' }}
+          </h5>
+          <button type="button" class="btn-close" aria-label="Close" @click="cancelReferenceAliasDialog"></button>
+        </div>
+        <div class="modal-body mb-edit-modal-body">
+          <form v-if="refAliasEditData" class="mb-edit-form" @submit.prevent="saveReferenceAliasDialog">
+            <div class="small text-muted mb-2 mb-ref-alias-source-line">
+              <strong>{{ getTranslation('link.ref.editDialog.original') || 'Original link' }}:</strong>
+              <span>{{ refAliasEditData.sourceTitle || (getTranslation('link.ref.missing') || 'Reference link (original missing)') }}</span>
+            </div>
+            <div v-if="refAliasEditData.sourceMissing" class="small mb-edit-field-help mb-ref-alias-warning mb-2">
+              {{ getTranslation('link.ref.editDialog.sourceMissingHint') || 'The original link could not be found. You can still set a local reference text.' }}
+            </div>
+            <div class="option-row mb-edit-field-row">
+              <label class="form-label mb-edit-field-label" for="referenceAliasInput">
+                {{ getTranslation('link.ref.editDialog.aliasLabel') || 'Reference text' }}
+              </label>
+              <input
+                id="referenceAliasInput"
+                ref="refAliasInput"
+                v-model="refAliasEditData.aliasText"
+                type="text"
+                class="form-control mb-edit-text-input"
+                :placeholder="getTranslation('link.ref.editDialog.aliasPlaceholder') || 'Leave empty to use the original link text'"
+                autocomplete="off">
+              <div class="form-text mb-edit-field-help">
+                {{ getTranslation('link.ref.editDialog.help') || 'Only this reference text is changed. URL and metadata stay linked to the original link.' }}
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer mb-edit-modal-footer">
+          <button type="button" class="btn btn-primary mb-edit-save-btn" @click="saveReferenceAliasDialog">
+            {{ getTranslation('save') || 'Save' }}
+          </button>
+          <button type="button" class="btn btn-secondary mb-edit-cancel-btn" @click="cancelReferenceAliasDialog">
+            {{ getTranslation('cancel') || 'Cancel' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="modal fade" id="keywordManagerModal" tabindex="-1" aria-labelledby="keywordManagerModalLabel" aria-hidden="true">
@@ -12474,6 +12553,7 @@ function getDefaultFaviconRules() {
           autoFetchTitle: false,
           autoFetchFavicon: false,
           showLinkBadges: false,
+          showReferenceMarker: true,
           showLinkPopover: true,
           progressiveLoadingThreshold: CONSTS.PROGRESSIVE_LOADING_THRESHOLD,
           copyUrlFormat: '{title}: {url}', // Customizable format for copying links
@@ -12812,10 +12892,13 @@ function getDefaultFaviconRules() {
           '.form-select',
           '.modal',
           '.mb-modal',
+          '.mb-ref-alias-modal',
           '.modal-content',
           '.modal-header',
           '.modal-body',
           '.modal-footer',
+          '.mb-ref-alias-source-line',
+          '.mb-ref-alias-warning',
           '.mb-context-menu',
           '.mb-css-sidebar',
           '.mb-css-sidebar-header',
@@ -12927,6 +13010,7 @@ function getDefaultFaviconRules() {
         editLink: null, // Link being edited in modal
         editLinkOriginalValues: null, // Original values before editing (for event-log)
         linkModalVisible: false, // Track when link edit modal is visible
+        refAliasEditData: null, // Data for dedicated reference-link alias dialog
         // Metadata fetch UI state (for edit/add dialog)
         titleFetchState: 'idle', // idle|loading|ok|fail
         faviconFetchState: 'idle', // idle|loading|ok|fail
@@ -13172,6 +13256,14 @@ function getDefaultFaviconRules() {
               translateKey: 'options.links.showLinkBadges',
               optionPath: 'links.showLinkBadges',
               helpText: 'options.links.showLinkBadges.help'
+              },
+              showReferenceMarker: {
+              id: 'LinksShowReferenceMarker',
+              type: 'checkbox',
+              translateKey: 'options.links.showReferenceMarker',
+              optionPath: 'links.showReferenceMarker',
+              helpText: 'options.links.showReferenceMarker.help',
+              defaultValue: true
               },
               showLinkPopover: {
               id: 'LinksShowLinkPopover',
@@ -13944,6 +14036,8 @@ function getDefaultFaviconRules() {
             'options.links.autoFetchFavicon.help': 'Use a favicon service URL to render the icon before the link',
             'options.links.showLinkBadges': 'Show link keyword badges',
             'options.links.showLinkBadges.help': 'Display keyword badges next to links',
+            'options.links.showReferenceMarker': 'Show reference link marker (*)',
+            'options.links.showReferenceMarker.help': 'Display a subtle asterisk next to reference links.',
             'options.links.showLinkPopover': 'Show link info popover on hover',
             'options.links.showLinkPopover.help': 'Display a multi-line popover with metadata when hovering or focusing a link',
             'css.visual.popoverLevel': 'Link Popover',
@@ -14201,9 +14295,27 @@ function getDefaultFaviconRules() {
             'color.add': 'Add Color',
             'menu.link.editLink': 'Edit link',
             'menu.link.deleteLink': 'Delete link',
+            'menu.link.createRefLink': 'Create ref link…',
+            'menu.link.editOriginalLink': 'Edit original link…',
             'link.copyUrl': 'Copy URL to clipboard',
             'link.urlCopied': 'URL copied',
             'link.copyFailed': 'Failed to copy URL',
+            'link.ref.markerTitle': 'Reference link',
+            'link.ref.missing': 'Reference link (original missing)',
+            'link.ref.keywordReadOnly': 'Reference link keywords are read-only. Edit the original link.',
+            'link.ref.sourceMissing': 'Original link could not be resolved.',
+            'link.ref.createFromRefDisabled': 'Create ref link is only available for original links.',
+            'link.ref.editDialog.title': 'Edit reference link text',
+            'link.ref.editDialog.original': 'Original link',
+            'link.ref.editDialog.sourceMissingHint': 'The original link could not be found. You can still set a local reference text.',
+            'link.ref.editDialog.aliasLabel': 'Reference text',
+            'link.ref.editDialog.aliasPlaceholder': 'Leave empty to use the original link text',
+            'link.ref.editDialog.help': 'Only this reference text is changed. URL and metadata stay linked to the original link.',
+            'link.ref.selectTargetPrompt': 'Select target group number for the reference link:',
+            'link.ref.invalidTarget': 'Invalid group selection.',
+            'link.ref.aliasPrompt': 'Optional reference text (leave empty to use original text):',
+            'link.ref.created': 'Reference link created.',
+            'link.ref.deleteSourceConfirm': 'This link is used by {count} reference link(s). Delete anyway?',
             'toast.success': 'Success',
             'toast.error': 'Error',
             'toast.warning': 'Warning',
@@ -14730,6 +14842,8 @@ function getDefaultFaviconRules() {
             'options.links.autoFetchFavicon.help': 'Verwende eine Favicon-Service-URL, um das Icon vor dem Link anzuzeigen',
             'options.links.showLinkBadges': 'Link-Keyword-Badges anzeigen',
             'options.links.showLinkBadges.help': 'Zeige Keyword-Badges neben Links an',
+            'options.links.showReferenceMarker': 'Referenz-Link-Markierung (*) anzeigen',
+            'options.links.showReferenceMarker.help': 'Zeigt ein dezentes Sternchen neben Referenz-Links an.',
             'options.links.showLinkPopover': 'Link-Infobox bei Hover anzeigen',
             'options.links.showLinkPopover.help': 'Zeigt beim Überfahren oder Fokussieren eines Links ein Popover mit wichtigsten Metadaten an',
             'css.visual.popoverLevel': 'Link-Popover',
@@ -15050,9 +15164,27 @@ function getDefaultFaviconRules() {
             'color.add': 'Farbe hinzufügen',
             'menu.link.editLink': 'Link bearbeiten',
             'menu.link.deleteLink': 'Link löschen',
+            'menu.link.createRefLink': 'Ref-Link erstellen…',
+            'menu.link.editOriginalLink': 'Original-Link bearbeiten…',
             'link.copyUrl': 'URL in Zwischenablage kopieren',
             'link.urlCopied': 'URL kopiert',
             'link.copyFailed': 'URL konnte nicht kopiert werden',
+            'link.ref.markerTitle': 'Referenz-Link',
+            'link.ref.missing': 'Referenz-Link (Original fehlt)',
+            'link.ref.keywordReadOnly': 'Keywords von Referenz-Links sind schreibgeschützt. Bearbeite den Original-Link.',
+            'link.ref.sourceMissing': 'Original-Link konnte nicht aufgelöst werden.',
+            'link.ref.createFromRefDisabled': 'Ref-Link erstellen ist nur für Original-Links verfügbar.',
+            'link.ref.editDialog.title': 'Referenz-Link-Text bearbeiten',
+            'link.ref.editDialog.original': 'Original-Link',
+            'link.ref.editDialog.sourceMissingHint': 'Der Original-Link konnte nicht gefunden werden. Sie können trotzdem einen lokalen Referenztext setzen.',
+            'link.ref.editDialog.aliasLabel': 'Referenztext',
+            'link.ref.editDialog.aliasPlaceholder': 'Leer lassen, um den Original-Linktext zu verwenden',
+            'link.ref.editDialog.help': 'Es wird nur dieser Referenztext geändert. URL und Metadaten bleiben mit dem Original verknüpft.',
+            'link.ref.selectTargetPrompt': 'Zielgruppe (Nummer) für den Referenz-Link wählen:',
+            'link.ref.invalidTarget': 'Ungültige Gruppenauswahl.',
+            'link.ref.aliasPrompt': 'Optionaler Referenz-Text (leer lassen = Originaltext):',
+            'link.ref.created': 'Referenz-Link erstellt.',
+            'link.ref.deleteSourceConfirm': 'Dieser Link wird von {count} Referenz-Link(s) verwendet. Trotzdem löschen?',
             'link.shortcut': 'Shortcut',
             'link.shortcut.placeholder': 'Feld fokussieren und z. B. Strg+Alt+M drücken',
             'link.shortcut.help': 'Die Tastenkombination direkt in diesem Feld drücken. Wenn mehrere Links denselben Shortcut haben, werden alle zusammen geöffnet.',
@@ -15917,6 +16049,13 @@ function getDefaultFaviconRules() {
         if (keywordQuickModal) {
           keywordQuickModal.addEventListener('hidden.bs.modal', () => {
             this.resetKeywordQuickDialog();
+          });
+        }
+
+        const referenceAliasModal = document.getElementById('referenceAliasModal');
+        if (referenceAliasModal) {
+          referenceAliasModal.addEventListener('hidden.bs.modal', () => {
+            this.refAliasEditData = null;
           });
         }
 
@@ -28731,7 +28870,7 @@ footer a:hover {
           return required.every(req => current.has(req));
         },
         groupOrLinkKeywordsContainAll(group, link, requiredKeywords = this.activeKeywordFilters) {
-          return this.keywordValuesContainAll([group?.keywords || '', link?.keywords || ''], requiredKeywords);
+          return this.keywordValuesContainAll([group?.keywords || '', this.getEffectiveLinkKeywords(link) || ''], requiredKeywords);
         },
         groupMatchesKeywordFilters(group, requiredKeywords = this.activeKeywordFilters) {
           if (!group) return false;
@@ -28758,6 +28897,7 @@ footer a:hover {
         shouldShowLinkKeywordQuickAddBadge(group, link) {
           if (!this.isKeywordQuickAddBadgeEnabled()) return false;
           if (!this.canEdit(group)) return false;
+          if (this.isReferenceLink(link)) return false;
           return !!(link?.isMouseOver || link?.isKeywordQuickAddBadgeHover);
         },
         getAssignedKeywordsForGroup(group) {
@@ -28766,7 +28906,7 @@ footer a:hover {
         },
         getAssignedKeywordsForLink(link) {
           if (!link) return [];
-          return this.sortKeywords(this.parseKeywords(link.keywords || ''));
+          return this.sortKeywords(this.parseKeywords(this.getEffectiveLinkKeywords(link) || ''));
         },
         getAvailableKeywordsForGroup(group) {
           const assigned = new Set(this.getAssignedKeywordsForGroup(group).map(kw => this.normalizeKeyword(kw)));
@@ -28798,6 +28938,10 @@ footer a:hover {
         },
         addKeywordToLink(group, link, keyword) {
           if (!group || !link || !keyword) return;
+          if (this.isReferenceLink(link)) {
+            this.showToast(this.getTranslation('link.ref.keywordReadOnly') || 'Reference link keywords are read-only. Edit the original link.', 'info');
+            return;
+          }
           const list = this.parseKeywords(link.keywords || '');
           const normalized = this.normalizeKeyword(keyword);
           if (list.some(kw => this.normalizeKeyword(kw) === normalized)) return;
@@ -28809,6 +28953,10 @@ footer a:hover {
         },
         removeKeywordFromLink(group, link, keyword) {
           if (!group || !link || !keyword) return;
+          if (this.isReferenceLink(link)) {
+            this.showToast(this.getTranslation('link.ref.keywordReadOnly') || 'Reference link keywords are read-only. Edit the original link.', 'info');
+            return;
+          }
           const normalized = this.normalizeKeyword(keyword);
           const before = this.parseKeywords(link.keywords || '');
           const after = before.filter(kw => this.normalizeKeyword(kw) !== normalized);
@@ -30509,6 +30657,9 @@ footer a:hover {
               delete link.editing;
               delete link.isMouseOver;
               delete link.isKeywordQuickAddBadgeHover;
+              delete link._originalValue;
+              delete link._refAliasWasEmpty;
+              delete link._refEditSeedValue;
             });
           });
 
@@ -30808,6 +30959,7 @@ footer a:hover {
             this.$set(this.data.options.groups, 'columnWidths', {});
           }
           this.data.options.links = Object.assign({}, defaultOptions.links || {}, this.data.options.links || {});
+          this.data.options.links.showReferenceMarker = this.data.options.links.showReferenceMarker !== false;
           const hasButtonsKeywordQuickAddBadge = !!(this.data.options.buttons && Object.prototype.hasOwnProperty.call(this.data.options.buttons, 'showKeywordQuickAddBadge'));
           const legacyKeywordQuickAddBadge = (this.data.options.common && Object.prototype.hasOwnProperty.call(this.data.options.common, 'showKeywordQuickAddBadge'))
             ? this.data.options.common.showKeywordQuickAddBadge
@@ -32628,7 +32780,9 @@ footer a:hover {
               uuid:l.uuid, 
               text:l.text, 
               url:l.url, 
-              keywords:l.keywords 
+              keywords:l.keywords,
+              refTargetUuid: l.refTargetUuid || '',
+              isReference: !!l.refTargetUuid
             }] };
             // to contacts
             for (const uuid of selectedContacts) {
@@ -32649,6 +32803,8 @@ footer a:hover {
                 text:l.text,
                 url:l.url,
                 keywords:l.keywords,
+                refTargetUuid: l.refTargetUuid || '',
+                isReference: !!l.refTargetUuid,
                 column:(typeof l.column==='number'?l.column:0),
                 index:(typeof l.index==='number'?l.index:0)
               })),
@@ -33854,6 +34010,14 @@ footer a:hover {
             const msg = this.getTranslation('confirm.deleteLink');
             if (!confirm(msg)) return;
           }
+          try {
+            const refCount = this.countReferenceLinksTo(link?.uuid);
+            if (refCount > 0) {
+              const msg = (this.getTranslation('link.ref.deleteSourceConfirm') || 'This link is used by {count} reference link(s). Delete anyway?')
+                .replace('{count}', String(refCount));
+              if (!confirm(msg)) return;
+            }
+          } catch {}
           const group = this.data.groups.find(g => g.links.some(l => 
             link.uuid && l.uuid === link.uuid
           ));
@@ -33945,12 +34109,12 @@ footer a:hover {
             .filter(l => {
               if (l.column !== colIndex) return false;
               const matchesText = (tokens.length === 0 || groupHasKeyword || (function() {
-                const text = (l.text || '').toLowerCase();
-                const url = (l.url || '').toLowerCase();
-                const kws = (Array.isArray(l.keywords) ? l.keywords : (typeof l.keywords === 'string' ? l.keywords.split(/[,;]+/) : []))
+                const text = (this.getEffectiveLinkText(l) || '').toLowerCase();
+                const url = (this.getEffectiveLinkUrl(l) || '').toLowerCase();
+                const kws = (Array.isArray(this.getEffectiveLinkKeywords(l)) ? this.getEffectiveLinkKeywords(l) : (typeof this.getEffectiveLinkKeywords(l) === 'string' ? this.getEffectiveLinkKeywords(l).split(/[,;]+/) : []))
                   .map(s => String(s).trim().toLowerCase()).join(' ');
                 return tokens.every(t => text.includes(t) || url.includes(t) || kws.includes(t));
-              })());
+              }).call(this));
               if (!matchesText) return false;
               if (!activeKeywords.length) return true;
               return this.groupOrLinkKeywordsContainAll(group, l, activeKeywords);
@@ -34236,6 +34400,88 @@ footer a:hover {
           } catch {}
         },
 
+        onLinkRowDblClick(link) {
+          if (!link) return;
+          if (this.isReferenceLink(link)) {
+            this.openReferenceAliasDialog(link);
+            return;
+          }
+          this.startEditing(link);
+        },
+        openReferenceAliasDialog(link) {
+          const targetLink = (link && link.uuid) ? (this.findLinkByUuid(link.uuid) || link) : link;
+          if (!targetLink) return;
+          if (!this.isReferenceLink(targetLink)) {
+            this.startEditing(targetLink);
+            return;
+          }
+
+          const parentGroup = this.findGroupContainingLinkUuid(targetLink.uuid);
+          if (parentGroup && !this.canEdit(parentGroup)) {
+            alert(this.getTranslation('error.perm.edit'));
+            this.hideMenus();
+            return;
+          }
+
+          const source = this.getReferenceSourceLink(targetLink);
+          this.refAliasEditData = {
+            linkUuid: targetLink.uuid,
+            aliasText: typeof targetLink.text === 'string' ? targetLink.text : '',
+            sourceTitle: source ? this.getLinkDisplayTitle(source) : '',
+            sourceMissing: !source
+          };
+
+          this.hideMenus();
+          this.$nextTick(() => {
+            const modalElement = document.getElementById('referenceAliasModal');
+            if (!modalElement) return;
+            const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
+            modalInstance.show();
+            this.$nextTick(() => {
+              const inputRef = this.$refs.refAliasInput;
+              const inputElement = Array.isArray(inputRef) ? inputRef[0] : inputRef;
+              if (inputElement && typeof inputElement.focus === 'function') {
+                inputElement.focus();
+                if (typeof inputElement.select === 'function') inputElement.select();
+              }
+            });
+          });
+        },
+        saveReferenceAliasDialog() {
+          const editData = this.refAliasEditData;
+          if (!editData || !editData.linkUuid) {
+            this.cancelReferenceAliasDialog();
+            return;
+          }
+
+          const link = this.findLinkByUuid(editData.linkUuid);
+          if (!link || !this.isReferenceLink(link)) {
+            this.cancelReferenceAliasDialog();
+            return;
+          }
+
+          const parentGroup = this.findGroupContainingLinkUuid(link.uuid);
+          if (parentGroup && !this.canEdit(parentGroup)) {
+            alert(this.getTranslation('error.perm.edit'));
+            return;
+          }
+
+          const currentAlias = typeof link.text === 'string' ? link.text : '';
+          const nextAlias = String(editData.aliasText || '').trim();
+          link._originalValue = currentAlias;
+          this.$set(link, 'text', nextAlias);
+          this.saveEditing(link);
+          this.cancelReferenceAliasDialog();
+        },
+        cancelReferenceAliasDialog() {
+          const modalElement = document.getElementById('referenceAliasModal');
+          if (modalElement) {
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) modalInstance.hide();
+          }
+          this.refAliasEditData = null;
+        },
+
         // --- Inline Editing (Vue way) ---
         startEditing(item) {
           // Cancel any other active editing
@@ -34255,46 +34501,74 @@ footer a:hover {
               }
             }
           } catch {}
+          const isLinkItem = !!(item && item.url !== undefined);
+          const isRefLink = isLinkItem && this.isReferenceLink(item);
           // Store original value in case of escape
-          item._originalValue = item.name || item.text;
+          if (item && item.name !== undefined) {
+            item._originalValue = item.name || '';
+          } else {
+            const originalText = item?.text || '';
+            item._originalValue = originalText;
+            // For reference links without local alias, prefill inline editor with effective text.
+            if (isRefLink && !String(originalText).trim()) {
+              const seedValue = this.getEffectiveLinkText(item) || '';
+              this.$set(item, 'text', seedValue);
+              item._refAliasWasEmpty = true;
+              item._refEditSeedValue = seedValue;
+            } else {
+              delete item._refAliasWasEmpty;
+              delete item._refEditSeedValue;
+            }
+          }
           this.$set(item, 'editing', true); // Ensure reactivity
-          if (item && item.url !== undefined) {
+          if (isLinkItem) {
             this.hideLinkPopover();
           }
           // Focus handled by v-focus directive
         },
         saveEditing(item) {
           if (!item) return;
+          const isLinkItem = !!(item && item.url !== undefined);
+          const isRefLink = isLinkItem && this.isReferenceLink(item);
           // Trim and check if changed
-          const newValue = (item.name || item.text || '').trim();
+          let newValue = (item.name !== undefined ? item.name : item.text || '').trim();
           const oldValue = item._originalValue || '';
           const valueKey = item.name !== undefined ? 'name' : 'text';
 
           // Permission enforcement for links
           try {
-            if (item && item.url !== undefined) { // link
+            if (isLinkItem) { // link
               const group = (this.data.groups||[]).find(g => Array.isArray(g.links) && g.links.some(l => l.uuid === item.uuid));
               if (group && group.shared && !this.canEdit(group)) {
                 alert(this.getTranslation('error.perm.edit'));
                 // revert if was editing
                 if (item._originalValue !== undefined) item[valueKey] = item._originalValue;
-                item.editing = false; delete item._originalValue; return;
+                item.editing = false;
+                delete item._originalValue;
+                delete item._refAliasWasEmpty;
+                delete item._refEditSeedValue;
+                return;
               }
             }
           } catch {}
 
-          if (newValue === '') { // Revert if empty
+          if (isRefLink && item._refAliasWasEmpty && newValue === String(item._refEditSeedValue || '').trim()) {
+            // Seed value was untouched -> keep no local alias
+            newValue = '';
+          }
+
+          if (!isRefLink && newValue === '') { // Revert if empty
             item[valueKey] = oldValue;
           } else {
             item[valueKey] = newValue; // Update with trimmed value
             if (newValue !== oldValue) {
-              const nowTs = item && item.url !== undefined
+              const nowTs = isLinkItem
                 ? this.touchLink(item)
                 : this.touchGroup(item);
               this.saveData();
               // Mark local edit timestamp + hash for conflict resolution (links only)
               try {
-                if (item && item.url !== undefined) {
+                if (isLinkItem) {
                   const nb = Object.assign({}, item.ncBookmarks||{}, { localUpdatedAt: nowTs });
                   // Do NOT update lastHash here; keep last synced signature as baseline
                   this.$set(item, 'ncBookmarks', nb);
@@ -34304,7 +34578,7 @@ footer a:hover {
               // If this is a link editing its text inline, broadcast to shared group
               try {
                 // Check if item is a link (has url property, even if empty)
-                if (item.url !== undefined) {
+                if (isLinkItem) {
                   const group = (this.data.groups||[]).find(g=>Array.isArray(g.links) && g.links.some(l=>
                     item.uuid && l.uuid === item.uuid
                   ));
@@ -34356,6 +34630,8 @@ footer a:hover {
                         keywords: item.keywords || '',
                         emoji: item.emoji || '',
                         shortcut: item.shortcut || '',
+                        refTargetUuid: item.refTargetUuid || '',
+                        isReference: !!item.refTargetUuid,
                         lastModified: item.lastModified || nowTs
                       };
                       debugLog('log', '[SYNC] Broadcasting inline-edited link (legacy)', {
@@ -34376,6 +34652,8 @@ footer a:hover {
           }
           item.editing = false;
           delete item._originalValue;
+          delete item._refAliasWasEmpty;
+          delete item._refEditSeedValue;
         },
         cancelEditing(item) {
           if (item && item.editing) {
@@ -34385,6 +34663,8 @@ footer a:hover {
             }
             item.editing = false;
             delete item._originalValue;
+            delete item._refAliasWasEmpty;
+            delete item._refEditSeedValue;
           }
         },
 
@@ -34561,8 +34841,130 @@ footer a:hover {
           this.isGroupMenuVisible = false;
           this.contextMenuTarget = null; // Clear the target
         },
+        createReferenceLinkFromContext(sourceGroup, sourceLink) {
+          if (!sourceLink) {
+            this.hideMenus();
+            return;
+          }
+
+          if (this.isReferenceLink(sourceLink)) {
+            this.showToast(
+              this.getTranslation('link.ref.createFromRefDisabled') || 'Create ref link is only available for original links.',
+              'info'
+            );
+            this.hideMenus();
+            return;
+          }
+
+          const source = sourceLink;
+          if (!source?.uuid) {
+            alert(this.getTranslation('link.ref.sourceMissing') || 'Original link could not be resolved.');
+            this.hideMenus();
+            return;
+          }
+
+          const targetGroup = sourceGroup || this.findGroupContainingLinkUuid(sourceLink.uuid);
+          if (!targetGroup) {
+            alert(this.getTranslation('link.ref.invalidTarget') || 'Invalid group selection.');
+            this.hideMenus();
+            return;
+          }
+
+          if (!this.canAdd(targetGroup)) {
+            alert(this.getTranslation('error.perm.add'));
+            this.hideMenus();
+            return;
+          }
+
+          // No alias prompt on creation: new ref should mirror original text by default.
+          this.createReferenceLink(source, targetGroup, '', {
+            insertAfterLinkUuid: sourceLink.uuid
+          });
+          this.hideMenus();
+        },
+        createReferenceLink(sourceLink, targetGroup, aliasText = '', options = {}) {
+          if (!sourceLink?.uuid || !targetGroup) return;
+
+          const nowTs = Date.now();
+          if (!Array.isArray(targetGroup.links)) this.$set(targetGroup, 'links', []);
+          const links = targetGroup.links;
+
+          const insertAfterLink = options?.insertAfterLinkUuid
+            ? links.find(l => l.uuid === options.insertAfterLinkUuid)
+            : null;
+          const targetColumn = Number.isFinite(options?.targetColumn)
+            ? Number(options.targetColumn)
+            : Number(insertAfterLink?.column ?? 0);
+
+          let nextIndex = 0;
+          if (insertAfterLink) {
+            nextIndex = Number(insertAfterLink.index || 0) + 1;
+            links.forEach(link => {
+              if ((link.column || 0) === targetColumn && (link.index || 0) >= nextIndex) {
+                link.index = (link.index || 0) + 1;
+              }
+            });
+          } else {
+            const columnLinks = links.filter(l => (l.column || 0) === targetColumn);
+            nextIndex = columnLinks.length ? Math.max(...columnLinks.map(l => Number(l.index) || 0)) + 1 : 0;
+          }
+
+          const refLink = {
+            uuid: this.generateUUID(),
+            text: String(aliasText || '').trim(),
+            url: '',
+            keywords: '',
+            shortcut: '',
+            color: '',
+            infoHtml: '',
+            emoji: '',
+            column: targetColumn,
+            index: nextIndex,
+            refTargetUuid: sourceLink.uuid,
+            isReference: true,
+            editing: false,
+            isMouseOver: false,
+            createdAt: nowTs,
+            lastModified: nowTs
+          };
+
+          links.push(refLink);
+
+          const refTs = this.touchLink(refLink, nowTs);
+          this.touchGroup(targetGroup, refTs);
+          this.saveData();
+          this.maybeAutoAdjustGroupHeightAfterLinkChange(targetGroup);
+          this.showToast(this.getTranslation('link.ref.created') || 'Reference link created.', 'success');
+        },
+        editOriginalLinkFromReference(link) {
+          const source = this.getReferenceSourceLink(link);
+          if (!source) {
+            this.showToast(this.getTranslation('link.ref.sourceMissing') || 'Original link could not be resolved.', 'warning');
+            this.hideMenus();
+            return;
+          }
+          this.showLinkEditModal(source);
+        },
+        shareResolvedLink(link) {
+          const effectiveUrl = this.getEffectiveLinkUrl(link);
+          if (!effectiveUrl) return;
+          const payload = Object.assign({}, link, {
+            text: this.getEffectiveLinkText(link) || effectiveUrl,
+            url: effectiveUrl,
+            keywords: this.getEffectiveLinkKeywords(link),
+            infoHtml: this.getEffectiveLinkInfoHtml(link),
+            emoji: this.getEffectiveLinkEmoji(link),
+            favicon: this.getEffectiveLinkFavicon(link),
+            faviconError: this.getEffectiveLinkFaviconError(link)
+          });
+          this.shareLink(payload);
+        },
         // Search removed by request
         showLinkEditModal(link) {
+          if (this.isReferenceLink(link)) {
+            this.openReferenceAliasDialog(link);
+            return;
+          }
           // Find the original link object in the data to ensure reactivity
           let originalLink = null;
           let parentGroup = null;
@@ -35203,12 +35605,106 @@ footer a:hover {
           }
           return null;
         },
+        isReferenceLink(link) {
+          return !!(link && typeof link === 'object' && link.refTargetUuid);
+        },
+        findGroupContainingLinkUuid(linkUuid) {
+          if (!linkUuid) return null;
+          return (this.data.groups || []).find(g => Array.isArray(g.links) && g.links.some(l => l.uuid === linkUuid)) || null;
+        },
+        findLinkByUuid(linkUuid) {
+          if (!linkUuid) return null;
+          const group = this.findGroupContainingLinkUuid(linkUuid);
+          if (!group) return null;
+          return group.links.find(l => l.uuid === linkUuid) || null;
+        },
+        countReferenceLinksTo(linkUuid) {
+          if (!linkUuid) return 0;
+          let count = 0;
+          (this.data.groups || []).forEach(group => {
+            (group.links || []).forEach(link => {
+              if (link && link.refTargetUuid === linkUuid) count += 1;
+            });
+          });
+          return count;
+        },
+        getReferenceSourceLink(link, maxDepth = 12) {
+          if (!this.isReferenceLink(link)) return null;
+          const visited = new Set();
+          if (link.uuid) visited.add(link.uuid);
+          let currentUuid = link.refTargetUuid;
+          let source = null;
+          let depth = 0;
+          while (currentUuid && depth < maxDepth) {
+            if (visited.has(currentUuid)) break;
+            visited.add(currentUuid);
+            const target = this.findLinkByUuid(currentUuid);
+            if (!target) break;
+            source = target;
+            if (!this.isReferenceLink(target)) return target;
+            currentUuid = target.refTargetUuid;
+            depth += 1;
+          }
+          return source;
+        },
+        getEffectiveLink(link) {
+          if (!link) return null;
+          const source = this.getReferenceSourceLink(link);
+          return source || link;
+        },
+        getEffectiveLinkText(link) {
+          if (!link) return '';
+          if (this.isReferenceLink(link)) {
+            const alias = typeof link.text === 'string' ? link.text : '';
+            if (alias.trim()) return alias;
+          }
+          const base = this.getEffectiveLink(link);
+          const text = typeof base?.text === 'string' ? base.text : '';
+          if (text.trim()) return text;
+          const url = typeof base?.url === 'string' ? base.url : '';
+          return url || '';
+        },
+        getEffectiveLinkUrl(link) {
+          const base = this.getEffectiveLink(link);
+          return (base && typeof base.url === 'string') ? base.url : '';
+        },
+        getEffectiveLinkKeywords(link) {
+          const base = this.getEffectiveLink(link);
+          return base?.keywords || '';
+        },
+        getEffectiveLinkInfoHtml(link) {
+          const base = this.getEffectiveLink(link);
+          return (base && typeof base.infoHtml === 'string') ? base.infoHtml : '';
+        },
+        getEffectiveLinkEmoji(link) {
+          const base = this.getEffectiveLink(link);
+          return (base && typeof base.emoji === 'string') ? base.emoji : '';
+        },
+        getEffectiveLinkFavicon(link) {
+          const base = this.getEffectiveLink(link);
+          return (base && typeof base.favicon === 'string') ? base.favicon : '';
+        },
+        getEffectiveLinkFaviconError(link) {
+          const base = this.getEffectiveLink(link);
+          return !!base?.faviconError;
+        },
+        getEffectiveLinkRawUrlInput(link) {
+          const base = this.getEffectiveLink(link);
+          return (base && typeof base.rawUrlInput === 'string') ? base.rawUrlInput : '';
+        },
+        getReferenceMarkerTitle(link) {
+          if (!this.isReferenceLink(link)) return '';
+          const source = this.getReferenceSourceLink(link);
+          if (!source) return this.getTranslation('link.ref.missing') || 'Reference link (original missing)';
+          const sourceTitle = this.getLinkDisplayTitle(source);
+          return (this.getTranslation('link.ref.markerTitle') || 'Reference link') + `: ${sourceTitle}`;
+        },
         getLinkDisplayTitle(link) {
           if (!link) return '';
-          const text = typeof link.text === 'string' ? link.text.trim() : '';
+          const text = this.getEffectiveLinkText(link).trim();
           if (text) return text;
 
-          const url = (link.url || '').trim();
+          const url = (this.getEffectiveLinkUrl(link) || '').trim();
           if (!url) return this.getTranslation('link.popover.untitled') || 'Untitled link';
 
           try {
@@ -35290,10 +35786,11 @@ footer a:hover {
         },
         getPopoverFavicon(link) {
           if (!link) return '';
-          if (link.favicon) return link.favicon;
+          const effectiveFavicon = this.getEffectiveLinkFavicon(link);
+          if (effectiveFavicon) return effectiveFavicon;
 
           const utils = (typeof MB !== 'undefined' && MB && MB.Utils) ? MB.Utils : null;
-          const rawUrl = link.url || '';
+          const rawUrl = this.getEffectiveLinkUrl(link) || '';
           const ensuredUrl = utils?.ensureProtocol ? utils.ensureProtocol(rawUrl) : rawUrl;
           const isValid = utils?.isValidHttpUrl ? utils.isValidHttpUrl(ensuredUrl) : /^https?:\/\//i.test(ensuredUrl);
           if (!isValid) {
@@ -35334,10 +35831,10 @@ footer a:hover {
 
             const popover = this.linkPopover;
             popover.link = link;
-            popover.url = link.url || '';
-            popover.displayUrl = this.buildLinkDisplayUrl(link.url || '');
+            popover.url = this.getEffectiveLinkUrl(link) || '';
+            popover.displayUrl = this.buildLinkDisplayUrl(this.getEffectiveLinkUrl(link) || '');
             popover.titleHtml = this.sanitizeInlineNoAnchor(this.getLinkDisplayTitle(link));
-            popover.rawUrlInput = link.rawUrlInput || '';
+            popover.rawUrlInput = this.getEffectiveLinkRawUrlInput(link) || '';
             popover.favicon = this.getPopoverFavicon(link);
             let needsSave = false;
             let createdDisplay = this.formatPopoverTimestamp(link.createdAt);
@@ -35368,8 +35865,8 @@ footer a:hover {
               }
               this.saveData();
             }
-            popover.keywords = this.parseKeywords(link.keywords);
-            popover.emoji = (link.emoji || '').trim();
+            popover.keywords = this.parseKeywords(this.getEffectiveLinkKeywords(link));
+            popover.emoji = (this.getEffectiveLinkEmoji(link) || '').trim();
             popover.uuid = link.uuid || '';
 
             const rect = target.getBoundingClientRect();
@@ -36247,19 +36744,21 @@ footer a:hover {
           });
         },
 
-        copyLinkToClipboard(link) {
-          if (!link || !link.url) return;
+        copyLinkToClipboard(link, explicitUrl = null) {
+          const effectiveUrl = explicitUrl || this.getEffectiveLinkUrl(link);
+          if (!link || !effectiveUrl) return;
 
           // Get customizable format from options
           const format = this.data.options?.links?.copyUrlFormat || '{title}: {url}';
 
           // Replace placeholders with actual values
-          const title = link.text || link.url;
+          const title = this.getEffectiveLinkText(link) || effectiveUrl;
+          const keywords = this.getEffectiveLinkKeywords(link) || '';
           const clipboardText = format
             .replace('{title}', title)
-            .replace('{url}', link.url)
+            .replace('{url}', effectiveUrl)
             .replace('{text}', title) // Alternative placeholder
-            .replace('{keywords}', link.keywords || '')
+            .replace('{keywords}', keywords)
             .replace('{date}', new Date().toLocaleDateString())
             .replace('{time}', new Date().toLocaleTimeString());
 
@@ -36600,7 +37099,7 @@ footer a:hover {
     let footer = new Vue({
       el: '#footer',
       data: {
-        version: '2026-02-19', // Updated version string
+        version: '2026-02-24', // Updated version string
       },
     });
   </script>
