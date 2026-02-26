@@ -9,19 +9,21 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 ## Features
 
 - **Rich bookmark workspace** – Organise links into draggable groups, expand/collapse sections, edit inline, tag with keywords, and surface link metadata with detailed popovers.
-- **Reference links** – Create symbolic links that point to one canonical link record, place them in multiple groups, and keep URL/metadata centrally maintained while allowing a local alias text per reference.
+- **Structured entries beyond URLs** – Add visual separators and rich note entries inside groups, collapse/expand note content inline, and keep sorting workflows separator-aware.
+- **Reference links** – Create symbolic links that point to one canonical link record, place them in multiple groups, and keep URL/metadata centrally maintained while allowing per-reference alias text, local keywords, and source-keyword inheritance control.
+- **URL templates & placeholders** – Use placeholder variables globally, per group, and per link/reference, including URL-encode switches, inherited values, resolved URL previews, and unresolved-placeholder hints.
 - **Advanced search & discovery** – Filter across groups and links, highlight duplicates, inspect JSON payloads, and capture snapshots for undo/redo workflows.
 - **Flexible import/export** – Round-trip data through JSON, CSV, Netscape HTML, and clipboard pastes. Dedicated dialogs support import previews (selectable groups/links), and full exports include settings, identity, contacts, snapshots, and Visual CSS Editor state.
-- **Favicon management** – Auto-fetch icons, upload/remove per item, and maintain reusable favicon rules with presets, comments, testing, JSON export/import, and default restoration.
+- **Favicon management** – Auto-fetch icons, upload/remove per item, maintain reusable favicon rules with presets/comments/testing/JSON export-import/default restoration, and optionally enable an external fallback provider for missing icons.
 - **Collaboration & sharing (optional)** – Push updates via ntfy topics, invite collaborators, manage contacts with Quick-Connect pairing, generate QR codes, broadcast snapshots, and reconcile conflicts through the integrated event-log system.
   - **Encrypted ntfy delivery** – Each client derives its own public/private key pair; messages are encrypted end-to-end when sharing entire groups, individual links, or broadcast snapshots.
 - **Member & permission management** – Shared groups support owner/member roles, per-member Add/Edit/Delete permissions, member removal, and ownership transfer.
 - **Sync integrations (optional)** – Hook into Nextcloud Bookmarks REST endpoints or CardDAV servers, complete with hash caching, rate limits, conflict handling, and diagnostics.
-- **Deep customization** – Toggle dark mode, apply per-element styling through the visual CSS editor (selectors, rules, rule sets, design tokens), and expose advanced developer routing with extensive logging utilities.
+- **Deep customization** – Toggle dark mode, apply per-element styling through the visual CSS editor (including dedicated selectors for links, separators, and notes), and expose advanced developer routing with extensive logging utilities.
 - **Shortcut manager & productivity** – Define global tree-based shortcuts, group-level shortcuts, and get overlap/conflict hints directly in edit dialogs.
 - **Link safety insights** – Analyse URLs in real time, flag suspicious patterns (dangerous protocols, token leakage, punycode, shorteners) and surface actionable hints directly in the UI.
 - **Flexible networking** – Route outbound requests via the browser companion extension **or** a self-hosted proxy, configurable per workspace, complete with custom headers and API token support.
-- **Local encryption & session locking** – Protect the entire workspace with a password, lock instantly from the toolbar, and auto-lock after configurable inactivity.
+- **Local encryption & session locking** – Encrypt IndexedDB data with a password, unlock through a dedicated lock-screen dialog, lock instantly from the toolbar, and auto-lock after configurable inactivity.
 
 ## Technology Stack
 
