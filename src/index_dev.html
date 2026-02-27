@@ -434,18 +434,22 @@
       text-overflow: ellipsis;
       pointer-events: none;
       margin-left: 8px;
-      margin-right: auto;
+      margin-right: 0;
       flex: 0 1 clamp(110px, 34%, 260px);
       min-width: 0;
     }
     
-    .linkContainerListItem:hover .link-url-preview {
+    .linkContainerListItem:hover .link-url-preview,
+    .linkContainerListItem:focus-within .link-url-preview {
       display: inline-block;
     }
 
-    .linkContainerListItem:hover .linkText .text-truncate {
-      min-width: 8ch;
-      flex: 1 1 auto;
+    .linkContainerListItem:hover .linkText .text-truncate,
+    .linkContainerListItem:focus-within .linkText .text-truncate {
+      min-width: 0;
+      flex: 0 1 auto;
+      width: fit-content;
+      max-width: 100%;
     }
     
     .linkText > span:first-child {
@@ -1404,7 +1408,7 @@
     }
 
     .linkanchor {
-      min-width: 50px;
+      min-width: 0;
     }
     
     .linkText .text-truncate {
@@ -1412,10 +1416,10 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       display: inline-block;
-      width: auto;
+      width: fit-content;
       max-width: 100%;
       min-width: 0;
-      flex: 1 1 auto;
+      flex: 0 1 auto;
     }
 
     .mb-link-text-with-marker {
@@ -2109,7 +2113,7 @@
     .link-favicon {
       width: 16px;
       height: 16px;
-      margin-right: 6px;
+      margin-right: 2px;
       vertical-align: -2px;
       border-radius: 3px;
       /* Ensure base64 favicons display correctly */
@@ -2121,7 +2125,7 @@
       position: relative;
       display: inline-block;
       vertical-align: -2px;
-      margin-right: 6px;
+      margin-right: 2px;
     }
     .link-favicon-wrap .link-favicon { margin-right: 0; }
     .link-favicon-dot {
@@ -2143,7 +2147,7 @@
       display: inline-block;
       width: 16px;
       height: 16px;
-      margin-right: 6px;
+      margin-right: 2px;
       vertical-align: -2px;
       font-size: 14px;
       line-height: 16px;
@@ -2850,12 +2854,19 @@
       right: -400px;
       width: 400px;
       height: 100vh;
-      background-color: #ffffff;
+      background-color: var(--bg-primary, #ffffff);
+      color: var(--text-primary, #212529);
       box-shadow: -2px 0 5px rgba(0,0,0,0.1);
       transition: right 0.3s ease;
       z-index: 1040;
       display: flex;
       flex-direction: column;
+    }
+
+    .css-sidebar.template-dark-active {
+      background-color: var(--bg-primary, #1f2428);
+      color: var(--text-primary, #f1f3f5);
+      box-shadow: -2px 0 12px rgba(0, 0, 0, 0.45);
     }
 
     /* When sidebar is open, shift the main content */
@@ -2917,11 +2928,12 @@
       padding: 1rem;
       margin: 0.5rem;
       margin-bottom: 0;
-      border-bottom: 1px solid #dee2e6;
+      border-bottom: 1px solid var(--border-color, #dee2e6);
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-radius: 0.25rem 0.25rem 0 0;
+      background-color: var(--bg-secondary, #f8f9fa);
     }
     
     .css-sidebar .sidebar-split-container {
@@ -2930,21 +2942,23 @@
       height: calc(100vh - 60px);
       padding: 0.5rem;
       padding-top: 0;
+      gap: 0.5rem;
+      overflow: hidden;
     }
     
     .css-sidebar .sidebar-top-section {
-      min-height: 100px;
-      overflow-y: auto;
+      min-height: 160px;
+      overflow: hidden;
       position: relative;
-      padding: 0.75rem;
-      background-color: #f8f9fa;
+      background-color: var(--bg-secondary, #f8f9fa);
+      color: var(--text-primary, #212529);
       border-radius: 0.25rem;
-      margin-bottom: 0.5rem;
+      border: 1px solid var(--border-color, #dee2e6);
     }
     
     .css-sidebar .sidebar-divider {
       height: 8px;
-      background-color: #e9ecef;
+      background-color: var(--bg-tertiary, #e9ecef);
       cursor: ns-resize;
       position: relative;
       user-select: none;
@@ -2952,26 +2966,28 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      border-radius: 4px;
+      flex-shrink: 0;
     }
     
     .css-sidebar .sidebar-divider::before {
       content: '';
       width: 40px;
       height: 2px;
-      background-color: #adb5bd;
+      background-color: var(--border-color-strong, #adb5bd);
       border-radius: 1px;
     }
     
     .css-sidebar .sidebar-divider:hover {
-      background-color: #dee2e6;
+      background-color: var(--surface-hover, #dee2e6);
     }
     
     .css-sidebar .sidebar-divider:hover::before {
-      background-color: #6c757d;
+      background-color: var(--text-muted, #6c757d);
     }
     
     .css-sidebar .sidebar-divider.resizing {
-      background-color: #ced4da;
+      background-color: var(--surface-active, #ced4da);
     }
     
     .css-sidebar .sidebar-bottom-section {
@@ -2979,17 +2995,17 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      min-height: 100px;
-      padding: 0.75rem;
-      background-color: #ffffff;
+      min-height: 160px;
+      padding: 0;
+      background-color: var(--bg-primary, #ffffff);
       border-radius: 0.25rem;
-      border: 1px solid #dee2e6;
+      border: 1px solid var(--border-color, #dee2e6);
     }
     
     .css-sidebar .editor-header {
       padding: 0.75rem 1rem;
-      border-bottom: 1px solid #dee2e6;
-      background-color: #f8f9fa;
+      border-bottom: 1px solid var(--border-color, #dee2e6);
+      background-color: var(--bg-secondary, #f8f9fa);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -2999,6 +3015,76 @@
       flex: 1;
       padding: 1rem;
       overflow-y: auto;
+    }
+
+    .css-sidebar.template-dark-active .sidebar-top-section,
+    .css-sidebar.template-dark-active .sidebar-bottom-section {
+      background-color: var(--bg-primary, #1f2428);
+      color: var(--text-primary, #f1f3f5);
+      border-color: var(--border-color, #495057);
+    }
+
+    .css-sidebar.template-dark-active .editor-header {
+      background-color: var(--bg-secondary, #2a2f34);
+      border-color: var(--border-color, #495057);
+    }
+
+    .css-sidebar.template-dark-active .sidebar-divider {
+      background-color: var(--bg-tertiary, #343a40);
+    }
+
+    .css-sidebar.template-dark-active .sidebar-divider:hover {
+      background-color: var(--surface-hover, #3f464d);
+    }
+
+    .css-sidebar .mb-css-property-editor .options-section {
+      margin-bottom: 0;
+      border-color: var(--border-color, #dee2e6);
+    }
+
+    .css-sidebar .mb-css-property-editor .options-section + .options-section {
+      margin-top: 0.5rem;
+    }
+
+    .css-sidebar .mb-css-property-editor .options-section-header {
+      background-color: var(--bg-secondary, #f8f9fa);
+      color: var(--text-primary, #212529);
+      border-bottom: 1px solid var(--border-color, #dee2e6);
+    }
+
+    .css-sidebar .mb-css-property-editor .options-section-header:hover {
+      background-color: var(--surface-hover, #e9ecef);
+    }
+
+    .css-sidebar .mb-css-property-editor .options-section-body {
+      background-color: var(--bg-primary, #ffffff);
+      color: var(--text-primary, #212529);
+    }
+
+    .visual-css-editor .property-item.property-editor-active {
+      border: 1px solid var(--accent-color, #0d6efd);
+      border-radius: 0.25rem;
+      padding: 0.4rem;
+      background: rgba(13, 110, 253, 0.06);
+    }
+
+    .css-sidebar.template-dark-active .mb-css-property-editor .options-section-header {
+      background-color: var(--bg-secondary, #2a2f34);
+      color: var(--text-primary, #f1f3f5);
+      border-color: var(--border-color, #495057);
+    }
+
+    .css-sidebar.template-dark-active .mb-css-property-editor .options-section-header:hover {
+      background-color: var(--surface-hover, #3f464d);
+    }
+
+    .css-sidebar.template-dark-active .mb-css-property-editor .options-section-body {
+      background-color: var(--bg-primary, #1f2428);
+      color: var(--text-primary, #f1f3f5);
+    }
+
+    .css-sidebar.template-dark-active .mb-css-property-editor .text-muted {
+      color: var(--text-muted, #adb5bd) !important;
     }
     
     .css-sidebar .sidebar-content {
@@ -3934,7 +4020,7 @@
                                           class="text-decoration-none linkanchor mb-link__anchor" draggable="false"
                                           @click.stop>
                                           <img
-                                            v-if="data.options?.links?.autoFetchFavicon && getEffectiveLinkFavicon(link)"
+                                            v-if="getEffectiveLinkFavicon(link)"
                                             :src="getEffectiveLinkFavicon(link)" alt="" class="link-favicon mb-link__icon" />
                                           <span
                                             v-else-if="data.options?.links?.autoFetchFavicon && getEffectiveLinkFaviconError(link)"
@@ -4223,16 +4309,23 @@
   </div>
   
   <!-- Visual CSS Editor Sidebar -->
-  <div v-if="cssSidebarVisible" class="css-sidebar mb-css-sidebar visual-css-editor-sidebar sidebar-open" :class="{ 'resizing': isCssSidebarWidthResizing }" :style="{ width: cssSidebarWidth + 'px' }">
+  <div v-if="cssSidebarVisible"
+       class="css-sidebar mb-css-sidebar visual-css-editor-sidebar sidebar-open"
+       :class="{
+         'resizing': isCssSidebarWidthResizing,
+         'template-dark-active': selectedVisualTemplate === 'dark-mode'
+       }"
+       :style="{ width: cssSidebarWidth + 'px' }">
     <!-- Resize Handle -->
     <div class="css-sidebar-resize-handle" :class="{ 'resizing': isCssSidebarWidthResizing }" @mousedown="startCssSidebarWidthResize"></div>
     <div class="sidebar-header mb-css-sidebar-header">
       <h5 class="mb-css-sidebar-title">{{ getTranslation('css.visual.title') || 'Visual CSS Editor' }}</h5>
       <button type="button" class="btn-close mb-css-sidebar-close" @click="closeCssSidebar()" aria-label="Close"></button>
     </div>
-    <div class="sidebar-split-container mb-css-sidebar-container">
-      <!-- Visual CSS Rules Editor -->
-      <div class="visual-css-editor" style="height: 100%; overflow-y: auto; padding: 15px;">
+    <div ref="cssSidebarSplitContainer" class="sidebar-split-container mb-css-sidebar-container">
+      <div class="sidebar-top-section mb-css-sidebar-top" :style="{ height: cssSidebarTopHeight + 'px' }">
+        <!-- Visual CSS Rules Editor -->
+        <div class="visual-css-editor" style="height: 100%; overflow-y: auto; padding: 15px;">
 
         <!-- Template Selection -->
         <div class="template-section mb-3">
@@ -4485,6 +4578,8 @@
                     <option value="group-header">{{ getTranslation('css.visual.groupHeader') || 'Gruppen Header' }}</option>
                     <option value="group-title">{{ getTranslation('css.visual.groupTitle') || 'Gruppen Titel' }}</option>
                     <option value="group-body">{{ getTranslation('css.visual.groupContent') || 'Gruppen Inhalt' }}</option>
+                    <option value="vertical-dropzone">Gruppen-Spalten Dropzone (vertikal)</option>
+                    <option value="group-horizontal-dropzone">Gruppen Dropzone (horizontal)</option>
                   </optgroup>
                   <optgroup :label="getTranslation('css.visual.linkLevel') || 'Link-Ebene'">
                     <option value="links">{{ getTranslation('css.visual.allLinks') || 'Alle Links' }}</option>
@@ -4494,6 +4589,8 @@
                     <option value="link-anchor">{{ getTranslation('css.visual.linkAnchor') || 'Link Anchor' }}</option>
                     <option value="link-url">{{ getTranslation('css.visual.linkUrl') || 'Link URL' }}</option>
                     <option value="link-icon">{{ getTranslation('css.visual.linkIcon') || 'Link Icon' }}</option>
+                    <option value="link-vertical-dropzone">Link-Spalten Dropzone (vertikal)</option>
+                    <option value="link-horizontal-dropzone">Link Dropzone (horizontal)</option>
                   </optgroup>
                   <optgroup :label="getTranslation('css.visual.popoverLevel') || 'Link-Popover'">
                     <option value="link-popover">{{ getTranslation('css.visual.linkPopover') || 'Popover Container' }}</option>
@@ -4518,6 +4615,37 @@
                     <option value="keyword-suggestion-item">{{ getTranslation('css.visual.keywordSuggestionItem') || 'Keyword Suggestion Item' }}</option>
                   </optgroup>
                 </select>
+              </div>
+
+              <!-- Pseudo State Selector -->
+              <div v-if="getRuleSelector(rule).base"
+                   class="selector-row mb-2 d-flex align-items-center">
+                <label class="form-label small mb-0 me-2" style="min-width: 60px;">{{ getTranslation('css.visual.state') || 'Zustand' }}:</label>
+                <div class="d-flex align-items-center flex-wrap gap-3">
+                  <div class="form-check form-switch mb-0">
+                    <input :id="'hover-state-' + rule.id"
+                           class="form-check-input"
+                           type="checkbox"
+                           :checked="getRuleSelector(rule).base === 'link-hover' ? true : !!getRuleSelector(rule).hover"
+                           :disabled="getRuleSelector(rule).base === 'link-hover'"
+                           @change="updateRuleHover(rule, $event)">
+                    <label class="form-check-label small"
+                           :for="'hover-state-' + rule.id">
+                      {{ getTranslation('css.visual.hoverState') || 'Hover (:hover)' }}
+                    </label>
+                  </div>
+                  <div class="form-check form-switch mb-0">
+                    <input :id="'drag-over-state-' + rule.id"
+                           class="form-check-input"
+                           type="checkbox"
+                           :checked="!!getRuleSelector(rule).dragOver"
+                           @change="updateRuleDragOver(rule, $event)">
+                    <label class="form-check-label small"
+                           :for="'drag-over-state-' + rule.id">
+                      {{ getTranslation('css.visual.dragOverState') || 'Drag Over (.drag-over-active)' }}
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <!-- Group Selector (conditional) -->
@@ -4601,7 +4729,10 @@
                 <div v-for="(value, prop) in rule.properties"
                      :key="prop"
                      class="property-item mb-2"
-                     :class="{ 'opacity-50': isPropertyDisabled(rule, prop) }">
+                     :class="{
+                       'opacity-50': isPropertyDisabled(rule, prop),
+                       'property-editor-active': isCssPropertyEditorTarget(rule, prop)
+                     }">
                   <!-- Custom CSS (multiline) with delete button -->
                   <div v-if="prop === 'custom'">
                     <div class="d-flex justify-content-between align-items-center mb-1">
@@ -4632,6 +4763,15 @@
                         class="form-control"
                         :class="{ 'is-invalid': !isPropertyValid(rule, prop) }"
                         :placeholder="getTranslation('css.visual.valuePlaceholder') || 'Wert eingeben (z. B. #ff0000, rgb(), var(--...))'">
+                      <button type="button"
+                              class="btn btn-outline-secondary"
+                              @click.stop="openCssPropertyEditor(rule, prop)"
+                              :title="getTranslation('css.visual.openFormatEditor') || 'Open property format editor'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                          <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zm-4.796 3.246a4.796 4.796 0 1 1 9.592 0 4.796 4.796 0 0 1-9.592 0z"/>
+                          <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a1.873 1.873 0 0 1-2.547 1.136l-.29-.15c-1.64-.85-3.433.943-2.582 2.582l.15.29a1.873 1.873 0 0 1-1.136 2.547l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a1.873 1.873 0 0 1 1.136 2.547l-.15.29c-.851 1.64.943 3.434 2.582 2.582l.29-.15a1.873 1.873 0 0 1 2.547 1.136l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a1.873 1.873 0 0 1 2.547-1.136l.29.15c1.64.852 3.433-.943 2.582-2.582l-.15-.29a1.873 1.873 0 0 1 1.136-2.547l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a1.873 1.873 0 0 1-1.136-2.547l.15-.29c.851-1.64-.943-3.433-2.582-2.582l-.29.15a1.873 1.873 0 0 1-2.547-1.136l-.094-.319z"/>
+                        </svg>
+                      </button>
                       <span class="input-group-text p-0">
                         <input type="color"
                                :value="getValidHexColor(rule.properties[prop])"
@@ -4678,6 +4818,15 @@
                       class="form-control"
                       :class="{ 'is-invalid': !isPropertyValid(rule, prop) }"
                       :placeholder="getTranslation('css.visual.valuePlaceholder') || 'Wert eingeben'">
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            @click.stop="openCssPropertyEditor(rule, prop)"
+                            :title="getTranslation('css.visual.openFormatEditor') || 'Open property format editor'">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zm-4.796 3.246a4.796 4.796 0 1 1 9.592 0 4.796 4.796 0 0 1-9.592 0z"/>
+                        <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a1.873 1.873 0 0 1-2.547 1.136l-.29-.15c-1.64-.85-3.433.943-2.582 2.582l.15.29a1.873 1.873 0 0 1-1.136 2.547l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a1.873 1.873 0 0 1 1.136 2.547l-.15.29c-.851 1.64.943 3.434 2.582 2.582l.29-.15a1.873 1.873 0 0 1 2.547 1.136l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a1.873 1.873 0 0 1 2.547-1.136l.29.15c1.64.852 3.433-.943 2.582-2.582l-.15-.29a1.873 1.873 0 0 1 1.136-2.547l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a1.873 1.873 0 0 1-1.136-2.547l.15-.29c.851-1.64-.943-3.433-2.582-2.582l-.29.15a1.873 1.873 0 0 1-2.547-1.136l-.094-.319z"/>
+                      </svg>
+                    </button>
                     <select class="form-select" style="max-width: 170px;"
                             @change="applyTokenToProperty(rule, prop, $event.target.value)">
                       <option value="">{{ getTranslation('css.visual.tokensSelect') || '-- Token wählen --' }}</option>
@@ -4760,6 +4909,7 @@
                       <option value="opacity">{{ getTranslation('css.opacity') || 'Transparenz' }}</option>
                     </optgroup>
                     <optgroup :label="getTranslation('css.visual.typography') || 'Text'">
+                      <option value="font-family">{{ getTranslation('css.fontFamily') || 'Schriftfamilie' }}</option>
                       <option value="font-weight">{{ getTranslation('css.fontWeight') || 'Schriftstärke' }}</option>
                       <option value="text-decoration">{{ getTranslation('css.textDecoration') || 'Textdekoration' }}</option>
                       <option value="text-align">{{ getTranslation('css.textAlign') || 'Textausrichtung' }}</option>
@@ -4802,8 +4952,337 @@
         
 
         <!-- Migration Notice (if old CSS exists) -->
-        <div v-if="showMigrationNotice" class="alert alert-info mt-3">
-          {{ getTranslation('css.visual.migrationNotice') || 'Hinweis: Ihr bisheriges Custom CSS wurde importiert. Sie können es oben als "Legacy CSS" Regel bearbeiten oder löschen.' }}
+          <div v-if="showMigrationNotice" class="alert alert-info mt-3">
+            {{ getTranslation('css.visual.migrationNotice') || 'Hinweis: Ihr bisheriges Custom CSS wurde importiert. Sie können es oben als "Legacy CSS" Regel bearbeiten oder löschen.' }}
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-divider mb-css-sidebar-divider"
+           :class="{ 'resizing': isCssSidebarResizing }"
+           @mousedown="startCssSidebarResize"></div>
+
+      <div class="sidebar-bottom-section mb-css-property-editor">
+        <div class="editor-header mb-css-property-editor-header">
+          <div>
+            <strong>{{ getTranslation('css.visual.formatEditor') || 'Property Format Editor' }}</strong>
+            <div class="small text-muted" v-if="cssPropertyEditor.property && cssPropertyEditorRule">
+              {{ formatPropertyName(cssPropertyEditor.property) }}
+              <span class="mx-1">·</span>
+              {{ cssPropertyEditorRule.name || ((getTranslation('css.visual.rule') || 'Rule') + ' ' + ((visualCssRules.indexOf(cssPropertyEditorRule) || 0) + 1)) }}
+            </div>
+          </div>
+          <button type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  :disabled="!cssPropertyEditor.property"
+                  @click="clearCssPropertyEditorSelection"
+                  :title="getTranslation('close') || 'Close'">
+            ×
+          </button>
+        </div>
+        <div class="editor-content mb-css-property-editor-content">
+          <div v-if="!cssPropertyEditor.property || !cssPropertyEditorRule" class="text-muted small">
+            {{ getTranslation('css.visual.formatEditorNoSelection') || 'Select a property with the gear button next to "Enter value...".' }}
+          </div>
+          <div v-else>
+            <div class="options-section mb-edit-section mb-2">
+              <div class="options-section-header mb-edit-section-header"
+                   :class="{ collapsed: !isCssPropertyEditorSectionExpanded('basic') }"
+                   @click="toggleCssPropertyEditorSection('basic')">
+                <span>{{ getTranslation('css.visual.formatEditorBasic') || 'Basic' }}</span>
+                <svg class="chevron-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
+              </div>
+              <div v-show="isCssPropertyEditorSectionExpanded('basic')" class="options-section-body mb-edit-section-body">
+                <div class="small mb-1"><strong>{{ getTranslation('css.visual.formatEditorProperty') || 'Property' }}:</strong> <code>{{ cssPropertyEditor.property }}</code></div>
+                <div class="small mb-1"><strong>{{ getTranslation('css.visual.formatEditorType') || 'Type' }}:</strong> {{ getCssPropertySchema(cssPropertyEditor.property).kind }}</div>
+                <div class="small mb-0"><strong>{{ getTranslation('css.visual.formatEditorPreview') || 'Preview' }}:</strong> <code>{{ getCssPropertyEditorPreviewValue() || '—' }}</code></div>
+              </div>
+            </div>
+
+            <div class="options-section mb-edit-section mb-2">
+              <div class="options-section-header mb-edit-section-header"
+                   :class="{ collapsed: !isCssPropertyEditorSectionExpanded('value') }"
+                   @click="toggleCssPropertyEditorSection('value')">
+                <span>{{ getTranslation('css.visual.formatEditorValue') || 'Value Builder' }}</span>
+                <svg class="chevron-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
+              </div>
+              <div v-show="isCssPropertyEditorSectionExpanded('value')" class="options-section-body mb-edit-section-body">
+                <div v-if="cssPropertyEditor.useRawValue" class="small text-muted">
+                  {{ getTranslation('css.visual.formatEditorRawEnabled') || 'Raw mode enabled. Disable it to use guided controls.' }}
+                </div>
+
+                <div v-else-if="getCssPropertySchema(cssPropertyEditor.property).kind === 'color'" class="row g-2">
+                  <div class="col-5">
+                    <label class="form-label small mb-1">{{ getTranslation('css.visual.color') || 'Color' }}</label>
+                    <input type="color" class="form-control form-control-color"
+                           :value="cssPropertyEditor.model.color"
+                           @input="onCssPropertyEditorColorInput($event.target.value)">
+                  </div>
+                  <div class="col-7">
+                    <label class="form-label small mb-1">{{ getTranslation('css.visual.alpha') || 'Alpha' }}</label>
+                    <input type="range" min="0" max="1" step="0.01" class="form-range"
+                           v-model.number="cssPropertyEditor.model.alpha"
+                           @input="onCssPropertyEditorModelChange">
+                  </div>
+                  <div class="col-12" v-if="(designTokens || []).length > 0">
+                    <label class="form-label small mb-1">{{ getTranslation('css.visual.tokensSelect') || '-- Select Token --' }}</label>
+                    <select class="form-select form-select-sm"
+                            v-model="cssPropertyEditor.model.tokenName"
+                            @change="onCssPropertyEditorTokenChange">
+                      <option value="">{{ getTranslation('css.visual.none') || 'None' }}</option>
+                      <option v-for="t in designTokens" :key="'editor-token-' + t.name" :value="t.name">{{ t.name }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div v-else-if="getCssPropertySchema(cssPropertyEditor.property).kind === 'font-family'" class="row g-2">
+                  <div class="col-12">
+                    <label class="form-label small mb-1">{{ getTranslation('css.fontFamily') || 'Font Family' }}</label>
+                    <select class="form-select form-select-sm"
+                            v-model="cssPropertyEditor.model.fontFamily"
+                            @change="onCssPropertyEditorModelChange">
+                      <option value="">{{ getTranslation('css.visual.fontFamilyCustom') || '-- Custom value --' }}</option>
+                      <option v-for="font in cssPropertyEditorFonts" :key="'font-opt-' + font.value" :value="font.value">{{ font.label }}</option>
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <input type="text"
+                           class="form-control form-control-sm"
+                           v-model="cssPropertyEditor.model.fontFamilyCustom"
+                           @input="onCssPropertyEditorModelChange"
+                           :placeholder="getTranslation('css.visual.fontFamilyCustom') || 'Custom font-family value'">
+                  </div>
+                </div>
+
+                <div v-else-if="getCssPropertySchema(cssPropertyEditor.property).kind === 'enum'" class="row g-2">
+                  <div class="col-12">
+                    <label class="form-label small mb-1">{{ getTranslation('css.visual.value') || 'Value' }}</label>
+                    <select class="form-select form-select-sm"
+                            v-model="cssPropertyEditor.model.enumValue"
+                            @change="onCssPropertyEditorModelChange">
+                      <option v-for="opt in getCssPropertySchema(cssPropertyEditor.property).options || []"
+                              :key="'enum-opt-' + opt"
+                              :value="opt">{{ opt }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div v-else-if="getCssPropertySchema(cssPropertyEditor.property).kind === 'number'" class="row g-2">
+                  <div class="col-12">
+                    <label class="form-label small mb-1">{{ getTranslation('css.visual.value') || 'Value' }}</label>
+                    <input type="range"
+                           class="form-range"
+                           :min="getCssPropertySchema(cssPropertyEditor.property).min"
+                           :max="getCssPropertySchema(cssPropertyEditor.property).max"
+                           :step="getCssPropertySchema(cssPropertyEditor.property).step || 1"
+                           v-model.number="cssPropertyEditor.model.numberValue"
+                           @input="onCssPropertyEditorModelChange">
+                    <input type="number"
+                           class="form-control form-control-sm"
+                           :min="getCssPropertySchema(cssPropertyEditor.property).min"
+                           :max="getCssPropertySchema(cssPropertyEditor.property).max"
+                           :step="getCssPropertySchema(cssPropertyEditor.property).step || 1"
+                           v-model.number="cssPropertyEditor.model.numberValue"
+                           @input="onCssPropertyEditorModelChange">
+                  </div>
+                </div>
+
+                <div v-else-if="getCssPropertySchema(cssPropertyEditor.property).kind === 'length'" class="row g-2">
+                  <div class="col-5">
+                    <label class="form-label small mb-1">{{ getTranslation('css.visual.value') || 'Value' }}</label>
+                    <input type="number"
+                           class="form-control form-control-sm"
+                           :step="getCssPropertySchema(cssPropertyEditor.property).step || 1"
+                           v-model.number="cssPropertyEditor.model.lengthValue"
+                           @input="onCssPropertyEditorModelChange">
+                  </div>
+                  <div class="col-3">
+                    <label class="form-label small mb-1">{{ getTranslation('css.unit') || 'Unit' }}</label>
+                    <select class="form-select form-select-sm"
+                            v-model="cssPropertyEditor.model.lengthUnit"
+                            @change="onCssPropertyEditorModelChange">
+                      <option v-for="unit in getCssPropertySchema(cssPropertyEditor.property).units || []" :key="'len-unit-' + unit" :value="unit">{{ unit }}</option>
+                    </select>
+                  </div>
+                  <div class="col-4" v-if="(getCssPropertySchema(cssPropertyEditor.property).keywords || []).length > 0">
+                    <label class="form-label small mb-1">{{ getTranslation('css.visual.keyword') || 'Keyword' }}</label>
+                    <select class="form-select form-select-sm"
+                            v-model="cssPropertyEditor.model.lengthKeyword"
+                            @change="onCssPropertyEditorModelChange">
+                      <option value="">{{ getTranslation('css.visual.none') || 'None' }}</option>
+                      <option v-for="kw in getCssPropertySchema(cssPropertyEditor.property).keywords || []" :key="'len-kw-' + kw" :value="kw">{{ kw }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div v-else-if="getCssPropertySchema(cssPropertyEditor.property).kind === 'spacing'" class="row g-2">
+                  <div class="col-12 d-flex align-items-center justify-content-between">
+                    <label class="form-label small mb-0">{{ getTranslation('css.spacing') || 'Spacing' }}</label>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input"
+                             type="checkbox"
+                             :id="'css-property-editor-link-' + cssPropertyEditor.property"
+                             v-model="cssPropertyEditor.model.spacingLinked"
+                             @change="onCssPropertyEditorSpacingLinked">
+                      <label class="form-check-label small" :for="'css-property-editor-link-' + cssPropertyEditor.property">
+                        {{ getTranslation('css.visual.linkValues') || 'Link values' }}
+                      </label>
+                    </div>
+                  </div>
+                  <div class="col-12" v-if="cssPropertyEditor.model.spacingLinked">
+                    <div class="input-group input-group-sm">
+                      <input type="number" class="form-control"
+                             v-model.number="cssPropertyEditor.model.spacing.top.value"
+                             @input="onCssPropertyEditorSpacingInput('top')">
+                      <select class="form-select"
+                              v-model="cssPropertyEditor.model.spacing.top.unit"
+                              @change="onCssPropertyEditorSpacingInput('top')">
+                        <option v-for="unit in getCssPropertySchema(cssPropertyEditor.property).units || []" :key="'sp-unit-all-' + unit" :value="unit">{{ unit }}</option>
+                      </select>
+                    </div>
+                  </div>
+                  <template v-else>
+                    <div class="col-6" v-for="side in ['top', 'right', 'bottom', 'left']" :key="'spacing-side-' + side">
+                      <label class="form-label small mb-1 text-capitalize">{{ side }}</label>
+                      <div class="input-group input-group-sm">
+                        <input type="number" class="form-control"
+                               v-model.number="cssPropertyEditor.model.spacing[side].value"
+                               @input="onCssPropertyEditorModelChange">
+                        <select class="form-select"
+                                v-model="cssPropertyEditor.model.spacing[side].unit"
+                                @change="onCssPropertyEditorModelChange">
+                          <option v-for="unit in getCssPropertySchema(cssPropertyEditor.property).units || []" :key="'sp-unit-' + side + '-' + unit" :value="unit">{{ unit }}</option>
+                        </select>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+
+                <div v-else-if="getCssPropertySchema(cssPropertyEditor.property).kind === 'border'" class="row g-2">
+                  <div class="col-4">
+                    <label class="form-label small mb-1">{{ getTranslation('css.borderWidth') || 'Border Width' }}</label>
+                    <input type="number" class="form-control form-control-sm"
+                           :step="0.1"
+                           v-model.number="cssPropertyEditor.model.border.width"
+                           @input="onCssPropertyEditorModelChange">
+                  </div>
+                  <div class="col-3">
+                    <label class="form-label small mb-1">{{ getTranslation('css.unit') || 'Unit' }}</label>
+                    <select class="form-select form-select-sm"
+                            v-model="cssPropertyEditor.model.border.unit"
+                            @change="onCssPropertyEditorModelChange">
+                      <option v-for="unit in ['px', 'rem', 'em']" :key="'bd-unit-' + unit" :value="unit">{{ unit }}</option>
+                    </select>
+                  </div>
+                  <div class="col-5">
+                    <label class="form-label small mb-1">{{ getTranslation('css.borderStyle') || 'Border Style' }}</label>
+                    <select class="form-select form-select-sm"
+                            v-model="cssPropertyEditor.model.border.style"
+                            @change="onCssPropertyEditorModelChange">
+                      <option v-for="styleOpt in getCssEnumOptions('border-style')" :key="'bd-style-' + styleOpt" :value="styleOpt">{{ styleOpt }}</option>
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label small mb-1">{{ getTranslation('css.borderColor') || 'Border Color' }}</label>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="color" class="form-control form-control-color"
+                             :value="cssPropertyEditor.model.border.color"
+                             @input="onCssPropertyEditorBorderColorInput($event.target.value)">
+                      <input type="range" min="0" max="1" step="0.01" class="form-range flex-grow-1"
+                             v-model.number="cssPropertyEditor.model.border.alpha"
+                             @input="onCssPropertyEditorModelChange">
+                    </div>
+                  </div>
+                </div>
+
+                <div v-else-if="getCssPropertySchema(cssPropertyEditor.property).kind === 'shadow'" class="row g-2">
+                  <div class="col-6">
+                    <label class="form-label small mb-1">X</label>
+                    <input type="number" class="form-control form-control-sm" v-model.number="cssPropertyEditor.model.shadow.offsetX" @input="onCssPropertyEditorModelChange">
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small mb-1">Y</label>
+                    <input type="number" class="form-control form-control-sm" v-model.number="cssPropertyEditor.model.shadow.offsetY" @input="onCssPropertyEditorModelChange">
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small mb-1">{{ getTranslation('css.blur') || 'Blur' }}</label>
+                    <input type="number" class="form-control form-control-sm" v-model.number="cssPropertyEditor.model.shadow.blur" @input="onCssPropertyEditorModelChange">
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small mb-1">{{ getTranslation('css.spread') || 'Spread' }}</label>
+                    <input type="number" class="form-control form-control-sm" v-model.number="cssPropertyEditor.model.shadow.spread" @input="onCssPropertyEditorModelChange">
+                  </div>
+                  <div class="col-12 d-flex align-items-center gap-2">
+                    <input type="color" class="form-control form-control-color"
+                           :value="cssPropertyEditor.model.shadow.color"
+                           @input="onCssPropertyEditorShadowColorInput($event.target.value)">
+                    <input type="range" min="0" max="1" step="0.01" class="form-range flex-grow-1"
+                           v-model.number="cssPropertyEditor.model.shadow.alpha"
+                           @input="onCssPropertyEditorModelChange">
+                    <div class="form-check mb-0">
+                      <input class="form-check-input" type="checkbox" :id="'shadow-inset-' + cssPropertyEditor.property"
+                             v-model="cssPropertyEditor.model.shadow.inset"
+                             @change="onCssPropertyEditorModelChange">
+                      <label class="form-check-label small" :for="'shadow-inset-' + cssPropertyEditor.property">inset</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-else class="small text-muted">
+                  {{ getTranslation('css.visual.formatEditorRawOnly') || 'This property uses raw mode only.' }}
+                </div>
+              </div>
+            </div>
+
+            <div class="options-section mb-edit-section">
+              <div class="options-section-header mb-edit-section-header"
+                   :class="{ collapsed: !isCssPropertyEditorSectionExpanded('advanced') }"
+                   @click="toggleCssPropertyEditorSection('advanced')">
+                <span>{{ getTranslation('css.visual.formatEditorAdvanced') || 'Advanced' }}</span>
+                <svg class="chevron-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
+              </div>
+              <div v-show="isCssPropertyEditorSectionExpanded('advanced')" class="options-section-body mb-edit-section-body">
+                <div class="form-check form-switch mb-2">
+                  <input class="form-check-input"
+                         type="checkbox"
+                         :id="'css-property-editor-raw-' + cssPropertyEditor.property"
+                         v-model="cssPropertyEditor.useRawValue"
+                         @change="onCssPropertyEditorRawModeToggle">
+                  <label class="form-check-label small" :for="'css-property-editor-raw-' + cssPropertyEditor.property">
+                    {{ getTranslation('css.visual.formatEditorUseRaw') || 'Edit as raw CSS value' }}
+                  </label>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small mb-1">{{ getTranslation('css.visual.value') || 'Value' }}</label>
+                  <input type="text"
+                         class="form-control form-control-sm"
+                         :class="{ 'is-invalid': !isCssPropertyEditorDraftValid() }"
+                         v-model="cssPropertyEditor.rawValue"
+                         @input="onCssPropertyEditorRawInput"
+                         :placeholder="getTranslation('css.visual.valuePlaceholder') || 'Enter value (e.g., #ff0000, rgb(), var(--...))'">
+                  <div v-if="!isCssPropertyEditorDraftValid()" class="invalid-feedback d-block">
+                    {{ getCssPropertyEditorValidationHint() }}
+                  </div>
+                </div>
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input"
+                         type="checkbox"
+                         :id="'css-property-editor-important-' + cssPropertyEditor.property"
+                         v-model="cssPropertyEditor.important"
+                         @change="onCssPropertyEditorImportantToggle">
+                  <label class="form-check-label small" :for="'css-property-editor-important-' + cssPropertyEditor.property">
+                    !important
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -6261,88 +6740,111 @@
           <div class="modal-body">
             <p class="mb-2">{{ getTranslation('clipboard.instructions') || 'Import from file or paste JSON, CSV, or HTML bookmarks:' }}</p>
             
-            <!-- File upload option -->
-            <div class="mb-3">
-              <label class="form-label">{{ getTranslation('import.fromFile') || 'Import from file:' }}</label>
-              <input type="file" class="form-control form-control-sm" 
-                accept=".json,.csv,.html,.htm" 
-                @change="handleFileUpload"
-                ref="fileInput">
-            </div>
-            
-            <div class="text-center mb-2">
-              <small class="text-muted">{{ getTranslation('import.or') || '— OR —' }}</small>
-            </div>
-            
-            <!-- URL import option -->
-            <div class="mb-3">
-              <label class="form-label">{{ getTranslation('import.fromUrl') || 'Import from URL:' }}</label>
-              <div class="input-group">
-                <input type="url" class="form-control form-control-sm" 
-                  v-model="importUrl"
-                  :placeholder="getTranslation('import.urlPlaceholder') || 'https://example.com/bookmarks.json'"
-                  @keyup.enter="fetchFromUrl">
-                <button type="button" class="btn btn-sm btn-outline-secondary" 
-                  @click="fetchFromUrl"
-                  :disabled="!importUrl || fetchingUrl">
-                  <span v-if="fetchingUrl">{{ getTranslation('import.fetching') || 'Fetching...' }}</span>
-                  <span v-else>{{ getTranslation('import.fetch') || 'Fetch' }}</span>
-                </button>
+            <!-- File upload section -->
+            <div class="options-section mb-edit-section">
+              <div
+                class="options-section-header mb-edit-section-header"
+                :class="{ collapsed: !isImportDialogSectionExpanded('file') }"
+                @click="toggleImportDialogSection('file')">
+                <span>{{ getTranslation('import.fromFile') || 'Import from file:' }}</span>
+                <svg class="chevron-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
               </div>
-              <div v-if="urlFetchError" class="text-danger small mt-1">{{ urlFetchError }}</div>
-            </div>
-            
-            <div v-if="extensionAvailable" class="text-center mb-2">
-              <small class="text-muted">{{ getTranslation('import.or') || '— OR —' }}</small>
+              <div v-show="isImportDialogSectionExpanded('file')" class="options-section-body mb-edit-section-body">
+                <input type="file" class="form-control form-control-sm"
+                  accept=".json,.csv,.html,.htm"
+                  @change="handleFileUpload"
+                  ref="fileInput">
+              </div>
             </div>
 
-            <!-- Browser bookmarks option (if extension available) -->
-            <div v-if="extensionAvailable" class="mb-3">
-              <label class="form-label">{{ getTranslation('import.fromBrowser') || 'Import from browser:' }}</label>
-              <div>
-                <button type="button" class="btn btn-sm btn-outline-primary"
-                  @click="fetchBrowserBookmarks"
-                  :disabled="fetchingBrowserBookmarks">
-                  <span v-if="fetchingBrowserBookmarks">
-                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                    {{ getTranslation('import.fetchingBookmarks') || 'Loading bookmarks...' }}
-                  </span>
-                  <span v-else>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bookmark-star me-1" viewBox="0 0 16 16">
-                      <path d="M7.84 4.1a.178.178 0 0 1 .32 0l.634 1.285a.178.178 0 0 0 .134.098l1.42.206c.145.021.204.2.098.303L9.42 6.993a.178.178 0 0 0-.051.158l.242 1.414a.178.178 0 0 1-.258.187l-1.27-.668a.178.178 0 0 0-.165 0l-1.27.668a.178.178 0 0 1-.257-.187l.242-1.414a.178.178 0 0 0-.05-.158l-1.03-1.001a.178.178 0 0 1 .098-.303l1.42-.206a.178.178 0 0 0 .134-.098L7.84 4.1z"/>
-                      <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
-                    </svg>
-                    {{ getTranslation('import.browserBookmarks') || 'Import Browser Bookmarks' }}
-                  </span>
-                </button>
-                <div v-if="browserBookmarksInfo" class="text-muted small mt-1">
-                  {{ browserBookmarksInfo }}
+            <!-- URL import section -->
+            <div class="options-section mb-edit-section">
+              <div
+                class="options-section-header mb-edit-section-header"
+                :class="{ collapsed: !isImportDialogSectionExpanded('url') }"
+                @click="toggleImportDialogSection('url')">
+                <span>{{ getTranslation('import.fromUrl') || 'Import from URL:' }}</span>
+                <svg class="chevron-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
+              </div>
+              <div v-show="isImportDialogSectionExpanded('url')" class="options-section-body mb-edit-section-body">
+                <div class="mb-2">
+                  <div class="input-group">
+                    <input type="url" class="form-control form-control-sm"
+                      v-model="importUrl"
+                      :placeholder="getTranslation('import.urlPlaceholder') || 'https://example.com/bookmarks.json'"
+                      @keyup.enter="fetchFromUrl">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                      @click="fetchFromUrl"
+                      :disabled="!importUrl || fetchingUrl">
+                      <span v-if="fetchingUrl">{{ getTranslation('import.fetching') || 'Fetching...' }}</span>
+                      <span v-else>{{ getTranslation('import.fetch') || 'Fetch' }}</span>
+                    </button>
+                  </div>
+                  <div v-if="urlFetchError" class="text-danger small mt-1">{{ urlFetchError }}</div>
+                </div>
+
+                <div v-if="extensionAvailable" class="text-center my-2">
+                  <small class="text-muted">{{ getTranslation('import.or') || '— OR —' }}</small>
+                </div>
+
+                <!-- Browser bookmarks option (if extension available) -->
+                <div v-if="extensionAvailable">
+                  <button type="button" class="btn btn-sm btn-outline-primary"
+                    @click="fetchBrowserBookmarks"
+                    :disabled="fetchingBrowserBookmarks">
+                    <span v-if="fetchingBrowserBookmarks">
+                      <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                      {{ getTranslation('import.fetchingBookmarks') || 'Loading bookmarks...' }}
+                    </span>
+                    <span v-else>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bookmark-star me-1" viewBox="0 0 16 16">
+                        <path d="M7.84 4.1a.178.178 0 0 1 .32 0l.634 1.285a.178.178 0 0 0 .134.098l1.42.206c.145.021.204.2.098.303L9.42 6.993a.178.178 0 0 0-.051.158l.242 1.414a.178.178 0 0 1-.258.187l-1.27-.668a.178.178 0 0 0-.165 0l-1.27.668a.178.178 0 0 1-.257-.187l.242-1.414a.178.178 0 0 0-.05-.158l-1.03-1.001a.178.178 0 0 1 .098-.303l1.42-.206a.178.178 0 0 0 .134-.098L7.84 4.1z"/>
+                        <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
+                      </svg>
+                      {{ getTranslation('import.browserBookmarks') || 'Import Browser Bookmarks' }}
+                    </span>
+                  </button>
+                  <div v-if="browserBookmarksInfo" class="text-muted small mt-1">
+                    {{ browserBookmarksInfo }}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="text-center mb-2">
-              <small class="text-muted">{{ getTranslation('import.or') || '— OR —' }}</small>
+            <!-- Clipboard section -->
+            <div class="options-section mb-edit-section">
+              <div
+                class="options-section-header mb-edit-section-header"
+                :class="{ collapsed: !isImportDialogSectionExpanded('clipboard') }"
+                @click="toggleImportDialogSection('clipboard')">
+                <span>{{ getTranslation('import.fromClipboard') || 'Paste from clipboard:' }}</span>
+                <svg class="chevron-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
+              </div>
+              <div v-show="isImportDialogSectionExpanded('clipboard')" class="options-section-body mb-edit-section-body">
+                <div class="mb-2">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" @click="readFromClipboard">{{ getTranslation('clipboard.read') || 'Read from Clipboard' }}</button>
+                </div>
+                <div class="mb-3">
+                  <textarea class="form-control" rows="5" v-model="pasteContent" @input="parsePastedContent" :placeholder="getTranslation('clipboard.placeholder') || 'Paste your data here...'"></textarea>
+                </div>
+                <div class="mb-0">
+                  <label class="form-label">{{ getTranslation('import.csvSeparator') || 'CSV separator (optional):' }}</label>
+                  <input type="text" class="form-control form-control-sm"
+                    v-model="importCsvSeparator"
+                    maxlength="8"
+                    @input="parsePastedContent"
+                    :placeholder="getTranslation('import.csvSeparator.placeholder') || 'Auto-detect (e.g. ; or ,)'">
+                  <div class="form-text">{{ getTranslation('import.csvSeparator.help') || 'Leave empty for automatic detection. Use \\t for tab.' }}</div>
+                </div>
+                <div class="text-muted small mt-2" v-if="pasteHint">{{ pasteHint }}</div>
+              </div>
             </div>
-
-            <!-- Clipboard option -->
-            <div class="mb-2">
-              <label class="form-label">{{ getTranslation('import.fromClipboard') || 'Paste from clipboard:' }}</label>
-              <button type="button" class="btn btn-sm btn-outline-secondary ms-2" @click="readFromClipboard">{{ getTranslation('clipboard.read') || 'Read from Clipboard' }}</button>
-            </div>
-            <div class="mb-3">
-              <textarea class="form-control" rows="5" v-model="pasteContent" @input="parsePastedContent" :placeholder="getTranslation('clipboard.placeholder') || 'Paste your data here...'"></textarea>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">{{ getTranslation('import.csvSeparator') || 'CSV separator (optional):' }}</label>
-              <input type="text" class="form-control form-control-sm"
-                v-model="importCsvSeparator"
-                maxlength="8"
-                @input="parsePastedContent"
-                :placeholder="getTranslation('import.csvSeparator.placeholder') || 'Auto-detect (e.g. ; or ,)'">
-              <div class="form-text">{{ getTranslation('import.csvSeparator.help') || 'Leave empty for automatic detection. Use \\t for tab.' }}</div>
-            </div>
-            <div class="text-muted small mb-2" v-if="pasteHint">{{ pasteHint }}</div>
             
             <!-- Format detection -->
             <div v-if="detectedFormat" class="alert alert-info py-2">
@@ -7462,6 +7964,14 @@ const DEFAULT_FAVICON_RULES = Object.freeze([
     pattern: '(?:www\\.)?amazon\\.',
     iconDataUrl: 'data:image/svg+xml;base64,AAABAAQAMDAAAAEAIACoJQAARgAAACAgAAABACAAqBAAAO4lAAAYGAAAAQAgAIgJAACWNgAAEBAAAAEAIABoBAAAHkAAACgAAAAwAAAAYAAAAAEAIAAAAAAAgCUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///0X///+Z////zP////P////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////w////zP///5P///8/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8k////wP//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////t////x4AAAAAAAAAAAAAAAAAAAAAAAAAAP///0L////z///////////////////////////////////////////////////////////////////////////X7///u+T//5DV//+R1f//csr//1C+//+Cz///kdX//5/Z///L6v//8vr//////////////////////////////////////////////////////////////////////////////////////+3///85AAAAAAAAAAAAAAAA////Lf////D///////////////////////////////////////////////////////////////+85f//csr//xOt//8AqP//AKj//wCn//8Ap///AKf+/wCn//8AqP//AKf//wCn//8Ap///AKj//z64//+Q1f//2PD////////////////////////////////////////////////////////////////////////////q////JAAAAAAAAAAA////zP/////////////////////////////////////////////////////y+v//kNX//xOs//8Ap///AKf//wCo//8Ap///AKf//wCo//8AqP//AKf//wCn/v8Ap///AKj//wCn//8AqP//AKf//wCn//8Ap///AKf//z64//+u4P//////////////////////////////////////////////////////////////////////vQAAAAD///9R////////////////////////////////////////////////8vr//5HV//8TrP//AKj//wCo//8AqP//AKj//wCo//8Ap///AKf//wCn//8AqP//AKf//wCo//8AqP//AKj//wCn//8Ap/7/AKf//wCo//8AqP//AKf//wCo//8Ap///KbL//67g////////////////////////5fT//////////////////////////////////////0L///+l//////////////////////////////////////////+75P//E63//wCn//8Ap///AKf//wCn/v8AqP//AKf//wCo//8psv//UL///4LQ//+R1f//kNX//5DV//+Q1f//kNX//5HV//9hw///UL7//wCo//8Ap/7/AKj//wCn//8Ap///AKj//wCn//9Qvv//5vX/////////////Ub///5DV/////////////////////////////////5b////q////////////////////////////////8vr//3LK//8AqP//AKf//wCn//8AqP//AKj//1C///+R1f//y+r////////////////////////////////////////////////////////////////////////Y7///rd///3LJ//8Trf//AKf+/wCn//8AqP//E63//7zl////////n9r//wCo///l9P///////////////////////////9v////////////////////////////////Y7///Prj//wCn//8Ap///AKf+/1C+//+t3///8vr/////////////////////////////////////////////////////////////////////////////////////////////////////////////vOX//3LK//8Ap///AKf//wCo//+t3///2O///wCn//9zyv////////////////////////////n//////////////////////////9jw//8Trf//AKf//wCn//9yyf//5fT////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////y+v//kNX//xOt//9hw////////xOt//8Trf//////////////////////////////////////////////////u+T//xOt//8AqP//csn//+X0/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////1G///8Ap///5vX////////////////////////////////////////Y7///AKj//1C+///l9f///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9jv//8Ap///Ub///2HD//+Q1f//csr//wCn//8Ap///y+r////////////////////////////////////////Y8P//ruD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////L6v//YsP//wCn//8Ap///AKj//wCo//8Ap///2PD///////////////////////////////////////////////////////////////////////////////////////////////////Pz8/+ioqL/VlZU/x0dG/8FBQT/BQUD/x0dHP9WVlX/hoaE/9jY2P////////////////////////////////++vr7/VlZV/6Kiov/////////////////////////////////K6f//yun//8rq///l9P//////////////////////////////////////////////////////////////////////////////////////////////////oqKi/x0dHP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP9WVlT/5ubm/////////////////7Cwr/8FBQT/BQUE/wUFBP92dnb///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+GhoX/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wQEA/8FBQT/BQUD/wUFA/8FBQT/HR0c/7Cwr///////2dnZ/wUFBP8FBQT/BQUE/wUFBP8FBQT/Z2dm//Ly8v///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////729vf8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQP/BQUD/wUFBP8FBQT/BQUE/wUFBP+ioqL/MjIw/wUFBP8FBQT/BQUD/wUFA/8FBQT/BQUE/0REQ//y8vL//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////zExMP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8dHRv/////////////////////////////////////////////////////////////////////////////////////////////////////////////////2dnZ/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8dHRz/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8yMjD/////////////////////////////////////////////////////////////////////////////////////////////////////////////////lJST/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/HR0c/8zMzP///////////8zMzP8xMTD/BQUE/wUFBP8FBQT/BQUD/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP/MzMz/////////////////////////////////////////////////////////////////////////////////////////////////////////////////hoaF/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/zMzM///////////////////////y8vL/HR0c/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/4aGhP//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VlZV/wUFBP8EBAP/BQUD/wUFA/8FBQT/BQUE/wUFBP9FRUT/////////////////////////////////sLCv/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/+Xl5f//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////ZmZl/wUFA/8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP9VVVT//////////////////////////////////////zExMP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////lJST/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP9WVlX//////////////////////////////////////3Z2dv8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////sbGw/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8dHRz//////////////////////////////////////5SUk/8FBQP/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/VlZU////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8vLy/wUFA/8FBQP/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQT/oqKi/////////////////////////////////5SUk/8FBQP/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQP/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////3Z2dv8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/HR0c/729vf///////////////////////////83Nzf8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+bm5v8dHRz/BQUD/wUFA/8FBQT/BQUE/wUFBP8EBAP/BQUE/wUFBP9WVlX/vb29//Pz8////////////83Nzf8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/VlZV//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////++vr7/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZU/0REQ/8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/VVVU////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////zMzM/x0dG/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQP/VVVU//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////Ly8v92dnb/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////5ubm/6Kiov9VVVT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9nZ2f/MzMz/lJST/5SUk/9WVlT/VlZV/zExMP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8zMzP8FBQP/BQUE/wUFA/8FBQT/BAQD/wUFBP8FBQT/VlZV////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8/Pz/8zMzP/MzMz/lJST/5SUk//Z2dn//////////////////////////////////////76+vv8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/VlZV/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////5WVk/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP9nZ2b//////////////////////////////////////5SUk/8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/dnZ2/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////1ZWVP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFA/8dHRz/8/Pz/////////////////////////////////3Z2dv8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/lJST/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////6Ghof8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/dnZ2////////////////////////////2dnZ/x0dHP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/lJST/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+bm5v8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BAQD/zExMP+xsbD/zMzM/8zMzP+UlJP/HR0c/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/zMzM//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////92dnb/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8dHRv///////////////////////////////////////////////////////////////////////////n////t///////////////////////////////////////////////////////////m5ub/Hh4c/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wQEA/8FBQP/BQUD/wUFBP+UlJP//////////////////////////////////////////////////////////////////////////97///+o////////////////////////////////////////////////////////////////2dnZ/x0dG/8FBQT/BQUE/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQP/BQUE/0VFRP/z8/P//////////////////////////////////////////////////////////////////////////5b///9U/////////////////////////////////////////////////////////////////////9nZ2f8xMTD/BQUE/wUFBP8FBQP/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/VVVU//Ly8v///////////////////////////////////////////////////////////////////////////////0L///8D////z///////////////////////////////////////////////////////////////////////////lZWU/zExMP8FBQT/BQUD/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/BQUD/zExMP+xsbD/////////////////////////////////////////////////////////////////////////////////////wwAAAAAAAAAA////MP////b////////////////////////////////////////////////////////////////////////////////Z2dn/lJST/1ZWVf9WVlX/BAQD/wUFBP8FBQT/RUVD/1ZWVf+UlJP/zMzM///////////////////////////////////////////////////////////////////////////////////////////w////JwAAAAAAAAAAAAAAAP///0v////z//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////D///8/AAAAAAAAAAAAAAAAAAAAAAAAAAD///8t////yf//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////w////yQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///0v///+f////z///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////zP///5n///9FAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAB8AAOAAAAAABwAAwAAAAAADAACAAAAAAAEAAIAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAgAAAAAABAADAAAAAAAMAAOAAAAAABwAA+AAAAAAfAAAoAAAAIAAAAEAAAAABACAAAAAAAIAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////Uf///5/////S///////////////////////////////////////////////////////////////////////////////////////////////////////////////P////nP///0gAAAAAAAAAAAAAAAAAAAAA////GP///7H//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////6X///8SAAAAAP///wb////P////////////////////////////////////////////////5fX//67g//+R1f//UL7//1C+//9Rv///YsT//5DU//+85f//8vr//////////////////////////////////////////////////////8P///8D////df//////////////////////////////////////////ruD//z24//8AqP//AKf//wCo//8Ap///AKj//wCo//8Ap/7/AKf//wCn//8AqP//csr//8vq/////////////////////////////////////////////////2b////S////////////////////////////////y+r//ymy//8Ap///AKj//wCo//8Ap///AKf//wCn//8Ap///AKj//wCn//8Ap///AKj//wCo//8AqP//AKj//1C////Y8P///////8rq///Y7///////////////////////w/////z/////////////////////8vr//3LJ//8AqP//AKf//wCn/v9ixP//kNT//8vq///y+v////////////////////////L6///L6v//n9r//2LE//8Trf//AKf//wCo//+u4P//vOX//z65///////////////////////w//////////////////////L6//8+uP//AKf//1C+//+t3///8/r///////////////////////////////////////////////////////////////////////+85f//UL7//wCo///Y7///AKf//8rp///////////////////////////////////Y7///E63//1C+///L6v////////////////////////////////////////////////////////////////////////////////////////P7///L6v//5fT///L6//8ps///kNT//////////////////////////////////5DU//+t3///////////////////////////////////////////////////////////////////////////////////////////////////5fX//1C+//8AqP//AKf//wCn//+Q1f//////////////////////////////////////////////////////////////////8vLy/5SUk/9FRUT/BQUE/wQEA/8yMjD/Z2dm/8zMzP////////////////+GhoX/Z2dm//Lz8////////////+X0///L6v//yun///L6//////////////////////////////////////////////////////////////Ly8v9FRUT/BQUE/wUFBP8FBQT/BQUE/wQEA/8FBQT/BQUD/3Z2dv/z8/P/dnZ2/wUFBP8FBQP/MTEw/9nZ2f//////////////////////////////////////////////////////////////////////////////////////VlZV/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/zIyMP8FBQT/BQUE/wUFBP8FBQT/HR0c/9nZ2f///////////////////////////////////////////////////////////////////////////+bm5v8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8xMTD/HR0c/wUFA/8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFA/8FBQT/lJST////////////////////////////////////////////////////////////////////////////vb29/wUFBP8EBAP/BQUE/wUFBP8FBQT/dnZ2////////////oqKi/wUFBP8EBAP/BQUE/wUFBP8FBQP/BQUE/zIyMf/y8vL///////////////////////////////////////////////////////////////////////////+UlJP/BQUE/wUFBP8FBQT/BQUE/wUFBP/y8vL/////////////////Z2dm/wUFBP8FBQT/BQUE/wUFBP8FBQT/sbGw/////////////////////////////////////////////////////////////////////////////////7GxsP8FBQT/BQUD/wUFBP8FBQT/BQUD//////////////////////+9vb3/BQUE/wUFBP8FBQT/BQUE/wUFBP/m5ub/////////////////////////////////////////////////////////////////////////////////2dnZ/wUFBP8FBQT/BQUE/wUFBP8FBQT/zMzM/////////////////+bm5v8FBQT/BQUE/wUFA/8FBQT/BQUD////////////////////////////////////////////////////////////////////////////////////////////MTEw/wUFBP8FBQT/BQUE/wUFBP9FRUT/5eXl/////////////////wUFBP8FBQT/BQUE/wUFBP8FBQT////////////////////////////////////////////////////////////////////////////////////////////MzMz/BQUE/wUFA/8FBQT/BQUD/wUFBP8FBQT/dnZ2/5SUk/+9vb3/BQUE/wUFBP8FBQT/BQUE/wUFA/////////////////////////////////////////////////////////////////////////////////////////////////+wsK//HR0c/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE///////////////////////////////////////////////////////////////////////////////////////////////////////m5ub/hoaF/zIyMP8FBQT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQP//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+bm5v/MzMz/lJST/5SUk/9WVlX/BQUE/wQEA/8FBQT/BQUE/wUFA//////////////////////////////////////////////////////////////////////////////////////////////////y8vL/zMzM/8zMzP/Nzc3///////////////////////////8FBQT/BQUE/wUFBP8FBQT/BQUD////////////////////////////////////////////////////////////////////////////////////////////Z2dm/wUFBP8FBQT/BQUE/wUFBP/y8vL/////////////////2dnZ/wUFA/8FBQP/BQUD/wUFBP8FBQT///////////////////////////////////////////////////////////////////////////////////////////9mZmX/BQUE/wUFBP8FBQT/BQUE/3Z2dv////////////////92dnb/BQUE/wUFBP8FBQT/BQUE/wUFBP///////////////////////////////////////////////////////////////////////////////////////////7CwsP8FBQT/BQUE/wUFBP8FBQT/BQUE/zIyMP9WVlX/RUVE/wUFBP8FBQT/BQUE/wUFBP8FBQT/RUVD/////////////////////////////////////////////////////////////////////////////////////////////////1ZWVf8FBQT/BQUE/wUFBP8EBAP/BQUD/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP+wsK/////////////////////////////////////////////////2////2///////////////////////////////////////////8vLy/0VFRP8FBQP/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/dnZ2/////////////////////////////////////////////////////8z///9+/////////////////////////////////////////////////////7Cwr/9FRUT/BQUE/wUFBP8FBQT/BQUD/wUFBP8FBQT/RUVE/7Cwr///////////////////////////////////////////////////////////b////wz////b///////////////////////////////////////////////////////////y8vL/zMzM/8zMzP/MzMz/zc3N/+bm5v///////////////////////////////////////////////////////////////9L///8GAAAAAP///yf////b///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////S////HgAAAAAAAAAAAAAAAP///wz///94////2P/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////S////cv///wkAAAAAAAAAAOAAAAeAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAHAAAADKAAAABgAAAAwAAAAAQAgAAAAAABgCQAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8G////hP///9v/////////////////////////////////////////////////////////////////////////////////////////2////4T///8GAAAAAP///wz////P///////////////////////////y+v//vOX//5DV//+C0P//YsT//5DU//+u4P//5fT////////////////////////////////////////////G////Cf///4T/////////////////////8vr//3LK//8Trf//AKj//wCn//8Ap///AKf+/wCo//8AqP//AKf//1C+///K6v//////////////////////////////////////e////9v///////////////+u4P//E6z//wCn//8AqP//AKf//wCo//8Ap///AKf//wCo//8AqP//AKf//wCo//8Ap///kNX/////////////kdX//9jw////////////z/////D//////////4LP//8Ap///AKf//wCo//8qs///csr//5DV///K6f//y+r//8rq///L6v//n9n//3LK//8TrP//AKf//5/a////////kNX//1C+////////////7f////D/////kdX//wCo//8AqP//csn//9jw///////////////////////////////////////////////////y+v//n9r//4LQ////////yun//wCn///l9P//////8P////DK6v//AKf//1C+///l9P//////////////////////////////////////////////////////////////////////////////////yun//wCn//+85f//////8P////Aps///kNX///////////////////////////////////////////////////////////////////////+g2v//KrP//2LE//+Q1P//csr//wCn//+R1f//////8P////C75P////////////////////////////+xsbD/VlZV/1VVVP9WVlX/oaGh//Ly8v/y8vL/dnZ2/7Cwr///////vOT//2HD//8Ap///AKj//wCn/v+85f//////8P////D//////////////////////////4aGhf8EBAP/BQUD/wUFBP8EBAP/BQUD/0VFRP9nZ2b/BQUE/wUFBP92dnb/////////////////2O///+b1////////////8P////D/////////////////////8vLy/wUFBP8FBQT/BQUE/wUFA/9EREP/HR0b/wUFBP8FBQT/BQUD/wUFBP8FBQT/////////////////////////////////////8P////D/////////////////////zMzM/wUFBP8FBQT/BQUE/3Z2dv//////8vLy/x0dHP8FBQT/BQUE/wUFBP+UlJP/////////////////////////////////////8P////D/////////////////////zc3N/wUFBP8FBQT/BQUE/5SUk////////////4aGhf8FBQT/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D//////////////////////////x0dG/8FBQT/BQUE/0VFQ//z8/P//////76+vv8FBQT/BQUE/wUFBP/Nzc3/////////////////////////////////////8P////D//////////////////////////7CwsP8FBQP/BQUE/wUFBP8dHRv/dnZ2/3Z2dv8FBQP/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D///////////////////////////////++vr7/MTEw/wUFBP8FBQP/BQUD/wUFBP8FBQT/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D//////////////////////////////////////////+Xl5f/MzMz/lJST/3Z2dv8FBQT/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D//////////////////////////4aGhf9WVlX/HR0b/729vf///////////7Cwr/8FBQP/BQUE/wUFBP/MzMz/////////////////////////////////////8P////D//////////////////////////2ZmZf8FBQT/BQUE/x0dHP++vr7/zMzM/0VFRP8FBQT/BQUE/wUFBP/y8vL/////////////////////////////////////8P////D//////////////////////////8zMzP8FBQT/BQUE/wUFBP8FBQT/BQUE/wUFBP8FBQT/BQUD/1ZWVP/29vb/////////////////////////////////////7f///9X///////////////////////////////+wsK//HR0c/wUFBP8FBQT/BQUE/wUFBP8FBQT/MTEw/9vb2//6+vr/////////////////////////////////////z////3v/////////////////////////////////////8vLy/76+vv+UlJP/lJST/5SUk/++vr7/////////////////////////////////////////////////////df///wn////D//////////////////////////////////////////////////////////////////////////////////////////////////////////////+9////BgAAAAD///8D////df///9L/////////////////////////////////////////////////////////////////////////////////////////z////3X///8DAAAAAIAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAABACgAAAAQAAAAIAAAAAEAIAAAAAAAQAQAAAAAAAAAAAAAAAAAAAAAAAD///8G////lv////b/////////////////////////////////////////////////////////9v///5b///8G////iv/////////////////////Y7///n9r//5DV//+Q1P//vOT/////////////////////////////////iv///+f//////////8vq//9Qvv//AKj//wCn//8Ap///AKf+/wCn//8ps///u+T////////y+v//8vr//////+f////w/////67g//8AqP//AKj//z24//+C0P//kNX//5DU//+R1f//UL7//wCn//+u4P//vOX//4LQ///////w////8Lzl//8AqP//csn//+bz///////////////////////////////////l9P//rd///9jv//8Trf//////8P////Aqs///2O//////////////////////////////////////////////Ur7//3LK//+C0P//AKf///////D////w5vX/////////////zMzM/x0dG/8FBQT/HR0b/5SUk/9WVlT/RUVD/+fu8/+i2P7/csr//3LK///////w////8P///////////////zExMP8FBQT/BQUE/0VFRP8FBQP/BQUE/wUFBP+UlJP/////////////////////8P////D///////////////8FBQT/BQUE/4aGhP//////ZmZl/wUFBP8FBQT/8vLy//////////////////////D////w////////////////VlZV/wUFBP8yMjD/5ubm/5SUk/8FBQT/BQUE///////////////////////////w////8P///////////////9nZ2f8yMjD/BQUE/wUFBP8FBQT/BQUE/wUFBP//////////////////////////8P////D////////////////m5ub/zMzM/729vf+wsK//VlZV/wUFBP8FBQT///////////////////////////D////w////////////////Z2dm/wUFBP9FRUT/2NjY/2dnZv8FBQT/HR0c///////////////////////////w////5////////////////8zMzP8FBQP/BQUE/wUFBP8FBQT/BQUE/3Z2dv//////////////////////////5////4f/////////////////////2dnZ/3Z2dv9VVVT/VlZV/6Kiov///////////////////////////////4r///8G////jf///+T/////////////////////////////////////////////////////////5P///43///8GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==',
     comment: 'Standard-Favicon Amazon'
+  },
+  {
+    id: 'preset-http-default',
+    enabled: true,
+    patternType: 'regex',
+    pattern: '^https?:\\/\\/',
+    iconDataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNiIgZmlsbD0iI2Y4ZmFmYyIvPjxjaXJjbGUgY3g9IjE2IiBjeT0iMTYiIHI9IjkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzY0NzQ4YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTcgMTZoMThNMTYgN2MzIDMgNC41IDYgNC41IDlzLTEuNSA2LTQuNSA5Yy0zLTMtNC41LTYtNC41LTlzMS41LTYgNC41LTl6IiBmaWxsPSJub25lIiBzdHJva2U9IiM2NDc0OGIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+',
+    comment: 'Standard-Favicon HTTP(S)'
   }
 ]);
 
@@ -13364,8 +13874,6 @@ function getDefaultFaviconRules() {
         visualCssAvailableSelectors: [],
         showMigrationNotice: false,
         customCssDraft: '', // Keep for computed properties compatibility
-        cssSidebarWidth: 400,
-        isCssSidebarWidthResizing: false,
         selectedVisualTemplate: null,
         editingRuleId: null,
         editingRuleName: '',
@@ -13401,6 +13909,21 @@ function getDefaultFaviconRules() {
         cssSidebarTopHeight: 300, // Default height in pixels
         cssSidebarStartY: 0,
         cssSidebarStartHeight: 0,
+        cssPropertyEditor: {
+          ruleId: null,
+          property: '',
+          rawValue: '',
+          useRawValue: false,
+          important: false,
+          model: {}
+        },
+        cssPropertyEditorExpandedSections: {
+          basic: true,
+          value: true,
+          advanced: true
+        },
+        cssPropertyEditorFonts: [],
+        cssPropertyEditorFontsLoaded: false,
         // CSS Sidebar width resize
         isCssSidebarWidthResizing: false,
         cssSidebarWidth: 400, // Default width in pixels
@@ -13535,6 +14058,9 @@ function getDefaultFaviconRules() {
           '.sidebar-top-section',
           '.sidebar-bottom-section',
           '.sidebar-divider',
+          '.mb-css-property-editor',
+          '.mb-css-property-editor-header',
+          '.mb-css-property-editor-content',
           '.editor-header',
           '.editor-content',
           '.sidebar-content',
@@ -13640,6 +14166,7 @@ function getDefaultFaviconRules() {
         fetchingBrowserBookmarks: false,
         browserBookmarksInfo: '',
         importCollapsedGroups: {}, // Track which groups are collapsed in import preview
+        importDialogExpandedSections: { file: true, url: true, clipboard: true },
         exportSelection: [],
         exportFormat: 'json',
         
@@ -14582,6 +15109,29 @@ function getDefaultFaviconRules() {
             'css.visual.tokensHint': 'Use tokens via the dropdown next to properties (var(--token)).',
             'css.visual.tokensSelect': '-- Select Token --',
             'css.visual.valuePlaceholder': 'Enter value (e.g., #ff0000, rgb(), var(--...))',
+            'css.visual.openFormatEditor': 'Open property format editor',
+            'css.visual.formatEditor': 'Property Format Editor',
+            'css.visual.formatEditorNoSelection': 'Select a property with the gear button next to "Enter value...".',
+            'css.visual.formatEditorBasic': 'Basic',
+            'css.visual.formatEditorValue': 'Value Builder',
+            'css.visual.formatEditorAdvanced': 'Advanced',
+            'css.visual.formatEditorApply': 'Apply',
+            'css.visual.formatEditorRevert': 'Revert',
+            'css.visual.formatEditorUseRaw': 'Edit as raw CSS value',
+            'css.visual.formatEditorPreview': 'Preview',
+            'css.visual.formatEditorProperty': 'Property',
+            'css.visual.formatEditorType': 'Type',
+            'css.visual.formatEditorRawEnabled': 'Raw mode enabled. Disable it to use guided controls.',
+            'css.visual.formatEditorRawOnly': 'This property uses raw mode only.',
+            'css.visual.value': 'Value',
+            'css.visual.none': 'None',
+            'css.visual.color': 'Color',
+            'css.visual.alpha': 'Alpha',
+            'css.visual.fontFamilyCustom': 'Custom font-family value',
+            'css.visual.linkValues': 'Link values',
+            'css.unit': 'Unit',
+            'css.blur': 'Blur',
+            'css.spread': 'Spread',
             'css.visual.tokenName': 'Token name',
             'css.visual.tokenValue': 'Token value',
             'css.visual.invalidCssValue': 'Invalid CSS value',
@@ -14629,6 +15179,9 @@ function getDefaultFaviconRules() {
             'css.visual.allSeparators': 'All Separators',
             'css.visual.allNotes': 'All Notes',
             'css.visual.linkHover': 'Link (Hover)',
+            'css.visual.state': 'State',
+            'css.visual.hoverState': 'Hover (:hover)',
+            'css.visual.dragOverState': 'Drag Over (.drag-over-active)',
             'css.visual.linkAnchor': 'Link Anchor',
             'css.visual.linkUrl': 'Link URL',
             'css.visual.linkIcon': 'Link Icon',
@@ -16270,6 +16823,29 @@ function getDefaultFaviconRules() {
             , 'css.visual.tokensHint': 'Tokens per Dropdown neben den Properties einsetzen (var(--token)).'
             , 'css.visual.tokensSelect': '-- Token wählen --'
             , 'css.visual.valuePlaceholder': 'Wert eingeben (z. B. #ff0000, rgb(), var(--...))'
+            , 'css.visual.openFormatEditor': 'Property-Format-Editor öffnen'
+            , 'css.visual.formatEditor': 'Property-Format-Editor'
+            , 'css.visual.formatEditorNoSelection': 'Wähle eine Property über den Zahnrad-Button neben "Wert eingeben ...".'
+            , 'css.visual.formatEditorBasic': 'Basis'
+            , 'css.visual.formatEditorValue': 'Wert-Builder'
+            , 'css.visual.formatEditorAdvanced': 'Erweitert'
+            , 'css.visual.formatEditorApply': 'Anwenden'
+            , 'css.visual.formatEditorRevert': 'Zurücksetzen'
+            , 'css.visual.formatEditorUseRaw': 'Als rohen CSS-Wert bearbeiten'
+            , 'css.visual.formatEditorPreview': 'Vorschau'
+            , 'css.visual.formatEditorProperty': 'Property'
+            , 'css.visual.formatEditorType': 'Typ'
+            , 'css.visual.formatEditorRawEnabled': 'Rohmodus aktiv. Deaktiviere ihn, um geführte Eingaben zu nutzen.'
+            , 'css.visual.formatEditorRawOnly': 'Diese Property unterstützt nur den Rohmodus.'
+            , 'css.visual.value': 'Wert'
+            , 'css.visual.none': 'Keine'
+            , 'css.visual.color': 'Farbe'
+            , 'css.visual.alpha': 'Alpha'
+            , 'css.visual.fontFamilyCustom': 'Eigener font-family-Wert'
+            , 'css.visual.linkValues': 'Werte koppeln'
+            , 'css.unit': 'Einheit'
+            , 'css.blur': 'Unschärfe'
+            , 'css.spread': 'Ausdehnung'
             , 'css.visual.tokenName': 'Token-Name'
             , 'css.visual.tokenValue': 'Token-Wert'
             , 'css.visual.invalidCssValue': 'Ungültiger CSS-Wert'
@@ -16344,6 +16920,9 @@ function getDefaultFaviconRules() {
             , 'css.visual.allSeparators': 'Alle Trenner'
             , 'css.visual.allNotes': 'Alle Notizen'
             , 'css.visual.linkHover': 'Link (Hover)'
+            , 'css.visual.state': 'Zustand'
+            , 'css.visual.hoverState': 'Hover (:hover)'
+            , 'css.visual.dragOverState': 'Drag Over (.drag-over-active)'
             , 'css.visual.linkAnchor': 'Link Anchor'
             , 'css.visual.linkUrl': 'Link URL'
             , 'css.visual.linkIcon': 'Link Icon'
@@ -16502,6 +17081,12 @@ function getDefaultFaviconRules() {
         hasCustomCssChanges() {
           const currentCss = this.data.options?.customCss || '';
           return this.customCssDraft !== currentCss;
+        },
+
+        cssPropertyEditorRule() {
+          const ruleId = this.cssPropertyEditor?.ruleId;
+          if (!ruleId) return null;
+          return (this.visualCssRules || []).find((rule) => String(rule?.id) === String(ruleId)) || null;
         },
         
         // Syntax highlighted CSS for display
@@ -16855,6 +17440,9 @@ function getDefaultFaviconRules() {
           window.addEventListener('scroll', this.handleKeywordSuggestionViewportChange, true);
       },
       beforeDestroy() {
+        this.stopElementPicker();
+        document.body.classList.remove('css-sidebar-open');
+        document.body.style.marginRight = '';
         // Clean up global listeners
         if (this._onEscapeKeyup) {
           window.removeEventListener('keyup', this._onEscapeKeyup);
@@ -18672,17 +19260,24 @@ function getDefaultFaviconRules() {
           }
 
           const preferredTopHeight = parseInt(visualCssOptions.sidebarTopHeight, 10);
-          if (Number.isFinite(preferredTopHeight)) {
-            this.cssSidebarTopHeight = preferredTopHeight;
+          let resolvedTopHeight = null;
+          const localTopHeight = parseInt(localStorage.getItem('cssSidebarTopHeight'), 10);
+          if (Number.isFinite(localTopHeight) && localTopHeight !== 300) {
+            resolvedTopHeight = localTopHeight;
+          } else if (Number.isFinite(preferredTopHeight) && preferredTopHeight !== 300) {
+            resolvedTopHeight = preferredTopHeight;
           } else {
-            const localTopHeight = parseInt(localStorage.getItem('cssSidebarTopHeight'), 10);
-            if (Number.isFinite(localTopHeight)) {
-              this.cssSidebarTopHeight = localTopHeight;
-            } else {
-              const legacyTopHeight = parseInt(localStorage.getItem('sidebarTopHeight'), 10);
-              if (Number.isFinite(legacyTopHeight)) this.cssSidebarTopHeight = legacyTopHeight;
+            const legacyTopHeight = parseInt(localStorage.getItem('sidebarTopHeight'), 10);
+            if (Number.isFinite(legacyTopHeight) && legacyTopHeight !== 300) {
+              resolvedTopHeight = legacyTopHeight;
             }
           }
+          if (!Number.isFinite(resolvedTopHeight)) {
+            const containerHeight = Math.max(420, window.innerHeight - 100);
+            resolvedTopHeight = Math.round(containerHeight * (2 / 3));
+          }
+          this.cssSidebarTopHeight = resolvedTopHeight;
+          this.clampCssSidebarTopHeight();
         },
         openCssSidebar() {
           // Initialize Visual CSS Rules if not already loaded
@@ -18706,9 +19301,17 @@ function getDefaultFaviconRules() {
           document.body.classList.add('css-sidebar-open');
           this.applyVisualCssSidebarPreferences();
           document.body.style.marginRight = this.cssSidebarWidth + 'px';
+          this.$nextTick(() => {
+            this.clampCssSidebarTopHeight();
+            this.ensureCssPropertyEditorFonts();
+            if (this.cssPropertyEditor.ruleId && !this.cssPropertyEditorRule) {
+              this.clearCssPropertyEditorSelection();
+            }
+          });
         },
 
         closeCssSidebar() {
+          if (this.elementPickerActive) this.stopElementPicker();
           this.cssSidebarVisible = false;
           // Remove class from body to restore layout
           document.body.classList.remove('css-sidebar-open');
@@ -18733,10 +19336,14 @@ function getDefaultFaviconRules() {
             { value: '.mb-group__header', label: 'Group Header', supportsGroup: true, supportsLink: false },
             { value: '.mb-group__name', label: 'Group Name', supportsGroup: true, supportsLink: false },
             { value: '.mb-group__actions', label: 'Group Actions', supportsGroup: true, supportsLink: false },
+            { value: '.verticalDropZone', label: 'Group Column Dropzone (Vertical)', supportsGroup: false, supportsLink: false },
+            { value: '.groupContainerDragAndDrop.group-drop-zone', label: 'Group Dropzone (Horizontal)', supportsGroup: false, supportsLink: false },
             { value: '.mb-links-container', label: 'Links Container', supportsGroup: true, supportsLink: false },
             { value: '.mb-link', label: 'Link', supportsGroup: true, supportsLink: true },
             { value: '.mb-link-separator', label: 'Sep.', supportsGroup: true, supportsLink: true },
             { value: '.mb-link-note', label: 'Note', supportsGroup: true, supportsLink: true },
+            { value: '.linkVerticalDropZone', label: 'Link Column Dropzone (Vertical)', supportsGroup: true, supportsLink: false },
+            { value: '.linkContainerDragAndDrop.link-drop-zone', label: 'Link Dropzone (Horizontal)', supportsGroup: true, supportsLink: false },
             { value: '.link-url-preview', label: 'Link URL', supportsGroup: true, supportsLink: true },
             { value: '.mb-link__icon', label: 'Link Icon', supportsGroup: true, supportsLink: true },
             { value: '.mb-link__actions', label: 'Link Actions', supportsGroup: true, supportsLink: true },
@@ -18858,17 +19465,32 @@ function getDefaultFaviconRules() {
           }
         },
 
+        nextVisualRuleId() {
+          const now = Date.now();
+          if (!Number.isFinite(this._visualCssRuleSeq)) {
+            this._visualCssRuleSeq = now;
+          } else {
+            this._visualCssRuleSeq = Math.max(this._visualCssRuleSeq + 1, now);
+          }
+          while (Array.isArray(this.visualCssRules) && this.visualCssRules.some(r => r && r.id === this._visualCssRuleSeq)) {
+            this._visualCssRuleSeq += 1;
+          }
+          return this._visualCssRuleSeq;
+        },
+
         attemptCssMigration(cssText) {
           // Simple migration: Convert CSS text to visual rules
           // This is a basic implementation - can be enhanced
           const migrationRule = {
-            id: Date.now(),
+            id: this.nextVisualRuleId(),
             enabled: true,
             selector: {
               base: 'body',
               groupId: null,
               linkId: null,
-              keywordSlug: null
+              keywordSlug: null,
+              hover: false,
+              dragOver: false
             },
             groupId: null,
             linkId: null,
@@ -18886,13 +19508,16 @@ function getDefaultFaviconRules() {
         addNewCssRule() {
           const ruleCount = this.visualCssRules.length + 1;
           const newRule = {
-            id: Date.now(),
+            id: this.nextVisualRuleId(),
             name: `${this.getTranslation('css.visual.rule') || 'Regel'} ${ruleCount}`,
             enabled: true,
             selector: {
               base: '',
               groupId: null,
-              linkId: null
+              linkId: null,
+              keywordSlug: null,
+              hover: false,
+              dragOver: false
             },
             groupId: null,
             linkId: null,
@@ -18933,7 +19558,7 @@ function getDefaultFaviconRules() {
         duplicateCssRule(rule) {
           // Create a deep copy to avoid shared references
           const duplicate = JSON.parse(JSON.stringify(rule));
-          duplicate.id = Date.now();
+          duplicate.id = this.nextVisualRuleId();
           duplicate.name = (rule.name || this.getTranslation('css.visual.rule') || 'Regel') + ' ' + (this.getTranslation('css.visual.copy') || 'Kopie');
 
           const index = this.visualCssRules.indexOf(rule);
@@ -18944,6 +19569,9 @@ function getDefaultFaviconRules() {
         deleteCssRule(rule) {
           const index = this.visualCssRules.indexOf(rule);
           if (index > -1) {
+            if (String(this.cssPropertyEditor?.ruleId) === String(rule?.id)) {
+              this.clearCssPropertyEditorSelection();
+            }
             this.visualCssRules.splice(index, 1);
             // Remove from collapsed list if present
             const ci = this.collapsedRules.indexOf(rule.id);
@@ -19073,6 +19701,74 @@ function getDefaultFaviconRules() {
           this.$delete(rule.properties, property);
         },
 
+        selectorUsesHoverState(selectorObj) {
+          if (!selectorObj || typeof selectorObj !== 'object') return false;
+          if (!selectorObj.hover) return false;
+          const base = String(selectorObj.base || '').trim();
+          if (!base) return false;
+          // `link-hover` already has :hover in its mapping.
+          if (base === 'link-hover') return false;
+          return true;
+        },
+
+        selectorUsesDragOverState(selectorObj) {
+          if (!selectorObj || typeof selectorObj !== 'object') return false;
+          if (!selectorObj.dragOver) return false;
+          const base = String(selectorObj.base || '').trim();
+          if (!base) return false;
+          return true;
+        },
+
+        appendHoverToSelector(selectorText) {
+          const text = String(selectorText || '').trim();
+          if (!text) return text;
+
+          return text
+            .split(',')
+            .map((rawPart) => {
+              const part = String(rawPart || '').trim();
+              if (!part) return '';
+              if (/:hover\b/i.test(part)) return part;
+
+              // Keep pseudo-elements at the end: `.x::before` -> `.x:hover::before`
+              const pseudoElementMatch = part.match(/(::[a-z0-9_-]+)\s*$/i);
+              if (pseudoElementMatch) {
+                const pseudoElement = pseudoElementMatch[1];
+                const withoutPseudoElement = part.slice(0, -pseudoElement.length).trim();
+                return `${withoutPseudoElement}:hover${pseudoElement}`;
+              }
+
+              return `${part}:hover`;
+            })
+            .filter(Boolean)
+            .join(', ');
+        },
+
+        appendDragOverToSelector(selectorText) {
+          const text = String(selectorText || '').trim();
+          if (!text) return text;
+
+          return text
+            .split(',')
+            .map((rawPart) => {
+              const part = String(rawPart || '').trim();
+              if (!part) return '';
+              if (part.includes('.drag-over-active')) return part;
+
+              // Keep pseudo-elements at the end: `.x::before` -> `.x.drag-over-active::before`
+              const pseudoElementMatch = part.match(/(::[a-z0-9_-]+)\s*$/i);
+              if (pseudoElementMatch) {
+                const pseudoElement = pseudoElementMatch[1];
+                const withoutPseudoElement = part.slice(0, -pseudoElement.length).trim();
+                return `${withoutPseudoElement}.drag-over-active${pseudoElement}`;
+              }
+
+              return `${part}.drag-over-active`;
+            })
+            .filter(Boolean)
+            .join(', ');
+        },
+
         generateCssSelector(rule) {
           // Ensure selector is an object
           const selectorObj = this.getRuleSelector(rule);
@@ -19120,6 +19816,8 @@ function getDefaultFaviconRules() {
             'group-header': '.mb-group__header',
             'group-title': '.mb-group__title',
             'group-body': '.mb-group__body',  // Group content area
+            'vertical-dropzone': '.verticalDropZone',
+            'group-horizontal-dropzone': '.groupContainerDragAndDrop.group-drop-zone',
             'links': '.mb-link',
             'separators': '.mb-link-separator',
             'notes': '.mb-link-note',
@@ -19127,6 +19825,8 @@ function getDefaultFaviconRules() {
             'link-anchor': '.mb-link__anchor',
             'link-url': '.link-url-preview',
             'link-icon': '.mb-link__icon',
+            'link-vertical-dropzone': '.linkVerticalDropZone',
+            'link-horizontal-dropzone': '.linkContainerDragAndDrop.link-drop-zone',
             'link-popover': '.link-detail-popover',
             'link-popover-title': '.link-detail-popover__title',
             'link-popover-url': '.link-detail-popover__url',
@@ -19142,6 +19842,7 @@ function getDefaultFaviconRules() {
             'keywords': '.mb-keyword',  // Keywords in keyword bar
             'keywords-selected': '.mb-keywords-cloud .mb-keyword.mb-keyword-active',
             'keyword-selected-text': '.mb-keywords-cloud .mb-keyword.mb-keyword-active .mb-keyword-text',
+            'keyword-by-name': '.mb-keyword',
             'keywords-hierarchical': '.keyword-badge',  // All keyword badges (common class)
             'keyword-suggestions': '.mb-keyword-suggestions, .mb-keyword-suggestions--overlay',
             'keyword-suggestion-item': '.mb-keyword-suggestion',
@@ -19150,13 +19851,46 @@ function getDefaultFaviconRules() {
 
           let baseSelector = baseSelectorMap[selectorObj.base] || selectorObj.base || '*';
           let fullSelector = baseSelector;
+          const hasScopedGroup = selectorObj.groupId !== null
+            && selectorObj.groupId !== undefined
+            && selectorObj.groupId !== ''
+            && selectorObj.groupId !== 'null';
+          const hasScopedLink = selectorObj.linkId !== null
+            && selectorObj.linkId !== undefined
+            && selectorObj.linkId !== ''
+            && selectorObj.linkId !== 'null';
+          const groups = Array.isArray(this.data?.groups) ? this.data.groups : [];
+          const scopedGroup = hasScopedGroup
+            ? groups.find(g =>
+              g.id === selectorObj.groupId ||
+              g.uuid === selectorObj.groupId ||
+              g.id === parseInt(selectorObj.groupId))
+            : null;
+
+          // Guard against missing target entities: never fallback to global selectors.
+          if (hasScopedGroup && !scopedGroup) {
+            return '';
+          }
+          if (hasScopedLink) {
+            if (!scopedGroup) return '';
+            const scopedLinks = Array.isArray(scopedGroup.links) ? scopedGroup.links : [];
+            const scopedLink = scopedLinks.find(l =>
+              l.id === selectorObj.linkId ||
+              l.uuid === selectorObj.linkId ||
+              l.id === parseInt(selectorObj.linkId));
+            if (!scopedLink) return '';
+          }
 
           // Handle different selector types
-          if (selectorObj.base === 'keyword-by-name' && selectorObj.keywordSlug) {
-            // Use the slug directly since it's already stored
-            const slug = selectorObj.keywordSlug;
-            // Use the mb-keyword-kw-{slug} class that's already added to keywords
-            fullSelector = `.mb-keyword-kw-${slug}`;
+          if (selectorObj.base === 'keyword-by-name') {
+            if (selectorObj.keywordSlug) {
+              // Use the slug directly since it's already stored
+              const slug = selectorObj.keywordSlug;
+              // Use the mb-keyword-kw-{slug} class that's already added to keywords
+              fullSelector = `.mb-keyword-kw-${slug}`;
+            } else {
+              fullSelector = baseSelector;
+            }
           } else if (selectorObj.base && selectorObj.base.startsWith('badges-')) {
             // Special handling for badge selectors
             if (selectorObj.groupId) {
@@ -19337,6 +20071,13 @@ function getDefaultFaviconRules() {
             }
           }
 
+          if (this.selectorUsesDragOverState(selectorObj)) {
+            fullSelector = this.appendDragOverToSelector(fullSelector);
+          }
+          if (this.selectorUsesHoverState(selectorObj)) {
+            fullSelector = this.appendHoverToSelector(fullSelector);
+          }
+
           return fullSelector;
         },
 
@@ -19386,6 +20127,7 @@ function getDefaultFaviconRules() {
               if (!rule.enabled || !rule.selector) continue;
 
               const selector = this.generateCssSelector(rule);
+              if (!selector || !String(selector).trim()) continue;
               const properties = [];
 
               for (const [prop, value] of Object.entries(rule.properties)) {
@@ -19409,6 +20151,7 @@ function getDefaultFaviconRules() {
               if (!selObj.base) continue;
 
               const selector = this.generateCssSelector(rule);
+              if (!selector || !String(selector).trim()) continue;
               const properties = [];
               let mirrorLinkAnchorColor = null;
               let hasBackgroundColorOverride = false;
@@ -19595,7 +20338,7 @@ function getDefaultFaviconRules() {
           document.addEventListener('mouseover', this.onPickerMouseOver, true);
           document.addEventListener('mouseout', this.onPickerMouseOut, true);
           document.addEventListener('click', this.onPickerClick, true);
-          this.showToast(this.getTranslation('css.visual.pickerActive') || 'Element-Picker aktiv: Klicke ein Element im Inhalt', 'info');
+          this.showToast(this.getTranslation('css.visual.pickerActive') || 'Element-Picker aktiv: Klicke ein Element im Inhalt (Shift+Klick = Link Hover)', 'info');
         },
         stopElementPicker() {
           this.elementPickerActive = false;
@@ -19622,7 +20365,7 @@ function getDefaultFaviconRules() {
           e.preventDefault();
           e.stopPropagation();
           try {
-            const base = this.detectBaseForElement(t);
+            const base = this.detectBaseForElement(t, e);
             const pickedRule = this.currentPickerRule;
             if (base && pickedRule) {
               // Update base
@@ -19650,6 +20393,14 @@ function getDefaultFaviconRules() {
                 const levt = { target: { value: linkEl.dataset.uuid } };
                 this.updateRuleLinkId(pickedRule, levt);
               }
+              // Auto-fill keyword slug when picking keyword-specific selectors
+              if (base === 'keyword-by-name' || base === 'keywords-hierarchical') {
+                const slug = this.detectKeywordSlugForElement(t);
+                if (slug) {
+                  const kevt = { target: { value: slug } };
+                  this.updateRuleKeywordSlug(pickedRule, kevt);
+                }
+              }
               this.showToast((this.getTranslation('css.visual.picked') || 'Ausgewählt') + ': ' + base, 'success');
             }
           } finally {
@@ -19671,11 +20422,80 @@ function getDefaultFaviconRules() {
             this.lastHighlightedOutline = null;
           }
         },
-        detectBaseForElement(el) {
+        detectKeywordSlugForElement(el) {
+          if (!el || typeof el.closest !== 'function') return '';
+          const keywordEl = el.closest('[data-keyword], [class*="mb-keyword-kw-"]');
+          if (!keywordEl) return '';
+
+          const datasetKeyword = String(keywordEl?.dataset?.keyword || '').trim();
+          if (datasetKeyword) return this.keywordSlug(datasetKeyword);
+
+          const className = String(keywordEl.className || '');
+          const classMatch = className.match(/\bmb-keyword-kw-([a-z0-9_-]+)\b/i);
+          if (classMatch && classMatch[1]) return this.keywordSlug(classMatch[1]);
+
+          const labelEl = keywordEl.querySelector('.mb-keyword-text');
+          const textFallback = String((labelEl && labelEl.textContent) || keywordEl.textContent || '').trim();
+          if (!textFallback) return '';
+          return this.keywordSlug(textFallback);
+        },
+        detectBaseForElement(el, event = null) {
+          if (event && event.shiftKey && el.closest('.mb-link')) {
+            return 'link-hover';
+          }
           // Check most specific targets first; body last
           const candidates = [
+            { base: 'link-popover-favicon', sel: '.link-detail-popover__favicon' },
+            { base: 'link-popover-badge', sel: '.link-detail-popover__badge' },
+            { base: 'link-popover-keywords', sel: '.link-detail-popover__keywords' },
+            { base: 'link-popover-value-muted', sel: '.link-detail-popover__value--muted' },
+            { base: 'link-popover-value', sel: '.link-detail-popover__value' },
+            { base: 'link-popover-label', sel: '.link-detail-popover__label' },
+            { base: 'link-popover-row', sel: '.link-detail-popover__row' },
+            { base: 'link-popover-meta', sel: '.link-detail-popover__meta' },
+            { base: 'link-popover-url', sel: '.link-detail-popover__url' },
+            { base: 'link-popover-title', sel: '.link-detail-popover__title' },
+            { base: 'link-popover', sel: '.link-detail-popover' },
+            { base: 'link-vertical-dropzone', sel: '.linkVerticalDropZone' },
+            { base: 'link-horizontal-dropzone', sel: '.linkContainerDragAndDrop, .link-drop-zone' },
+            { base: 'vertical-dropzone', sel: '.verticalDropZone' },
+            { base: 'group-horizontal-dropzone', sel: '.groupContainerDragAndDrop, .group-drop-zone' },
+            { base: 'keyword-selected-text', sel: '.mb-keywords-cloud .mb-keyword.mb-keyword-active .mb-keyword-text' },
+            { base: 'keywords-selected', sel: '.mb-keywords-cloud .mb-keyword.mb-keyword-active' },
+            { base: 'keyword-by-name', sel: '.mb-keywords-cloud .mb-keyword[class*="mb-keyword-kw-"]' },
+            { base: 'keyword-suggestion-item', sel: '.mb-keyword-suggestion' },
+            { base: 'keyword-suggestions', sel: '.mb-keyword-suggestions, .mb-keyword-suggestions--overlay' },
+            { base: 'keywords-hierarchical', sel: '.keyword-badge' },
+            { base: 'context-menu-item', sel: '.mb-context-menu-list > li' },
+            { base: 'context-menu', sel: '.mb-context-menu' },
+            { base: 'dropdown-item', sel: '.dropdown-item' },
+            { base: 'dropdown-menu', sel: '.dropdown-menu' },
+            { base: 'form-check-input', sel: '.form-check-input' },
+            { base: 'input-group-text', sel: '.input-group-text' },
+            { base: 'form-select', sel: '.form-select' },
+            { base: 'form-control', sel: '.form-control' },
+            { base: 'table-header', sel: '.table thead th' },
+            { base: 'table-cell', sel: '.table tbody td' },
+            { base: 'table', sel: '.table' },
+            { base: 'list-group-item', sel: '.list-group-item' },
+            { base: 'card-header', sel: '.card-header' },
+            { base: 'card', sel: '.card' },
+            { base: 'alert-warning', sel: '.alert-warning' },
+            { base: 'alert-info', sel: '.alert-info' },
+            { base: 'surface-panel', sel: '.mb-surface-panel' },
+            { base: 'muted-text', sel: '.text-muted' },
+            { base: 'sidebar-divider', sel: '.sidebar-divider' },
+            { base: 'sidebar-bottom-section', sel: '.sidebar-bottom-section' },
+            { base: 'sidebar-top-section', sel: '.sidebar-top-section' },
+            { base: 'sidebar-header', sel: '.sidebar-header' },
+            { base: 'feature-sidebar', sel: '.feature-sidebar' },
+            { base: 'css-sidebar', sel: '.css-sidebar' },
+            { base: 'modal-header', sel: '.modal-header' },
+            { base: 'modal-body', sel: '.modal-body' },
+            { base: 'modal-footer', sel: '.modal-footer' },
+            { base: 'modal', sel: '.modal-content' },
             { base: 'link-anchor', sel: '.mb-link__anchor' },
-            { base: 'link-url', sel: '.link-url-preview' },
+            { base: 'link-url', sel: '.link-url-preview, .mb-link__url' },
             { base: 'link-icon', sel: '.mb-link__icon' },
             { base: 'separators', sel: '.mb-link-separator, .mb-link-separator-row' },
             { base: 'notes', sel: '.mb-link-note, .mb-link-note-row' },
@@ -19684,10 +20504,11 @@ function getDefaultFaviconRules() {
             { base: 'group-header', sel: '.mb-group__header' },
             { base: 'group-body', sel: '.mb-group__body' },
             { base: 'groups', sel: '.mb-group' },
+            { base: 'groups-links-container', sel: '.mb-groups-links-container, .mainContainer' },
             { base: 'toolbar', sel: '.mb-toolbar' },
             { base: 'header', sel: '.mb-titlebar' },
             { base: 'footer', sel: '.mb-footer' },
-            { base: 'app', sel: '#app' },
+            { base: 'app', sel: '#app, .mb-app' },
             { base: 'keywords', sel: '.mb-keyword' },
             { base: 'body', sel: 'body' }
           ];
@@ -19742,6 +20563,7 @@ function getDefaultFaviconRules() {
           const groupSupportingSelectors = [
             'groups', 'group-header', 'group-title', 'group-body',
             'links', 'separators', 'notes', 'link-hover', 'link-anchor', 'link-url', 'link-icon',
+            'link-vertical-dropzone', 'link-horizontal-dropzone',
             'link-popover', 'link-popover-title', 'link-popover-url', 'link-popover-meta',
             'link-popover-row', 'link-popover-label', 'link-popover-value', 'link-popover-value-muted',
             'link-popover-keywords', 'link-popover-badge', 'link-popover-favicon',
@@ -20002,7 +20824,9 @@ function getDefaultFaviconRules() {
               base: rule.selector,
               groupId: rule.groupId || null,
               linkId: rule.linkId || null,
-              keywordSlug: null
+              keywordSlug: null,
+              hover: false,
+              dragOver: false
             };
           }
           if (!rule.selector || typeof rule.selector !== 'object') {
@@ -20010,11 +20834,22 @@ function getDefaultFaviconRules() {
               base: '',
               groupId: null,
               linkId: null,
-              keywordSlug: null
+              keywordSlug: null,
+              hover: false,
+              dragOver: false
             };
           }
           if (!Object.prototype.hasOwnProperty.call(rule.selector, 'keywordSlug')) {
             rule.selector.keywordSlug = null;
+          }
+          if (!Object.prototype.hasOwnProperty.call(rule.selector, 'hover')) {
+            rule.selector.hover = false;
+          }
+          if (!Object.prototype.hasOwnProperty.call(rule.selector, 'dragOver')) {
+            rule.selector.dragOver = false;
+          }
+          if (rule.selector.base === 'link-hover' && rule.selector.hover) {
+            rule.selector.hover = false;
           }
 
           this.normalizeRuleProperties(rule);
@@ -20023,7 +20858,23 @@ function getDefaultFaviconRules() {
 
         normalizeAllVisualRules() {
           if (!Array.isArray(this.visualCssRules)) return;
-          this.visualCssRules.forEach((rule) => this.normalizeVisualRule(rule));
+          const seenRuleIds = new Set();
+          this.visualCssRules.forEach((rule) => {
+            this.normalizeVisualRule(rule);
+            if (!rule || typeof rule !== 'object') return;
+
+            let ruleId = rule.id;
+            if (ruleId === undefined || ruleId === null || ruleId === '') {
+              rule.id = this.nextVisualRuleId();
+              ruleId = rule.id;
+            }
+
+            while (seenRuleIds.has(String(ruleId))) {
+              rule.id = this.nextVisualRuleId();
+              ruleId = rule.id;
+            }
+            seenRuleIds.add(String(ruleId));
+          });
         },
 
         formatPropertyName(property) {
@@ -20035,6 +20886,7 @@ function getDefaultFaviconRules() {
             'background-color': 'Background Color',
             'backgroundcolor': 'Background Color',
             'color': 'Text Color',
+            'font-family': 'Font Family',
             'font-size': 'Font Size',
             'font-weight': 'Font Weight',
             'border': 'Border',
@@ -20056,6 +20908,667 @@ function getDefaultFaviconRules() {
           if (propertyMap[normalizedProperty]) return propertyMap[normalizedProperty];
           if (normalizedProperty.startsWith('--')) return normalizedProperty;
           return normalizedProperty.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        },
+
+        getCssEnumOptions(enumType) {
+          const map = {
+            'border-style': ['none', 'solid', 'dashed', 'dotted', 'double', 'groove', 'ridge', 'inset', 'outset'],
+            'outline-style': ['none', 'solid', 'dashed', 'dotted', 'double', 'groove', 'ridge', 'inset', 'outset'],
+            'text-align': ['left', 'center', 'right', 'justify', 'start', 'end'],
+            'text-decoration': ['none', 'underline', 'overline', 'line-through', 'underline overline'],
+            'font-weight': ['100', '200', '300', '400', '500', '600', '700', '800', '900', 'normal', 'bold', 'bolder', 'lighter'],
+            'display': ['block', 'inline', 'inline-block', 'flex', 'inline-flex', 'grid', 'inline-grid', 'none']
+          };
+          return map[enumType] || [];
+        },
+
+        getCssPropertySchema(property) {
+          const normalized = this.normalizeCssPropertyName(property);
+          if (!normalized || normalized === 'custom' || normalized.startsWith('--')) {
+            return { kind: 'raw' };
+          }
+
+          if (normalized === 'font-family') {
+            return { kind: 'font-family' };
+          }
+
+          if (normalized === 'font-weight') {
+            return { kind: 'enum', options: this.getCssEnumOptions('font-weight') };
+          }
+
+          if (normalized === 'text-align') {
+            return { kind: 'enum', options: this.getCssEnumOptions('text-align') };
+          }
+
+          if (normalized === 'text-decoration') {
+            return { kind: 'enum', options: this.getCssEnumOptions('text-decoration') };
+          }
+
+          if (normalized === 'display') {
+            return { kind: 'enum', options: this.getCssEnumOptions('display') };
+          }
+
+          if (normalized === 'opacity') {
+            return { kind: 'number', min: 0, max: 1, step: 0.01 };
+          }
+
+          if (normalized === 'box-shadow') {
+            return { kind: 'shadow' };
+          }
+
+          if (normalized === 'padding' || normalized === 'margin') {
+            return {
+              kind: 'spacing',
+              units: normalized === 'margin'
+                ? ['px', 'rem', 'em', '%', 'auto']
+                : ['px', 'rem', 'em', '%']
+            };
+          }
+
+          if (
+            normalized === 'border'
+            || normalized === 'outline'
+            || /^border-(top|right|bottom|left)$/.test(normalized)
+          ) {
+            return { kind: 'border' };
+          }
+
+          if (
+            normalized === 'font-size'
+            || normalized === 'width'
+            || normalized === 'height'
+            || normalized === 'outline-width'
+            || normalized === 'outline-offset'
+            || normalized === 'border-width'
+            || /^border-(top|right|bottom|left)-width$/.test(normalized)
+            || normalized === 'border-radius'
+            || /^border-(top|right|bottom|left)-(left|right)-radius$/.test(normalized)
+          ) {
+            const keywords = [];
+            let units = ['px', 'rem', 'em'];
+            if (normalized === 'width' || normalized === 'height') {
+              keywords.push('auto', 'fit-content', 'min-content', 'max-content');
+              units = ['px', 'rem', 'em', '%', 'vw', 'vh'];
+            } else if (normalized === 'font-size') {
+              units = ['px', 'rem', 'em', '%'];
+            } else if (normalized.includes('radius')) {
+              units = ['px', 'rem', 'em', '%'];
+            }
+            if (normalized.includes('width') && normalized.startsWith('border')) {
+              keywords.push('thin', 'medium', 'thick');
+            }
+            return {
+              kind: 'length',
+              units,
+              keywords
+            };
+          }
+
+          if (
+            normalized === 'border-style'
+            || normalized === 'outline-style'
+            || /^border-(top|right|bottom|left)-style$/.test(normalized)
+          ) {
+            return { kind: 'enum', options: this.getCssEnumOptions('border-style') };
+          }
+
+          if (this.isColorProperty(normalized) || normalized === 'background') {
+            return { kind: 'color' };
+          }
+
+          return { kind: 'raw' };
+        },
+
+        isCssPropertyEditorTarget(rule, property) {
+          if (!rule || !property) return false;
+          const editorRuleId = this.cssPropertyEditor?.ruleId;
+          const editorProperty = this.normalizeCssPropertyName(this.cssPropertyEditor?.property || '');
+          if (!editorRuleId || !editorProperty) return false;
+          return String(rule.id) === String(editorRuleId)
+            && this.normalizeCssPropertyName(property) === editorProperty;
+        },
+
+        isCssPropertyEditorSectionExpanded(sectionKey) {
+          return this.cssPropertyEditorExpandedSections[sectionKey] !== false;
+        },
+
+        toggleCssPropertyEditorSection(sectionKey) {
+          this.$set(this.cssPropertyEditorExpandedSections, sectionKey, !this.isCssPropertyEditorSectionExpanded(sectionKey));
+        },
+
+        clearCssPropertyEditorSelection() {
+          this.cssPropertyEditor = {
+            ruleId: null,
+            property: '',
+            rawValue: '',
+            useRawValue: false,
+            important: false,
+            model: {}
+          };
+        },
+
+        openCssPropertyEditor(rule, property) {
+          if (!rule || !property) return;
+          const normalizedProperty = this.normalizeCssPropertyName(property);
+          if (!normalizedProperty || normalizedProperty === 'custom') return;
+          this.$set(this.cssPropertyEditor, 'ruleId', rule.id);
+          this.$set(this.cssPropertyEditor, 'property', normalizedProperty);
+          this.cssPropertyEditorExpandedSections = { basic: true, value: true, advanced: true };
+          this.ensureCssPropertyEditorFonts();
+          this.resetCssPropertyEditorDraft();
+        },
+
+        resetCssPropertyEditorDraft() {
+          const rule = this.cssPropertyEditorRule;
+          const property = this.normalizeCssPropertyName(this.cssPropertyEditor?.property || '');
+          if (!rule || !property) return;
+          const key = this.findEquivalentPropertyKey(rule.properties, property) || property;
+          const rawValue = String(rule?.properties?.[key] ?? '');
+          const schema = this.getCssPropertySchema(property);
+          const parsed = this.parseCssPropertyEditorDraft(schema, rawValue);
+
+          this.$set(this.cssPropertyEditor, 'rawValue', rawValue);
+          this.$set(this.cssPropertyEditor, 'important', this.getPropertyImportant(rule, property));
+          this.$set(this.cssPropertyEditor, 'model', parsed.model);
+          this.$set(this.cssPropertyEditor, 'useRawValue', schema.kind === 'raw' || !parsed.success);
+        },
+
+        createDefaultCssPropertyEditorModel(schema) {
+          const kind = schema?.kind || 'raw';
+          if (kind === 'color') {
+            return { color: '#000000', alpha: 1, tokenName: '' };
+          }
+          if (kind === 'font-family') {
+            return { fontFamily: '', fontFamilyCustom: '' };
+          }
+          if (kind === 'enum') {
+            return { enumValue: (schema.options || [])[0] || '' };
+          }
+          if (kind === 'number') {
+            return { numberValue: Number.isFinite(schema.min) ? schema.min : 0 };
+          }
+          if (kind === 'length') {
+            return { lengthValue: 0, lengthUnit: (schema.units || ['px'])[0], lengthKeyword: '' };
+          }
+          if (kind === 'spacing') {
+            const unit = (schema.units || ['px'])[0];
+            return {
+              spacingLinked: true,
+              spacing: {
+                top: { value: 0, unit },
+                right: { value: 0, unit },
+                bottom: { value: 0, unit },
+                left: { value: 0, unit }
+              }
+            };
+          }
+          if (kind === 'border') {
+            return { border: { width: 1, unit: 'px', style: 'solid', color: '#000000', alpha: 1 } };
+          }
+          if (kind === 'shadow') {
+            return {
+              shadow: {
+                offsetX: 0,
+                offsetY: 2,
+                blur: 8,
+                spread: 0,
+                color: '#000000',
+                alpha: 0.25,
+                inset: false
+              }
+            };
+          }
+          return {};
+        },
+
+        parseCssPropertyEditorDraft(schema, rawValue) {
+          const kind = schema?.kind || 'raw';
+          const raw = String(rawValue || '').trim();
+          const model = this.createDefaultCssPropertyEditorModel(schema);
+          if (!raw) return { success: true, model };
+
+          if (kind === 'color') {
+            const varMatch = raw.match(/^var\(\s*--([a-z0-9_-]+)\s*\)$/i);
+            if (varMatch) {
+              model.tokenName = this.normalizeTokenName(varMatch[1]);
+              return { success: true, model };
+            }
+            const hex = this.getValidHexColor(raw);
+            if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(raw)) {
+              model.color = hex;
+              model.alpha = 1;
+              model.tokenName = '';
+              return { success: true, model };
+            }
+            const rgbaMatch = raw.match(/^rgba?\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)(?:\s*,\s*([0-9.]+))?\s*\)$/i);
+            if (rgbaMatch) {
+              const r = Math.max(0, Math.min(255, parseFloat(rgbaMatch[1]) || 0));
+              const g = Math.max(0, Math.min(255, parseFloat(rgbaMatch[2]) || 0));
+              const b = Math.max(0, Math.min(255, parseFloat(rgbaMatch[3]) || 0));
+              const a = rgbaMatch[4] !== undefined ? Math.max(0, Math.min(1, parseFloat(rgbaMatch[4]) || 0)) : 1;
+              model.color = '#' + [r, g, b].map((n) => Math.round(n).toString(16).padStart(2, '0')).join('');
+              model.alpha = a;
+              model.tokenName = '';
+              return { success: true, model };
+            }
+            return { success: false, model };
+          }
+
+          if (kind === 'font-family') {
+            model.fontFamilyCustom = raw;
+            model.fontFamily = raw;
+            return { success: true, model };
+          }
+
+          if (kind === 'enum') {
+            if ((schema.options || []).includes(raw)) {
+              model.enumValue = raw;
+              return { success: true, model };
+            }
+            return { success: false, model };
+          }
+
+          if (kind === 'number') {
+            const parsed = parseFloat(raw);
+            if (!Number.isFinite(parsed)) return { success: false, model };
+            model.numberValue = parsed;
+            return { success: true, model };
+          }
+
+          if (kind === 'length') {
+            if ((schema.keywords || []).includes(raw)) {
+              model.lengthKeyword = raw;
+              return { success: true, model };
+            }
+            const m = raw.match(/^(-?\d*\.?\d+)([a-z%]+)?$/i);
+            if (!m) return { success: false, model };
+            model.lengthValue = parseFloat(m[1]);
+            model.lengthUnit = m[2] || model.lengthUnit || 'px';
+            model.lengthKeyword = '';
+            return { success: true, model };
+          }
+
+          if (kind === 'spacing') {
+            const tokens = raw.split(/\s+/).filter(Boolean);
+            if (!tokens.length || tokens.length > 4) return { success: false, model };
+            const expanded = [];
+            if (tokens.length === 1) expanded.push(tokens[0], tokens[0], tokens[0], tokens[0]);
+            if (tokens.length === 2) expanded.push(tokens[0], tokens[1], tokens[0], tokens[1]);
+            if (tokens.length === 3) expanded.push(tokens[0], tokens[1], tokens[2], tokens[1]);
+            if (tokens.length === 4) expanded.push(tokens[0], tokens[1], tokens[2], tokens[3]);
+            const sides = ['top', 'right', 'bottom', 'left'];
+            for (let i = 0; i < sides.length; i += 1) {
+              const side = sides[i];
+              const token = expanded[i];
+              if (token === 'auto') {
+                model.spacing[side] = { value: 0, unit: 'auto' };
+                continue;
+              }
+              const parsed = token.match(/^(-?\d*\.?\d+)([a-z%]+)?$/i);
+              if (!parsed) return { success: false, model };
+              model.spacing[side] = {
+                value: parseFloat(parsed[1]),
+                unit: parsed[2] || model.spacing[side].unit || 'px'
+              };
+            }
+            model.spacingLinked = sides.every((side) =>
+              model.spacing[side].value === model.spacing.top.value && model.spacing[side].unit === model.spacing.top.unit
+            );
+            return { success: true, model };
+          }
+
+          if (kind === 'border') {
+            const tokens = raw.split(/\s+/).filter(Boolean);
+            if (!tokens.length) return { success: false, model };
+            const styles = this.getCssEnumOptions('border-style');
+            let widthToken = '';
+            let styleToken = '';
+            let colorToken = '';
+            tokens.forEach((token) => {
+              if (!styleToken && styles.includes(token)) {
+                styleToken = token;
+                return;
+              }
+              if (!widthToken && /^(-?\d*\.?\d+)([a-z%]+)?$/i.test(token)) {
+                widthToken = token;
+                return;
+              }
+              if (!widthToken && ['thin', 'medium', 'thick'].includes(token)) {
+                widthToken = token;
+                return;
+              }
+              colorToken += (colorToken ? ' ' : '') + token;
+            });
+            if (widthToken) {
+              if (['thin', 'medium', 'thick'].includes(widthToken)) {
+                const map = { thin: 1, medium: 3, thick: 5 };
+                model.border.width = map[widthToken] || 1;
+                model.border.unit = 'px';
+              } else {
+                const wm = widthToken.match(/^(-?\d*\.?\d+)([a-z%]+)?$/i);
+                if (wm) {
+                  model.border.width = parseFloat(wm[1]);
+                  model.border.unit = wm[2] || 'px';
+                }
+              }
+            }
+            if (styleToken) model.border.style = styleToken;
+            if (colorToken) {
+              const hex = this.getValidHexColor(colorToken);
+              const rgbaMatch = colorToken.match(/^rgba?\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)(?:\s*,\s*([0-9.]+))?\s*\)$/i);
+              if (rgbaMatch) {
+                const r = Math.max(0, Math.min(255, parseFloat(rgbaMatch[1]) || 0));
+                const g = Math.max(0, Math.min(255, parseFloat(rgbaMatch[2]) || 0));
+                const b = Math.max(0, Math.min(255, parseFloat(rgbaMatch[3]) || 0));
+                model.border.color = '#' + [r, g, b].map((n) => Math.round(n).toString(16).padStart(2, '0')).join('');
+                model.border.alpha = rgbaMatch[4] !== undefined ? Math.max(0, Math.min(1, parseFloat(rgbaMatch[4]) || 0)) : 1;
+              } else if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(colorToken)) {
+                model.border.color = hex;
+                model.border.alpha = 1;
+              } else {
+                return { success: false, model };
+              }
+            }
+            return { success: true, model };
+          }
+
+          if (kind === 'shadow') {
+            const rawNoInset = raw.replace(/\binset\b/g, '').trim();
+            const colorMatch = rawNoInset.match(/(rgba?\([^)]*\)|#[0-9a-fA-F]{3,8})\s*$/);
+            let core = rawNoInset;
+            if (colorMatch) {
+              core = rawNoInset.slice(0, colorMatch.index).trim();
+              const colorRaw = colorMatch[1];
+              if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(colorRaw)) {
+                model.shadow.color = this.getValidHexColor(colorRaw);
+                model.shadow.alpha = 1;
+              } else {
+                const rgbaMatch = colorRaw.match(/^rgba?\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)(?:\s*,\s*([0-9.]+))?\s*\)$/i);
+                if (rgbaMatch) {
+                  const r = Math.max(0, Math.min(255, parseFloat(rgbaMatch[1]) || 0));
+                  const g = Math.max(0, Math.min(255, parseFloat(rgbaMatch[2]) || 0));
+                  const b = Math.max(0, Math.min(255, parseFloat(rgbaMatch[3]) || 0));
+                  model.shadow.color = '#' + [r, g, b].map((n) => Math.round(n).toString(16).padStart(2, '0')).join('');
+                  model.shadow.alpha = rgbaMatch[4] !== undefined ? Math.max(0, Math.min(1, parseFloat(rgbaMatch[4]) || 0)) : 1;
+                }
+              }
+            }
+            const parts = core.split(/\s+/).filter(Boolean);
+            if (parts.length < 2) return { success: false, model };
+            const num = (value) => {
+              const m = String(value || '').match(/^(-?\d*\.?\d+)([a-z%]+)?$/i);
+              return m ? parseFloat(m[1]) : null;
+            };
+            const x = num(parts[0]);
+            const y = num(parts[1]);
+            const blur = parts[2] !== undefined ? num(parts[2]) : 0;
+            const spread = parts[3] !== undefined ? num(parts[3]) : 0;
+            if (x === null || y === null || blur === null || spread === null) return { success: false, model };
+            model.shadow.offsetX = x;
+            model.shadow.offsetY = y;
+            model.shadow.blur = blur;
+            model.shadow.spread = spread;
+            model.shadow.inset = /\binset\b/.test(raw);
+            return { success: true, model };
+          }
+
+          return { success: false, model };
+        },
+
+        onCssPropertyEditorModelChange() {
+          const nextValue = this.getCssPropertyEditorPreviewValue();
+          this.$set(this.cssPropertyEditor, 'rawValue', nextValue);
+          this.applyCssPropertyEditorDraft();
+        },
+
+        onCssPropertyEditorRawInput() {
+          if (!this.cssPropertyEditor.useRawValue) this.cssPropertyEditor.useRawValue = true;
+          this.applyCssPropertyEditorDraft();
+        },
+
+        onCssPropertyEditorRawModeToggle() {
+          if (!this.cssPropertyEditor.useRawValue) {
+            const property = this.normalizeCssPropertyName(this.cssPropertyEditor?.property || '');
+            if (property) {
+              const schema = this.getCssPropertySchema(property);
+              const parsed = this.parseCssPropertyEditorDraft(schema, this.cssPropertyEditor.rawValue);
+              if (parsed.success) {
+                this.$set(this.cssPropertyEditor, 'model', parsed.model);
+              } else {
+                this.$set(this.cssPropertyEditor, 'useRawValue', true);
+                this.showToast(this.getTranslation('css.visual.invalidCssValue') || 'Invalid CSS value', 'warning');
+                return;
+              }
+            }
+            this.onCssPropertyEditorModelChange();
+            return;
+          }
+          this.applyCssPropertyEditorDraft();
+        },
+
+        onCssPropertyEditorImportantToggle() {
+          this.applyCssPropertyEditorDraft();
+        },
+
+        onCssPropertyEditorColorInput(colorHex) {
+          this.cssPropertyEditor.model.tokenName = '';
+          this.cssPropertyEditor.model.color = colorHex;
+          this.onCssPropertyEditorModelChange();
+        },
+
+        onCssPropertyEditorTokenChange() {
+          if (this.cssPropertyEditor.model.tokenName) {
+            this.cssPropertyEditor.model.alpha = 1;
+          }
+          this.onCssPropertyEditorModelChange();
+        },
+
+        onCssPropertyEditorBorderColorInput(colorHex) {
+          this.cssPropertyEditor.model.border.color = colorHex;
+          this.onCssPropertyEditorModelChange();
+        },
+
+        onCssPropertyEditorShadowColorInput(colorHex) {
+          this.cssPropertyEditor.model.shadow.color = colorHex;
+          this.onCssPropertyEditorModelChange();
+        },
+
+        onCssPropertyEditorSpacingLinked() {
+          if (this.cssPropertyEditor.model.spacingLinked) {
+            ['right', 'bottom', 'left'].forEach((side) => {
+              this.cssPropertyEditor.model.spacing[side].value = this.cssPropertyEditor.model.spacing.top.value;
+              this.cssPropertyEditor.model.spacing[side].unit = this.cssPropertyEditor.model.spacing.top.unit;
+            });
+          }
+          this.onCssPropertyEditorModelChange();
+        },
+
+        onCssPropertyEditorSpacingInput(side) {
+          if (this.cssPropertyEditor.model.spacingLinked && side === 'top') {
+            ['right', 'bottom', 'left'].forEach((otherSide) => {
+              this.cssPropertyEditor.model.spacing[otherSide].value = this.cssPropertyEditor.model.spacing.top.value;
+              this.cssPropertyEditor.model.spacing[otherSide].unit = this.cssPropertyEditor.model.spacing.top.unit;
+            });
+          }
+          this.onCssPropertyEditorModelChange();
+        },
+
+        getCssPropertyEditorPreviewValue() {
+          const property = this.normalizeCssPropertyName(this.cssPropertyEditor?.property || '');
+          if (!property) return '';
+          if (this.cssPropertyEditor.useRawValue) return String(this.cssPropertyEditor.rawValue || '').trim();
+
+          const schema = this.getCssPropertySchema(property);
+          const model = this.cssPropertyEditor.model || {};
+          if (schema.kind === 'color') {
+            if (model.tokenName) return `var(--${this.normalizeTokenName(model.tokenName)})`;
+            const hex = this.getValidHexColor(model.color || '#000000');
+            const alpha = Number.isFinite(model.alpha) ? Math.max(0, Math.min(1, model.alpha)) : 1;
+            if (alpha >= 0.999) return hex;
+            const rgb = hex.replace('#', '');
+            const r = parseInt(rgb.substring(0, 2), 16);
+            const g = parseInt(rgb.substring(2, 4), 16);
+            const b = parseInt(rgb.substring(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')})`;
+          }
+          if (schema.kind === 'font-family') {
+            const custom = String(model.fontFamilyCustom || '').trim();
+            const selected = String(model.fontFamily || '').trim();
+            const source = custom || selected;
+            if (!source) return '';
+            if (source.startsWith('var(') || source.includes(',')) return source;
+            if (/\s/.test(source) && !/^["'].*["']$/.test(source)) return `"${source}"`;
+            return source;
+          }
+          if (schema.kind === 'enum') {
+            return String(model.enumValue || '').trim();
+          }
+          if (schema.kind === 'number') {
+            if (!Number.isFinite(model.numberValue)) return '';
+            const v = Number(model.numberValue);
+            return String(v);
+          }
+          if (schema.kind === 'length') {
+            const keyword = String(model.lengthKeyword || '').trim();
+            if (keyword) return keyword;
+            if (!Number.isFinite(model.lengthValue)) return '';
+            const unit = String(model.lengthUnit || 'px').trim() || 'px';
+            return `${Number(model.lengthValue)}${unit}`;
+          }
+          if (schema.kind === 'spacing') {
+            const fmt = (sideObj) => {
+              if (!sideObj) return '0px';
+              if (String(sideObj.unit) === 'auto') return 'auto';
+              const value = Number(sideObj.value);
+              if (!Number.isFinite(value)) return '0px';
+              return `${value}${sideObj.unit || 'px'}`;
+            };
+            if (model.spacingLinked) {
+              return fmt(model.spacing?.top);
+            }
+            return [
+              fmt(model.spacing?.top),
+              fmt(model.spacing?.right),
+              fmt(model.spacing?.bottom),
+              fmt(model.spacing?.left)
+            ].join(' ');
+          }
+          if (schema.kind === 'border') {
+            const width = Number(model.border?.width);
+            const widthPart = Number.isFinite(width) ? `${width}${model.border?.unit || 'px'}` : '';
+            const stylePart = String(model.border?.style || '').trim();
+            const colorHex = this.getValidHexColor(model.border?.color || '#000000');
+            const alpha = Number.isFinite(model.border?.alpha) ? Math.max(0, Math.min(1, model.border.alpha)) : 1;
+            let colorPart = colorHex;
+            if (alpha < 0.999) {
+              const rgb = colorHex.replace('#', '');
+              const r = parseInt(rgb.substring(0, 2), 16);
+              const g = parseInt(rgb.substring(2, 4), 16);
+              const b = parseInt(rgb.substring(4, 6), 16);
+              colorPart = `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')})`;
+            }
+            return [widthPart, stylePart, colorPart].filter(Boolean).join(' ').trim();
+          }
+          if (schema.kind === 'shadow') {
+            const shadow = model.shadow || {};
+            const x = Number.isFinite(shadow.offsetX) ? shadow.offsetX : 0;
+            const y = Number.isFinite(shadow.offsetY) ? shadow.offsetY : 0;
+            const blur = Number.isFinite(shadow.blur) ? shadow.blur : 0;
+            const spread = Number.isFinite(shadow.spread) ? shadow.spread : 0;
+            const colorHex = this.getValidHexColor(shadow.color || '#000000');
+            const alpha = Number.isFinite(shadow.alpha) ? Math.max(0, Math.min(1, shadow.alpha)) : 1;
+            let colorPart = colorHex;
+            if (alpha < 0.999) {
+              const rgb = colorHex.replace('#', '');
+              const r = parseInt(rgb.substring(0, 2), 16);
+              const g = parseInt(rgb.substring(2, 4), 16);
+              const b = parseInt(rgb.substring(4, 6), 16);
+              colorPart = `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')})`;
+            }
+            return `${shadow.inset ? 'inset ' : ''}${x}px ${y}px ${blur}px ${spread}px ${colorPart}`.trim();
+          }
+          return String(this.cssPropertyEditor.rawValue || '').trim();
+        },
+
+        isCssPropertyEditorDraftValid() {
+          const property = this.normalizeCssPropertyName(this.cssPropertyEditor?.property || '');
+          if (!property) return false;
+          const value = this.getCssPropertyEditorPreviewValue();
+          if (!value) return true;
+          const stripped = this.stripImportant(value);
+          if (this.hasVarFunction(stripped)) {
+            const vars = this.extractVarNames(stripped);
+            if (vars.length && !vars.every((n) => this.tokenExists(n))) return false;
+          }
+          return this.cssSupports(property, stripped);
+        },
+
+        getCssPropertyEditorValidationHint() {
+          const value = this.getCssPropertyEditorPreviewValue();
+          if (this.hasVarFunction(value)) {
+            const vars = this.extractVarNames(value);
+            const missing = vars.filter((n) => !this.tokenExists(n));
+            if (missing.length) {
+              return (this.getTranslation('css.visual.missingTokens') || 'Missing tokens') + ': ' + missing.join(', ');
+            }
+          }
+          return this.getTranslation('css.visual.invalidCssValue') || 'Invalid CSS value';
+        },
+
+        applyCssPropertyEditorDraft() {
+          const rule = this.cssPropertyEditorRule;
+          const property = this.normalizeCssPropertyName(this.cssPropertyEditor?.property || '');
+          if (!rule || !property) return;
+          const value = this.getCssPropertyEditorPreviewValue();
+
+          const key = this.findEquivalentPropertyKey(rule.properties, property) || property;
+          this.$set(rule.properties, key, value);
+
+          if (!rule.important || typeof rule.important !== 'object' || Array.isArray(rule.important)) {
+            this.$set(rule, 'important', {});
+          }
+          this.$set(rule.important, key, !!this.cssPropertyEditor.important);
+          this.saveVisualCss();
+        },
+
+        async ensureCssPropertyEditorFonts() {
+          if (this.cssPropertyEditorFontsLoaded) return;
+          const defaults = [
+            { label: 'System UI', value: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' },
+            { label: 'Arial', value: 'Arial, sans-serif' },
+            { label: 'Helvetica', value: '"Helvetica Neue", Helvetica, Arial, sans-serif' },
+            { label: 'Verdana', value: 'Verdana, Geneva, sans-serif' },
+            { label: 'Tahoma', value: 'Tahoma, Geneva, sans-serif' },
+            { label: 'Trebuchet MS', value: '"Trebuchet MS", Helvetica, sans-serif' },
+            { label: 'Times New Roman', value: '"Times New Roman", Times, serif' },
+            { label: 'Georgia', value: 'Georgia, serif' },
+            { label: 'Garamond', value: 'Garamond, serif' },
+            { label: 'Courier New', value: '"Courier New", Courier, monospace' },
+            { label: 'Monaco', value: 'Monaco, "Lucida Console", monospace' },
+            { label: 'Inter', value: 'Inter, "Segoe UI", Arial, sans-serif' },
+            { label: 'Roboto', value: 'Roboto, "Segoe UI", Arial, sans-serif' },
+            { label: 'Open Sans', value: '"Open Sans", "Segoe UI", Arial, sans-serif' },
+            { label: 'Lato', value: 'Lato, "Segoe UI", Arial, sans-serif' },
+            { label: 'Poppins', value: 'Poppins, "Segoe UI", Arial, sans-serif' }
+          ];
+
+          const merged = new Map(defaults.map((font) => [font.value, font]));
+          if (typeof window !== 'undefined' && typeof window.queryLocalFonts === 'function') {
+            try {
+              const localFonts = await window.queryLocalFonts();
+              (localFonts || []).forEach((font) => {
+                const family = String(font?.family || '').trim();
+                if (!family) return;
+                const value = /\s/.test(family) ? `"${family}"` : family;
+                if (!merged.has(value)) merged.set(value, { label: family, value });
+              });
+            } catch (error) {
+              debugLog('warn', 'Local font discovery skipped:', error);
+            }
+          }
+
+          this.cssPropertyEditorFonts = Array.from(merged.values()).sort((a, b) => a.label.localeCompare(b.label));
+          this.cssPropertyEditorFontsLoaded = true;
         },
 
         isColorProperty(property) {
@@ -20124,6 +21637,10 @@ function getDefaultFaviconRules() {
           const normalizedProperty = this.normalizeCssPropertyName(prop);
           const key = this.findEquivalentPropertyKey(rule.properties, normalizedProperty) || normalizedProperty;
           this.$set(rule.properties, key, `var(--${name})`);
+          if (this.isCssPropertyEditorTarget(rule, normalizedProperty)) {
+            this.$set(this.cssPropertyEditor, 'rawValue', `var(--${name})`);
+            this.resetCssPropertyEditorDraft();
+          }
           this.saveVisualCss();
         },
 
@@ -20139,6 +21656,9 @@ function getDefaultFaviconRules() {
           // Also remove disabled state for this property
           if (rule.disabled && rule.disabled[key]) {
             delete rule.disabled[key];
+          }
+          if (this.isCssPropertyEditorTarget(rule, normalizedProperty)) {
+            this.clearCssPropertyEditorSelection();
           }
           this.saveVisualCss();
         },
@@ -20287,6 +21807,10 @@ function getDefaultFaviconRules() {
           const normalizedProperty = this.normalizeCssPropertyName(property);
           const key = this.findEquivalentPropertyKey(rule.properties, normalizedProperty) || normalizedProperty;
           this.$set(rule.properties, key, val);
+          if (this.isCssPropertyEditorTarget(rule, normalizedProperty)) {
+            this.$set(this.cssPropertyEditor, 'rawValue', val);
+            this.resetCssPropertyEditorDraft();
+          }
           this.saveVisualCss();
         },
 
@@ -20308,6 +21832,9 @@ function getDefaultFaviconRules() {
             rule.important = {};
           }
           rule.important[key] = !rule.important[key];
+          if (this.isCssPropertyEditorTarget(rule, normalizedProperty)) {
+            this.$set(this.cssPropertyEditor, 'important', !!rule.important[key]);
+          }
           this.saveVisualCss();
         },
 
@@ -20429,14 +21956,49 @@ function getDefaultFaviconRules() {
               base: typeof rule.selector === 'string' ? rule.selector : '',
               groupId: rule.groupId || null,
               linkId: rule.linkId || null,
-              keywordSlug: null
+              keywordSlug: null,
+              hover: false,
+              dragOver: false
             };
           }
           // Ensure the selector has all required properties
           if (!rule.selector.hasOwnProperty('keywordSlug')) {
             rule.selector.keywordSlug = null;
           }
+          if (!rule.selector.hasOwnProperty('hover')) {
+            rule.selector.hover = false;
+          }
+          if (!rule.selector.hasOwnProperty('dragOver')) {
+            rule.selector.dragOver = false;
+          }
           return rule.selector;
+        },
+
+        updateRuleHover(rule, event) {
+          const selector = this.getRuleSelector(rule);
+          selector.hover = !!event.target.checked;
+
+          // `link-hover` already encodes :hover in its base selector.
+          if (selector.base === 'link-hover' && selector.hover) {
+            selector.hover = false;
+          }
+
+          if (this.selectedVisualTemplate && selector.base) {
+            this.loadTemplatePropertiesForRule(rule);
+          }
+
+          this.saveVisualCss();
+        },
+
+        updateRuleDragOver(rule, event) {
+          const selector = this.getRuleSelector(rule);
+          selector.dragOver = !!event.target.checked;
+
+          if (this.selectedVisualTemplate && selector.base) {
+            this.loadTemplatePropertiesForRule(rule);
+          }
+
+          this.saveVisualCss();
         },
 
         updateRuleBase(rule, event) {
@@ -20447,13 +22009,17 @@ function getDefaultFaviconRules() {
               base: '',
               groupId: null,
               linkId: null,
-              keywordSlug: null
+              keywordSlug: null,
+              hover: false,
+              dragOver: false
             };
           }
           const oldBase = rule.selector.base;
           const previousGroupId = rule.selector.groupId;
           const previousLinkId = rule.selector.linkId;
           const previousKeywordSlug = rule.selector.keywordSlug;
+          const previousHover = !!rule.selector.hover;
+          const previousDragOver = !!rule.selector.dragOver;
 
           // Update the base value
           rule.selector.base = baseValue;
@@ -20462,12 +22028,19 @@ function getDefaultFaviconRules() {
           const groupSupportingSelectors = [
             'groups', 'group-header', 'group-title', 'group-body',
             'links', 'separators', 'notes', 'link-hover', 'link-anchor', 'link-url', 'link-icon',
+            'link-vertical-dropzone', 'link-horizontal-dropzone',
+            'link-popover', 'link-popover-title', 'link-popover-url', 'link-popover-meta',
+            'link-popover-row', 'link-popover-label', 'link-popover-value', 'link-popover-value-muted',
+            'link-popover-keywords', 'link-popover-badge', 'link-popover-favicon',
             'badges-group', 'badges-group-linkcount', 'badges-group-keywords',
             'badges-link', 'badges-link-keywords',
             'keywords-hierarchical'
           ];
           const linkSupportingSelectors = [
             'links', 'separators', 'notes', 'link-hover', 'link-anchor', 'link-url', 'link-icon',
+            'link-popover', 'link-popover-title', 'link-popover-url', 'link-popover-meta',
+            'link-popover-row', 'link-popover-label', 'link-popover-value', 'link-popover-value-muted',
+            'link-popover-keywords', 'link-popover-badge', 'link-popover-favicon',
             'badges-link', 'badges-link-keywords',
             'keywords-hierarchical'
           ];
@@ -20484,6 +22057,8 @@ function getDefaultFaviconRules() {
           // Link only meaningful if base supports link AND we still have a group
           rule.selector.linkId = (keepLink && (keepGroup ? previousGroupId : null)) ? previousLinkId : null;
           rule.selector.keywordSlug = keepKeyword ? previousKeywordSlug : null;
+          rule.selector.hover = (!baseValue || baseValue === 'link-hover') ? false : previousHover;
+          rule.selector.dragOver = !!baseValue && previousDragOver;
 
           // Keep legacy fields in sync
           rule.groupId = rule.selector.groupId;
@@ -20559,6 +22134,8 @@ function getDefaultFaviconRules() {
             'group-header': '.mb-group__header',
             'group-title': '.mb-group__title',
             'group-body': '.mb-group__body',
+            'vertical-dropzone': '.verticalDropZone',
+            'group-horizontal-dropzone': '.groupContainerDragAndDrop.group-drop-zone',
             'links': '.mb-link',
             'separators': '.mb-link-separator',
             'notes': '.mb-link-note',
@@ -20566,6 +22143,8 @@ function getDefaultFaviconRules() {
             'link-anchor': '.mb-link__anchor',
             'link-url': '.link-url-preview',
             'link-icon': '.mb-link__icon',
+            'link-vertical-dropzone': '.linkVerticalDropZone',
+            'link-horizontal-dropzone': '.linkContainerDragAndDrop.link-drop-zone',
             'link-popover': '.link-detail-popover',
             'link-popover-title': '.link-detail-popover__title',
             'link-popover-url': '.link-detail-popover__url',
@@ -20595,7 +22174,14 @@ function getDefaultFaviconRules() {
             'btn-danger': '.btn-danger'
           };
 
-          const targetSelector = baseSelectorMap[selector.base] || selector.base;
+          const baseTargetSelector = baseSelectorMap[selector.base] || selector.base;
+          let targetSelector = baseTargetSelector;
+          if (this.selectorUsesDragOverState(selector)) {
+            targetSelector = this.appendDragOverToSelector(targetSelector);
+          }
+          if (this.selectorUsesHoverState(selector)) {
+            targetSelector = this.appendHoverToSelector(targetSelector);
+          }
 
           // Collect all matching CSS properties from template
           const aggregatedProperties = {};
@@ -20607,26 +22193,33 @@ function getDefaultFaviconRules() {
             // Check if template rule selector matches our target
             if (tRule.selector === targetSelector) {
               matches = true;
+            } else if (tRule.selector === baseTargetSelector) {
+              matches = true;
             } else if (tRule.selector === selector.base) {
               matches = true;
             } else if (tRule.selector === `.${selector.base}`) {
               matches = true;
             } else if (targetSelector && tRule.selector) {
               // Check various matching patterns
-              const normalizedTarget = targetSelector.replace('#', '').replace('.', '');
-              const normalizedTemplate = tRule.selector.replace('#', '').replace('.', '');
+              const normalizeSelectorForMatch = (value) => String(value || '').replace(/[#.]/g, '').trim();
+              const normalizedTarget = normalizeSelectorForMatch(targetSelector);
+              const normalizedBaseTarget = normalizeSelectorForMatch(baseTargetSelector);
+              const normalizedTemplate = normalizeSelectorForMatch(tRule.selector);
 
               // Direct match after normalization
-              if (normalizedTemplate === normalizedTarget) {
+              if ((normalizedTarget && normalizedTemplate === normalizedTarget)
+                || (normalizedBaseTarget && normalizedTemplate === normalizedBaseTarget)) {
                 matches = true;
               }
               // Check if template selector contains our target (for nested selectors)
               else if (tRule.selector.includes(targetSelector)) {
                 matches = true;
+              } else if (baseTargetSelector && tRule.selector.includes(baseTargetSelector)) {
+                matches = true;
               }
               // Check for class/id variations
-              else if (tRule.selector === `.${normalizedTarget}` ||
-                       tRule.selector === `#${normalizedTarget}`) {
+              else if ((normalizedTarget && (tRule.selector === `.${normalizedTarget}` || tRule.selector === `#${normalizedTarget}`))
+                       || (normalizedBaseTarget && (tRule.selector === `.${normalizedBaseTarget}` || tRule.selector === `#${normalizedBaseTarget}`))) {
                 matches = true;
               }
             }
@@ -25660,36 +27253,6 @@ footer a:hover {
           this.syncVisualCssStateToLocalStorage();
         },
 
-        // CSS Sidebar resize methods
-        startCssSidebarWidthResize(e) {
-          this.isCssSidebarWidthResizing = true;
-          const startX = e.pageX;
-          const startWidth = this.cssSidebarWidth;
-
-          const doResize = (moveEvent) => {
-            const diff = startX - moveEvent.pageX;
-            const newWidth = Math.max(300, Math.min(800, startWidth + diff));
-            this.cssSidebarWidth = newWidth;
-            // Update body margin when resizing
-            if (document.body.classList.contains('css-sidebar-open')) {
-              document.body.style.marginRight = newWidth + 'px';
-            }
-          };
-
-          const stopResize = () => {
-            this.isCssSidebarWidthResizing = false;
-            document.removeEventListener('mousemove', doResize);
-            document.removeEventListener('mouseup', stopResize);
-            // Save the width to localStorage
-            localStorage.setItem('cssSidebarWidth', this.cssSidebarWidth);
-            this.syncVisualCssStateToOptions(true);
-            this.syncVisualCssStateToLocalStorage();
-          };
-
-          document.addEventListener('mousemove', doResize);
-          document.addEventListener('mouseup', stopResize);
-        },
-        
         openFeatureSidebar() {
           this.featureSidebarVisible = true;
         },
@@ -25766,8 +27329,24 @@ footer a:hover {
         },
         
         // CSS Sidebar resize methods
+        getCssSidebarContainerHeight() {
+          const container = this.$refs?.cssSidebarSplitContainer;
+          if (container && Number.isFinite(container.clientHeight) && container.clientHeight > 0) {
+            return container.clientHeight;
+          }
+          return Math.max(420, window.innerHeight - 100);
+        },
+        clampCssSidebarTopHeight() {
+          const containerHeight = this.getCssSidebarContainerHeight();
+          const minTop = 180;
+          const minBottom = 180;
+          const maxTop = Math.max(minTop, containerHeight - minBottom - 8);
+          const next = Number.isFinite(this.cssSidebarTopHeight) ? this.cssSidebarTopHeight : Math.round(containerHeight * (2 / 3));
+          this.cssSidebarTopHeight = Math.min(Math.max(next, minTop), maxTop);
+        },
         startCssSidebarResize(event) {
           this.isCssSidebarResizing = true;
+          this.clampCssSidebarTopHeight();
           this.cssSidebarStartY = event.clientY;
           this.cssSidebarStartHeight = this.cssSidebarTopHeight;
           
@@ -25784,19 +27363,13 @@ footer a:hover {
           
           const deltaY = event.clientY - this.cssSidebarStartY;
           const newHeight = this.cssSidebarStartHeight + deltaY;
-          
-          // Get the container height
-          const containerHeight = window.innerHeight - 60; // Subtract header height
-          
-          // Limit the height between min and max
-          const minHeight = 100;
-          const maxHeight = containerHeight - 200; // Leave at least 200px for bottom section
-          
-          this.cssSidebarTopHeight = Math.min(Math.max(newHeight, minHeight), maxHeight);
+          this.cssSidebarTopHeight = newHeight;
+          this.clampCssSidebarTopHeight();
         },
         
         endCssSidebarResize() {
           this.isCssSidebarResizing = false;
+          this.clampCssSidebarTopHeight();
           
           // Remove event listeners
           document.removeEventListener('mousemove', this.handleCssSidebarResize);
@@ -28091,6 +29664,7 @@ footer a:hover {
           this.isFullExport = false;
           this.fullExportData = null;
           this.importCollapsedGroups = {}; // Reset collapsed state
+          this.importDialogExpandedSections = { file: true, url: true, clipboard: true };
           const modalElement = document.getElementById('pasteClipboardModal');
           if (!modalElement) return;
           const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
@@ -28838,6 +30412,17 @@ footer a:hover {
           return this.parsedLinks.filter(link => (link.groupName || '') === groupName);
         },
 
+        isImportDialogSectionExpanded(sectionKey) {
+          if (this.importDialogExpandedSections[sectionKey] === undefined) {
+            this.$set(this.importDialogExpandedSections, sectionKey, true);
+          }
+          return this.importDialogExpandedSections[sectionKey];
+        },
+
+        toggleImportDialogSection(sectionKey) {
+          this.$set(this.importDialogExpandedSections, sectionKey, !this.isImportDialogSectionExpanded(sectionKey));
+        },
+
         resetImportDialog() {
           // Clear all import-related data to free up memory
           // This is especially important for large link collections
@@ -28854,6 +30439,8 @@ footer a:hover {
           this.browserBookmarks = null;
           this.selectedBookmarkFolders = [];
           this.importGroupTitle = '';
+          this.importCollapsedGroups = {};
+          this.importDialogExpandedSections = { file: true, url: true, clipboard: true };
 
           // Clear file input if exists
           if (this.$refs.fileInput) {
@@ -33498,6 +35085,15 @@ footer a:hover {
             return;
           }
 
+          // Always resolve and preview matching favicon rules in the editor.
+          // Extension/network fetch remains optional and is handled below.
+          try {
+            const rawInput = (this.genericEditData?.url || '').trim();
+            this.applyFaviconRulesToLink(this.genericEditData, null, rawInput || url);
+          } catch (e) {
+            debugLog('warn', '[FaviconRules] generic preview apply failed', e);
+          }
+
           // Check if extension is available before trying to fetch
           if (!this.extensionAvailable || !window.MyBookmarksExtension) {
             debugLog('warn', 'Auto-fetch requested but extension not available');
@@ -33683,7 +35279,7 @@ footer a:hover {
         },
         addFaviconRule() {
           const rule = {
-            id: Date.now(),
+            id: this.generateUUID ? this.generateUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             enabled: true,
             patternType: 'domain',
             pattern: '',
@@ -33735,6 +35331,31 @@ footer a:hover {
             this.showToast(this.getTranslation('favicon.rules.exportError') || 'Failed to export favicon rules', 'error');
           }
         },
+        estimateFaviconPayloadSize(iconDataUrl) {
+          const src = (typeof iconDataUrl === 'string') ? iconDataUrl.trim() : '';
+          if (!src) return 0;
+          const commaIdx = src.indexOf(',');
+          if (commaIdx === -1) return src.length;
+
+          const meta = src.slice(0, commaIdx).toLowerCase();
+          const payload = src.slice(commaIdx + 1).trim();
+          if (!payload) return 0;
+
+          if (meta.includes(';base64')) {
+            const normalized = payload.replace(/\s+/g, '');
+            const padding = normalized.endsWith('==') ? 2 : (normalized.endsWith('=') ? 1 : 0);
+            return Math.max(0, Math.floor((normalized.length * 3) / 4) - padding);
+          }
+
+          try {
+            return decodeURIComponent(payload).length;
+          } catch {
+            return payload.length;
+          }
+        },
+        isFaviconPayloadWithinLimit(iconDataUrl, maxBytes = 256 * 1024) {
+          return this.estimateFaviconPayloadSize(iconDataUrl) <= maxBytes;
+        },
         onImportFaviconRules(event) {
           const input = event?.target;
           const file = input?.files?.[0];
@@ -33757,6 +35378,7 @@ footer a:hover {
                 (this.faviconRulesWorking || []).map(rule => `${(rule.patternType || 'domain')}__${(rule.pattern || '').trim().toLowerCase()}`)
               );
               let added = 0;
+              let skippedTooLarge = 0;
               parsed.forEach((rule, idx) => {
                 if (!rule || typeof rule !== 'object') return;
                 const pattern = (rule.pattern || '').toString().trim();
@@ -33766,12 +35388,18 @@ footer a:hover {
                 const key = `${patternType}__${pattern.toLowerCase()}`;
                 if (existingKeys.has(key)) return;
 
+                const iconDataUrlRaw = typeof rule.iconDataUrl === 'string' ? rule.iconDataUrl.trim() : '';
+                if (iconDataUrlRaw && !this.isFaviconPayloadWithinLimit(iconDataUrlRaw)) {
+                  skippedTooLarge++;
+                  return;
+                }
+
                 const normalized = {
-                  id: rule.id || (Date.now() + idx + Math.floor(Math.random() * 1000)),
+                  id: rule.id || (this.generateUUID ? this.generateUUID() : `${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 8)}`),
                   enabled: rule.enabled !== false,
                   patternType,
                   pattern,
-                  iconDataUrl: typeof rule.iconDataUrl === 'string' ? rule.iconDataUrl : '',
+                  iconDataUrl: iconDataUrlRaw,
                   comment: typeof rule.comment === 'string' ? rule.comment : '',
                   createdAt: Number(rule.createdAt) || Date.now() + idx
                 };
@@ -33786,6 +35414,10 @@ footer a:hover {
                 this.showToast(messageTemplate.replace('{count}', added), 'success');
               } else {
                 this.showToast(this.getTranslation('favicon.rules.importNothing') || 'No new favicon rules to import', 'info');
+              }
+              if (skippedTooLarge > 0) {
+                const tooLargeMsg = this.getTranslation('link.favicon.tooLarge') || 'Image is too large (max 256KB)';
+                this.showToast(`${skippedTooLarge} imported favicon rule(s) skipped: ${tooLargeMsg}`, 'warning');
               }
             } catch (error) {
               debugLog('error', '[FaviconRules] import failed', error);
@@ -33851,6 +35483,7 @@ footer a:hover {
           const file = event?.target?.files?.[0];
           if (!file) return;
           if (!file.type || !file.type.startsWith('image/')) { this.showToast(this.getTranslation('link.favicon.invalidFile') || 'Please select an image file', 'warning'); event.target.value=''; return; }
+          if (file.size > 256 * 1024) { this.showToast(this.getTranslation('link.favicon.tooLarge') || 'Image is too large (max 256KB)', 'warning'); event.target.value=''; return; }
           const reader = new FileReader();
           reader.onload = () => {
             const dataUrl = reader.result;
@@ -33923,8 +35556,11 @@ footer a:hover {
               if (!candidateStrings.includes(v)) candidateStrings.push(v);
             };
 
+            addCandidate(normalizedCandidate);
             addCandidate(normalizedLower);
+            addCandidate(normalizedSource);
             addCandidate(normalizedSource.toLowerCase());
+            addCandidate(rawTrimmed);
             addCandidate(rawLower);
             if (rawLower.includes('\\')) addCandidate(rawLower.replace(/\\+/g, '/'));
             if (normalizedLower.includes('\\')) addCandidate(normalizedLower.replace(/\\+/g, '/'));
@@ -33938,7 +35574,7 @@ footer a:hover {
             const existingCandidates = candidateStrings.slice();
             prefixStripList.forEach(pref => {
               existingCandidates.forEach(candidate => {
-                if (candidate.startsWith(pref)) {
+                if (candidate.toLowerCase().startsWith(pref)) {
                   addCandidate(candidate.slice(pref.length));
                 }
               });
@@ -33949,9 +35585,9 @@ footer a:hover {
 
             let host = '';
             let parsedUrl = null;
-            if (normalizedLower) {
+            if (normalizedCandidate) {
               try {
-                parsedUrl = new URL(normalizedLower);
+                parsedUrl = new URL(normalizedCandidate);
                 host = parsedUrl.hostname.toLowerCase();
               } catch {
                 parsedUrl = null;
@@ -33960,9 +35596,10 @@ footer a:hover {
             }
             let best = null; let bestLen = -1;
             for (const r of rules) {
-              let patRaw = (r.pattern || '').toString().trim().toLowerCase();
-              if (!patRaw) continue;
+              const patternRaw = (r.pattern || '').toString().trim();
+              if (!patternRaw) continue;
               if (r.patternType === 'domain') {
+                const patRaw = patternRaw.toLowerCase();
                 // Normalize: strip scheme, //, wildcard, and path
                 let pat = patRaw
                   .replace(/^https?:\/\//, '')
@@ -33975,6 +35612,7 @@ footer a:hover {
                   const len = pat.length; if (len > bestLen) { best = r; bestLen = len; }
                 }
               } else if (r.patternType === 'prefix') {
+                const patRaw = patternRaw.toLowerCase();
                 const trimSlash = (s) => s.replace(/\/+$/, '');
                 const patternVariants = [];
                 const addPatternVariant = (val) => {
@@ -33985,12 +35623,12 @@ footer a:hover {
                 };
                 addPatternVariant(patRaw);
                 addPatternVariant(patRaw.replace(/^[a-z]+:\/\//, ''));
-                addPatternVariant(MB.Utils.ensureProtocol(patRaw).toLowerCase());
+                addPatternVariant(MB.Utils.ensureProtocol(patternRaw).toLowerCase());
                 const matchedVariant = patternVariants.reduce((bestLocalLen, patt) => {
                   const len = patt.length;
                   if (!len) return bestLocalLen;
                   const found = candidateStrings.some(candidate => {
-                    const target = trimSlash(candidate);
+                    const target = trimSlash(candidate.toLowerCase());
                     return target.startsWith(patt);
                   });
                   return found ? Math.max(bestLocalLen, len) : bestLocalLen;
@@ -33998,9 +35636,8 @@ footer a:hover {
                 if (matchedVariant > bestLen) { best = r; bestLen = matchedVariant; }
               } else if (r.patternType === 'regex') {
                 try {
-                  // Be forgiving: unescape \/ to / and anchor to start if not provided
-                  let rxSrc = patRaw.replace(/\\\//g, '/');
-                  if (!/^\^/.test(rxSrc)) rxSrc = '^' + rxSrc;
+                  // Be forgiving: unescape \/ to /
+                  let rxSrc = patternRaw.replace(/\\\//g, '/');
                   const re = new RegExp(rxSrc, 'i');
                   const matched = candidateStrings.some(candidate => {
                     try { return re.test(candidate); } finally { re.lastIndex = 0; }
@@ -34091,7 +35728,7 @@ footer a:hover {
             let changed = false;
 
             groups.forEach(group => {
-              if (!group || group.collapsed || group.deleted) return;
+              if (!group || group.deleted) return;
               const links = Array.isArray(group.links) ? group.links : [];
               links.forEach(link => {
                 if (!link || link.deleted || !link.url) return;
@@ -35106,8 +36743,8 @@ footer a:hover {
           // 1. Toggle den Vue-Datenzustand (für Icon etc.)
           this.$set(group, 'collapsed', !group.collapsed);
 
-          // Load favicons when expanding the group (lazy loading)
-          if (!group.collapsed && this.extensionAvailable && this.data.options?.links?.autoFetchFavicon) {
+          // Apply favicon rules (and optionally extension fetch if enabled) on expand
+          if (!group.collapsed) {
             this.loadFaviconsForGroup(group);
           }
 
@@ -35356,10 +36993,8 @@ footer a:hover {
             ordered.forEach((l, i) => l.index = i);
             const newLinkTs = this.touchLink(newLink, nowTs);
             this.touchGroup(group, newLinkTs);
-            // Metadata helpers
-            if (this.data.options?.links?.autoFetchFavicon) {
-              this.tryFetchAndSetFavicon(newLink, url, url);
-            }
+            // Always apply favicon rules; extension fetch stays gated inside tryFetchAndSetFavicon
+            await this.tryFetchAndSetFavicon(newLink, url, url);
             if (this.data.options?.links?.autoFetchTitle && (!title || title === url)) {
               // best effort, non-blocking
               this.tryFetchTitle(url).then(tt => { if (tt) newLink.text = tt; this.saveData(); }).catch(() => { });
@@ -37035,7 +38670,9 @@ footer a:hover {
               linkData,
               this.linkEditDesign,
               editTitle,
-              (editedData) => {
+              async (editedData) => {
+                const previousUrl = (originalLink?.url || '').trim();
+                const previousRawUrlInput = (originalLink?.rawUrlInput || '').trim();
                 const itemType = this.normalizeLinkItemType(editedData);
                 this.$set(editedData, 'itemType', itemType);
                 // Normalize URL
@@ -37067,6 +38704,7 @@ footer a:hover {
                 if ('faviconRuleId' in editedData) {
                   this.$set(originalLink, 'faviconRuleId', editedData.faviconRuleId);
                 }
+                await this.refreshLinkFaviconAfterUrlChange(originalLink, previousUrl, previousRawUrlInput);
                 
                 // Event log for changes
                 const changes = [];
@@ -37165,6 +38803,8 @@ footer a:hover {
 
           if (originalLink) {
             if (!this.canEdit(parentGroup)) { alert(this.getTranslation('error.perm.edit')); return; }
+            const previousUrl = (originalLink.url || '').trim();
+            const previousRawUrlInput = (originalLink.rawUrlInput || '').trim();
             // Update existing link
             this.$set(originalLink, 'text', this.editLink.text.trim() || '');
             this.$set(originalLink, 'itemType', editItemType);
@@ -37190,6 +38830,7 @@ footer a:hover {
             } else if (this.editLink.faviconError) {
               this.$set(originalLink, 'faviconError', true);
             }
+            await this.refreshLinkFaviconAfterUrlChange(originalLink, previousUrl, previousRawUrlInput);
             // Update version for sync tracking
             this.touchGroup(parentGroup, nowTs);
             if (parentGroup.shared) {
@@ -37327,9 +38968,9 @@ footer a:hover {
             const linkTimestamp = this.touchLink(newLink, nowTs);
             this.touchGroup(targetGroup, linkTimestamp);
 
-            // Fetch favicon if autoFetchFavicon is enabled and URL is valid
-            if (this.data.options?.links?.autoFetchFavicon && url && MB.Utils.isValidHttpUrl(url)) {
-              this.tryFetchAndSetFavicon(newLink, url);
+            // Always apply favicon rules; extension fetch stays gated inside tryFetchAndSetFavicon
+            if (url && MB.Utils.isValidHttpUrl(url)) {
+              await this.tryFetchAndSetFavicon(newLink, url, this.editLink?.url || url);
             }
 
             this.saveData();
@@ -37493,9 +39134,9 @@ footer a:hover {
                 const newLinkTs = this.touchLink(newLink, nowTs);
                 this.touchGroup(targetGroup, newLinkTs);
 
-                // Fetch favicon if autoFetchFavicon is enabled and URL is valid
-                if (!this.isNonUrlLink(newLink) && this.data.options?.links?.autoFetchFavicon && url) {
-                  this.tryFetchAndSetFavicon(newLink, url, rawInput);
+                // Always apply favicon rules; extension fetch stays gated inside tryFetchAndSetFavicon
+                if (!this.isNonUrlLink(newLink) && url) {
+                  await this.tryFetchAndSetFavicon(newLink, url, rawInput);
                 }
 
                 this.saveData();
@@ -37646,6 +39287,9 @@ footer a:hover {
           const normalizedRaw = rawCandidate != null ? String(rawCandidate).trim() : null;
           if (this.applyFaviconRulesToLink(link, null, normalizedRaw)) return;
 
+          // Extension fetch is optional and controlled by autoFetchFavicon only
+          if (!this.data.options?.links?.autoFetchFavicon) return;
+
           // 1) Use extension for all web requests
           if (this.extensionAvailable) {
             try {
@@ -37670,6 +39314,31 @@ footer a:hover {
             // 2) Extension not available but option is enabled - mark as error
             debugLog('warn', 'Favicon fetch requested but extension not available');
             this.$set(link, 'faviconError', true);
+          }
+        },
+        async refreshLinkFaviconAfterUrlChange(link, previousUrl = '', previousRawUrlInput = '') {
+          try {
+            if (!link || this.isNonUrlLink(link)) return;
+
+            const nextUrl = (link.url || '').trim();
+            const nextRaw = (link.rawUrlInput || '').trim();
+            const prevUrl = (previousUrl || '').trim();
+            const prevRaw = (previousRawUrlInput || '').trim();
+
+            if (nextUrl === prevUrl && nextRaw === prevRaw) return;
+
+            // Keep manual uploads untouched when URL changes.
+            if (link.faviconSource === 'upload') return;
+
+            this.$set(link, 'favicon', null);
+            this.$set(link, 'faviconError', false);
+            this.$set(link, 'faviconSource', null);
+            this.$set(link, 'faviconRuleId', null);
+
+            if (!nextUrl) return;
+            await this.tryFetchAndSetFavicon(link, nextUrl, nextRaw || null);
+          } catch (err) {
+            debugLog('warn', '[FaviconRules] refreshLinkFaviconAfterUrlChange failed', err);
           }
         },
         
@@ -39517,7 +41186,7 @@ footer a:hover {
     let footer = new Vue({
       el: '#footer',
       data: {
-        version: '2026-02-26', // Updated version string
+        version: '2026-02-27', // Updated version string
       },
     });
   </script>
