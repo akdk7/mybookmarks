@@ -20,8 +20,8 @@ What it does:
 - Manages global settings for behavior, appearance, sharing, and sync.
 
 Read more:
-- [Dialog: Options](dialog-optionen.md)
-- [Dialog: Local Encryption (Password)](dialog-lokale-verschluesselung-passwort.md)
+- [Dialog: Options](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Options)
+- [Dialog: Local Encryption (Password)](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Local-Encryption-%28Password%29)
 
 ## 3) Favicon Rules
 What it does:
@@ -29,7 +29,7 @@ What it does:
 - Lets you define domain/prefix/regex icon rules.
 
 Read more:
-- [Dialog: Favicon Rules](dialog-favicon-regeln.md)
+- [Dialog: Favicon Rules](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Favicon-Rules)
 
 ## 4) Visual CSS Editor
 What it does:
@@ -37,7 +37,7 @@ What it does:
 - Lets you customize UI styling via rules, tokens, and selectors.
 
 Read more:
-- [Sidebar: Visual CSS Editor](sidebar-visual-css-editor.md)
+- [Sidebar: Visual CSS Editor](https://github.com/akdk7/mybookmarks/wiki/Sidebar:-Visual-CSS-Editor)
 
 ## 5) Find duplicates
 What it does:
@@ -45,7 +45,7 @@ What it does:
 - Opens a dialog for selective removal.
 
 Read more:
-- [Dialog: Duplicates](dialog-duplikate.md)
+- [Dialog: Duplicates](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Duplicates)
 
 ## 6) Shortcut Manager
 What it does:
@@ -53,7 +53,7 @@ What it does:
 - Supports global shortcuts for multiple groups/links.
 
 Read more:
-- [Dialog: Shortcut Manager](dialog-shortcut-manager.md)
+- [Dialog: Shortcut Manager](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Shortcut-Manager)
 
 ## 7) Global placeholders
 What it does:
@@ -61,7 +61,7 @@ What it does:
 - Values can be reused inside URL templates.
 
 Read more:
-- [Dialog: Global Placeholders](dialog-globale-platzhalter.md)
+- [Dialog: Global Placeholders](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Global-Placeholders)
 
 ## 8) Clear extension cache
 What it does:
@@ -84,7 +84,7 @@ What it does:
 - Opens the contacts dialog with two tabs: Contacts and Quick-Connect.
 
 Read more:
-- [Dialog: Contacts and Quick-Connect](dialog-kontakte-quick-connect.md)
+- [Dialog: Contacts and Quick-Connect](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Contacts-and-Quick-Connect)
 
 ## 11) Expand all groups
 What it does:
@@ -105,14 +105,14 @@ What it does:
 - Lets you select groups/links and output format.
 
 Read more:
-- [Dialog: Export](dialog-export.md)
+- [Dialog: Export](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Export)
 
 ## 15) Import
 What it does:
 - Opens the import dialog for file, URL, and clipboard.
 
 Read more:
-- [Dialog: Import](dialog-import.md)
+- [Dialog: Import](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Import)
 
 ## 16) Bookmarklet
 What it does:
@@ -120,7 +120,7 @@ What it does:
 - The bookmarklet copies URL + title of the current page.
 
 Read more:
-- [Dialog: Bookmarklet](dialog-bookmarklet.md)
+- [Dialog: Bookmarklet](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Bookmarklet)
 
 ## 17) Undo
 What it does:
@@ -150,7 +150,7 @@ What it does:
 - Opens a right help sidebar with German/English tabs.
 
 Read more:
-- [Sidebar: Feature Overview](sidebar-feature-overview.md)
+- [Sidebar: Feature Overview](https://github.com/akdk7/mybookmarks/wiki/Sidebar:-Feature-Overview)
 
 ## Key relationships at a glance
 - Options affect almost all toolbar functions.

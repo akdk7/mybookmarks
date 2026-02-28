@@ -42,7 +42,7 @@ Saving does more than writing form values:
 
 ## Security sub-dialog
 When local encryption is enabled, a second dialog is shown for password input:
-- [Dialog: Local Encryption (Password)](dialog-lokale-verschluesselung-passwort.md)
+- [Dialog: Local Encryption (Password)](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Local-Encryption-%28Password%29)
 
 ## Important relationships
 - Toolbar behavior like clear-search, column widths, sync, and favicon handling depends on options.

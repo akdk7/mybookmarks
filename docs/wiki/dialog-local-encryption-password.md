@@ -24,7 +24,7 @@ If validation fails:
 
 ## Relationship to options
 This is not an independent toolbar dialog. It is a sub-dialog in the options workflow:
-- [Dialog: Options](dialog-optionen.md)
+- [Dialog: Options](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Options)
 
 ## Technical
 - Triggered via `promptForLocalSecurityPassword()`

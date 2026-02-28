@@ -33,8 +33,8 @@ This dialog manages custom favicon rules.
 - The dialog is reachable directly from toolbar and indirectly from options.
 
 Related pages:
-- [Toolbar Functions](toolbar-funktionen.md)
-- [Dialog: Options](dialog-optionen.md)
+- [Toolbar Functions](https://github.com/akdk7/mybookmarks/wiki/Toolbar-Functions)
+- [Dialog: Options](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Options)
 
 ## Technical
 - Handler: `openFaviconRulesModal()`
