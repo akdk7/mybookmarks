@@ -65,7 +65,7 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
 */
 pre code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5px}.hljs{background:#f0f0f0;color:#444}.hljs-comment{color:#888}.hljs-punctuation,.hljs-tag{color:#444a}.hljs-tag .hljs-attr,.hljs-tag .hljs-name{color:#444}.hljs-attribute,.hljs-doctag,.hljs-keyword,.hljs-meta .hljs-keyword,.hljs-name,.hljs-selector-tag{font-weight:700}.hljs-deletion,.hljs-number,.hljs-quote,.hljs-selector-class,.hljs-selector-id,.hljs-string,.hljs-template-tag,.hljs-type{color:#800}.hljs-section,.hljs-title{color:#800;font-weight:700}.hljs-link,.hljs-operator,.hljs-regexp,.hljs-selector-attr,.hljs-selector-pseudo,.hljs-symbol,.hljs-template-variable,.hljs-variable{color:#bc6060}.hljs-literal{color:#78a960}.hljs-addition,.hljs-built_in,.hljs-bullet,.hljs-code{color:#397300}.hljs-meta{color:#1f7199}.hljs-meta .hljs-string{color:#4d99bf}.hljs-emphasis{font-style:italic}.hljs-strong{font-weight:700}
 
-    /* Enhanced CSS Variables System - Override these in Custom CSS without !important */
+/* Enhanced CSS Variables System - Override these in Custom CSS without !important */
     :root {
       /* Core Colors */
       --bg-primary: #fafbfc;
@@ -2668,6 +2668,21 @@ pre code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5p
       flex-shrink: 0;
     }
 
+    .mb-backup-urgency-indicator-button {
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      line-height: 0;
+      transition: transform 0.12s ease, box-shadow 0.2s ease;
+    }
+
+    .mb-backup-urgency-indicator-button:hover,
+    .mb-backup-urgency-indicator-button:focus-visible {
+      transform: scale(1.08);
+      box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.2);
+      outline: none;
+    }
+
     .mb-export-backup-alert {
       border-color: var(--mb-backup-alert-color, #dc3545) !important;
       color: var(--mb-backup-alert-color, #dc3545) !important;
@@ -3416,6 +3431,73 @@ pre code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5p
       overflow-y: auto;
       padding: 20px;
     }
+
+    .backup-activity-sidebar {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: min(420px, 92vw);
+      height: 100vh;
+      background-color: var(--bg-primary, #ffffff);
+      color: var(--text-primary, #212529);
+      box-shadow: -2px 0 8px rgba(0, 0, 0, 0.12);
+      transition: right 0.3s ease;
+      z-index: 1041;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border-color, #dee2e6);
+    }
+
+    .backup-activity-sidebar.sidebar-open {
+      right: 0;
+    }
+
+    .backup-activity-sidebar .sidebar-header {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--border-color, #dee2e6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: var(--bg-secondary, #f8f9fa);
+    }
+
+    .backup-activity-sidebar .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    .mb-backup-activity-entry {
+      border: 1px solid var(--border-color, #dee2e6);
+      border-radius: 0.5rem;
+      background: var(--bg-secondary, #f8f9fa);
+      padding: 0.75rem;
+    }
+
+    .mb-backup-activity-entry + .mb-backup-activity-entry {
+      margin-top: 0.65rem;
+    }
+
+    .mb-backup-activity-entry__title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.35;
+      margin-bottom: 0.2rem;
+    }
+
+    .mb-backup-activity-entry__meta {
+      font-size: 0.75rem;
+      color: var(--text-muted, #6c757d);
+      margin-bottom: 0.35rem;
+    }
+
+    .mb-backup-activity-entry__snapshot {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+    }
     
     .feature-section {
       margin-bottom: 25px;
@@ -3836,12 +3918,14 @@ pre code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5p
             
             <!-- Storage indicator (show used only) -->
             <div class="ms-2 me-2 d-flex align-items-center text-muted small mb-toolbar__storage" :title="getStorageTooltip()" style="min-width: auto;">
-              <span
+              <button
                 v-if="isBackupUrgencyIndicatorVisible()"
-                class="mb-toolbar__backup-urgency mb-backup-urgency-indicator me-1"
+                type="button"
+                class="mb-toolbar__backup-urgency mb-backup-urgency-indicator mb-backup-urgency-indicator-button me-1"
                 :style="getBackupUrgencyIndicatorStyle()"
-                :title="getBackupUrgencyTooltip()"
-                aria-hidden="true"></span>
+                :title="getBackupUrgencyIndicatorTooltip()"
+                :aria-label="getBackupUrgencyIndicatorTooltip()"
+                @click="openBackupActivitySidebar"></button>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-database-fill me-1" viewBox="0 0 16 16">
                 <path d="M3.904 1.777C4.978 1.289 6.427 1 8 1s3.022.289 4.096.777C13.125 2.245 14 2.993 14 4s-.875 1.755-1.904 2.223C11.022 6.711 9.573 7 8 7s-3.022-.289-4.096-.777C2.875 5.755 2 5.007 2 4s.875-1.755 1.904-2.223Z"/>
                 <path d="M2 6.161V7c0 1.007.875 1.755 1.904 2.223C4.978 9.71 6.427 10 8 10s3.022-.289 4.096-.777C13.125 8.755 14 8.007 14 7v-.839c-.457.432-1.004.751-1.49.972C11.278 7.693 9.682 8 8 8s-3.278-.307-4.51-.867c-.486-.22-1.033-.54-1.49-.972Z"/>
@@ -5450,6 +5534,50 @@ pre code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5p
       <div class="progress-bar" role="progressbar" :style="{ width: Math.max(0, Math.min(100, syncProgress)) + '%' }" :aria-valuenow="Math.round(syncProgress)" aria-valuemin="0" aria-valuemax="100"></div>
     </div>
     <div class="text-end mt-1" style="font-size: 11px; opacity: .8;">{{ Math.round(syncProgress) }}%</div>
+  </div>
+
+  <!-- Backup Activity Sidebar -->
+  <div
+    v-if="backupActivitySidebarVisible"
+    class="backup-activity-sidebar mb-backup-activity-sidebar"
+    :class="{ 'sidebar-open': backupActivitySidebarVisible }">
+    <div class="sidebar-header mb-backup-activity-sidebar-header">
+      <h5 class="mb-0">{{ getTranslation('backup.activity.title') || 'Backup activity log' }}</h5>
+      <button
+        type="button"
+        class="btn-close mb-backup-activity-sidebar-close"
+        :aria-label="getTranslation('close') || 'Close'"
+        @click="closeBackupActivitySidebar"></button>
+    </div>
+    <div class="sidebar-content mb-backup-activity-sidebar-content">
+      <p class="text-muted small mb-3">{{ getBackupUrgencyTooltip() }}</p>
+      <div v-if="!getBackupActivityLogEntries().length" class="text-muted small">
+        {{ getTranslation('backup.activity.empty') || 'No backup-related changes have been recorded yet.' }}
+      </div>
+      <div
+        v-for="entry in getBackupActivityLogEntries()"
+        :key="entry.id"
+        class="mb-backup-activity-entry">
+        <div class="mb-backup-activity-entry__title">{{ formatBackupActivityMessage(entry) }}</div>
+        <div class="mb-backup-activity-entry__meta">{{ formatEventTime(entry.timestamp) }}</div>
+        <div
+          v-if="shouldShowLinkedSnapshotsInBackupLog() && entry.snapshotId"
+          class="mb-backup-activity-entry__snapshot">
+          <span>
+            {{ getTranslation('backup.activity.snapshot') || 'Snapshot' }}:
+            <code>{{ entry.snapshotName || entry.snapshotId }}</code>
+          </span>
+          <a
+            v-if="findSnapshotById(entry.snapshotId)"
+            href="#"
+            class="link-primary"
+            @click.prevent="restoreSnapshot(entry.snapshotId)">
+            {{ getTranslation('backup.activity.restore') || 'Restore' }}
+          </a>
+          <span v-else class="text-muted">{{ getTranslation('backup.activity.snapshotMissing') || 'Snapshot no longer available' }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Feature Overview Sidebar -->
@@ -7743,7 +7871,7 @@ pre code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5p
               <input class="form-control form-control-sm" style="min-width: 320px;" v-model="faviconRulesTestUrl" placeholder="https://example.com/path">
               <div v-if="faviconRulesTestUrl" class="d-flex align-items-center gap-2">
                 <span class="badge bg-secondary">{{ getTranslation('favicon.rules.matchPreview') || 'Matched rule preview' }}</span>
-                <img :src="findRuleIconForUrl(faviconRulesTestUrl) || ''" v-if="findRuleIconForUrl(faviconRulesTestUrl)" style="width: 20px; height: 20px; object-fit: contain; border-radius: 3px;">
+                <img :src="findRuleIconForUrl(faviconRulesTestUrl, faviconRulesWorking, null, faviconRulesFirstMatchStopWorking) || ''" v-if="findRuleIconForUrl(faviconRulesTestUrl, faviconRulesWorking, null, faviconRulesFirstMatchStopWorking)" style="width: 20px; height: 20px; object-fit: contain; border-radius: 3px;">
               </div>
             </div>
             <div class="d-flex align-items-center gap-2">
@@ -7776,6 +7904,12 @@ pre code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5p
               <input ref="faviconRulesImport" type="file" class="d-none" accept="application/json" @change="onImportFaviconRules">
             </div>
           </div>
+          <div class="form-check form-switch mb-3 favicon-rules-first-match-toggle">
+            <input class="form-check-input" type="checkbox" id="faviconRulesFirstMatchStop" v-model="faviconRulesFirstMatchStopWorking">
+            <label class="form-check-label" for="faviconRulesFirstMatchStop">{{ getTranslation('favicon.rules.firstMatchStop') || 'First-match-stop (use rule order)' }}</label>
+            <div v-if="faviconRulesFirstMatchStopWorking" class="small text-muted">{{ getTranslation('favicon.rules.firstMatchStopHelp') || 'When enabled, the first matching rule is applied and evaluation stops.' }}</div>
+            <div v-else class="small text-muted">{{ getTranslation('favicon.rules.firstMatchStopDisabledHelp') || 'When disabled, the most specific matching rule is used and manual sorting has no effect.' }}</div>
+          </div>
 
           <div class="table-responsive">
             <table class="table table-sm align-middle">
@@ -7793,7 +7927,7 @@ pre code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5p
                 <tr v-if="!faviconRulesWorking.length">
                   <td colspan="6" class="text-center text-muted py-3">{{ getTranslation('favicon.rules.none') || 'No favicon rules yet.' }}</td>
                 </tr>
-                <tr v-for="(r, ri) in faviconRulesWorking" :key="r.id || ri">
+                <tr v-for="(r, ri) in faviconRulesWorking" :key="r.id || ri" :data-rule-id="r.id || ''">
                   <td>
                     <input type="checkbox" class="form-check-input" v-model="r.enabled">
                   </td>
@@ -7816,6 +7950,33 @@ pre code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5p
                   <td>
                     <div class="d-flex gap-1 justify-content-end favicon-rule-actions">
                       <button
+                        v-if="faviconRulesFirstMatchStopWorking"
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary favicon-rule-move-up"
+                        :title="getTranslation('favicon.rules.moveUp') || 'Move up'"
+                        :aria-label="getTranslation('favicon.rules.moveUp') || 'Move up'"
+                        :disabled="ri === 0"
+                        @click="moveFaviconRuleUp(ri)"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                          <path fill-rule="evenodd" d="M8 3.5a.5.5 0 0 1 .354.146l3 3a.5.5 0 1 1-.708.708L8.5 5.207V12.5a.5.5 0 0 1-1 0V5.207L5.354 7.354a.5.5 0 1 1-.708-.708l3-3A.5.5 0 0 1 8 3.5Z"/>
+                        </svg>
+                      </button>
+                      <button
+                        v-if="faviconRulesFirstMatchStopWorking"
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary favicon-rule-move-down"
+                        :title="getTranslation('favicon.rules.moveDown') || 'Move down'"
+                        :aria-label="getTranslation('favicon.rules.moveDown') || 'Move down'"
+                        :disabled="ri >= faviconRulesWorking.length - 1"
+                        @click="moveFaviconRuleDown(ri)"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                          <path fill-rule="evenodd" d="M8 12.5a.5.5 0 0 1-.354-.146l-3-3a.5.5 0 1 1 .708-.708L7.5 10.793V3.5a.5.5 0 0 1 1 0v7.293l2.146-2.147a.5.5 0 1 1 .708.708l-3 3A.5.5 0 0 1 8 12.5Z"/>
+                        </svg>
+                      </button>
+                      <button
+                        v-if="extensionAvailable"
                         type="button"
                         class="btn btn-sm btn-outline-secondary"
                         :title="getTranslation('favicon.rules.autofetch') || 'Auto-fetch'"
@@ -8111,9 +8272,10 @@ const CONSTS = {
       STORAGE_KEY_DARK_MODE: 'darkMode',
       STORAGE_KEY_CUSTOM_COLORS: 'customColors',
       STORAGE_KEY_SIDEBAR_HEIGHT: 'sidebarTopHeight',
-      STORAGE_KEY_CSS_SIDEBAR_WIDTH: 'cssSidebarWidth',
-      STORAGE_KEY_CSS_SIDEBAR_HEIGHT: 'cssSidebarTopHeight',
-      STORAGE_KEY_BACKUP_REMINDER_STATE: 'backupReminderState',
+	      STORAGE_KEY_CSS_SIDEBAR_WIDTH: 'cssSidebarWidth',
+	      STORAGE_KEY_CSS_SIDEBAR_HEIGHT: 'cssSidebarTopHeight',
+	      STORAGE_KEY_BACKUP_REMINDER_STATE: 'backupReminderState',
+	      BACKUP_ACTIVITY_LOG_MAX_ENTRIES: 200,
 
       // Defaults
       VERSION_FALLBACK: 0, // Default version for unversioned data
@@ -11757,6 +11919,9 @@ function getDefaultFaviconRules() {
               emoji: group.emoji || '',
               color: group.color,
               urlPlaceholders: JSON.parse(JSON.stringify(group.urlPlaceholders || [])),
+              autoAdjustHeightOnLinkChangesOverride: (this.app && this.app.normalizeGroupAutoAdjustHeightOverride)
+                ? this.app.normalizeGroupAutoAdjustHeightOverride(group.autoAdjustHeightOnLinkChangesOverride)
+                : (group.autoAdjustHeightOnLinkChangesOverride ?? null),
               linkedCollapseGroupUuids: JSON.parse(JSON.stringify(group.linkedCollapseGroupUuids || [])),
               linkedCollapseOnCloseGroupUuids: JSON.parse(JSON.stringify(group.linkedCollapseOnCloseGroupUuids || [])),
             }
@@ -11958,6 +12123,11 @@ function getDefaultFaviconRules() {
               group.urlPlaceholders = (window.app && window.app.normalizePlaceholderList)
                 ? window.app.normalizePlaceholderList(event.operation.data.urlPlaceholders || [])
                 : (event.operation.data.urlPlaceholders || []);
+              if (event.operation.data.autoAdjustHeightOnLinkChangesOverride !== undefined) {
+                group.autoAdjustHeightOnLinkChangesOverride = (window.app && window.app.normalizeGroupAutoAdjustHeightOverride)
+                  ? window.app.normalizeGroupAutoAdjustHeightOverride(event.operation.data.autoAdjustHeightOnLinkChangesOverride)
+                  : event.operation.data.autoAdjustHeightOnLinkChangesOverride;
+              }
               group.linkedCollapseGroupUuids = (window.app && window.app.normalizeLinkedCollapseGroupUuidList)
                 ? window.app.normalizeLinkedCollapseGroupUuidList(event.operation.data.linkedCollapseGroupUuids || [], group.uuid || '')
                 : (event.operation.data.linkedCollapseGroupUuids || []);
@@ -12806,6 +12976,15 @@ function getDefaultFaviconRules() {
             if (d.name !== undefined) this.app.$set(g, 'name', d.name);
             if (d.color !== undefined) this.app.$set(g, 'color', d.color);
             if (d.urlPlaceholders !== undefined) this.app.$set(g, 'urlPlaceholders', this.app.normalizePlaceholderList(d.urlPlaceholders || []));
+            if (d.autoAdjustHeightOnLinkChangesOverride !== undefined) {
+              this.app.$set(
+                g,
+                'autoAdjustHeightOnLinkChangesOverride',
+                this.app.normalizeGroupAutoAdjustHeightOverride(d.autoAdjustHeightOnLinkChangesOverride)
+              );
+            } else if (this.app.normalizeGroupAutoAdjustHeightSettings) {
+              this.app.normalizeGroupAutoAdjustHeightSettings(g);
+            }
             if (d.linkedCollapseGroupUuids !== undefined || d.linkedCollapseOnCloseGroupUuids !== undefined) {
               const normalizedLinked = this.app.normalizeLinkedCollapseGroupUuidList(
                 d.linkedCollapseGroupUuids !== undefined ? (d.linkedCollapseGroupUuids || []) : (g.linkedCollapseGroupUuids || []),
@@ -12933,6 +13112,15 @@ function getDefaultFaviconRules() {
             if (typeof env.opacity==='number') g.opacity = Math.max(0, Math.min(100, env.opacity));
             if (env.infoHtml !== undefined) g.infoHtml = this.app.sanitizeHtml(String(env.infoHtml || ''));
             if (env.urlPlaceholders !== undefined) this.app.$set(g, 'urlPlaceholders', this.app.normalizePlaceholderList(env.urlPlaceholders || []));
+            if (env.autoAdjustHeightOnLinkChangesOverride !== undefined) {
+              this.app.$set(
+                g,
+                'autoAdjustHeightOnLinkChangesOverride',
+                this.app.normalizeGroupAutoAdjustHeightOverride(env.autoAdjustHeightOnLinkChangesOverride)
+              );
+            } else if (this.app.normalizeGroupAutoAdjustHeightSettings) {
+              this.app.normalizeGroupAutoAdjustHeightSettings(g);
+            }
             if (env.linkedCollapseGroupUuids !== undefined || env.linkedCollapseOnCloseGroupUuids !== undefined) {
               const normalizedLinked = this.app.normalizeLinkedCollapseGroupUuidList(
                 env.linkedCollapseGroupUuids !== undefined ? (env.linkedCollapseGroupUuids || []) : (g.linkedCollapseGroupUuids || []),
@@ -13065,6 +13253,15 @@ function getDefaultFaviconRules() {
             if (typeof env.opacity==='number') g.opacity = Math.max(0, Math.min(100, env.opacity));
             if (env.infoHtml !== undefined) g.infoHtml = this.app.sanitizeHtml(String(env.infoHtml || ''));
             if (env.urlPlaceholders !== undefined) this.app.$set(g, 'urlPlaceholders', this.app.normalizePlaceholderList(env.urlPlaceholders || []));
+            if (env.autoAdjustHeightOnLinkChangesOverride !== undefined) {
+              this.app.$set(
+                g,
+                'autoAdjustHeightOnLinkChangesOverride',
+                this.app.normalizeGroupAutoAdjustHeightOverride(env.autoAdjustHeightOnLinkChangesOverride)
+              );
+            } else if (this.app.normalizeGroupAutoAdjustHeightSettings) {
+              this.app.normalizeGroupAutoAdjustHeightSettings(g);
+            }
             if (env.linkedCollapseGroupUuids !== undefined || env.linkedCollapseOnCloseGroupUuids !== undefined) {
               const normalizedLinked = this.app.normalizeLinkedCollapseGroupUuidList(
                 env.linkedCollapseGroupUuids !== undefined ? (env.linkedCollapseGroupUuids || []) : (g.linkedCollapseGroupUuids || []),
@@ -13608,6 +13805,7 @@ function getDefaultFaviconRules() {
           groupColor: freshGroup.color||'', 
           groupOpacity: (typeof freshGroup.opacity==='number'?freshGroup.opacity:100), 
           urlPlaceholders: this.app.normalizePlaceholderList(freshGroup.urlPlaceholders || []),
+          autoAdjustHeightOnLinkChangesOverride: this.app.normalizeGroupAutoAdjustHeightOverride(freshGroup.autoAdjustHeightOnLinkChangesOverride),
           linkedCollapseGroupUuids: this.app.normalizeLinkedCollapseGroupUuidList(freshGroup.linkedCollapseGroupUuids || [], freshGroup.uuid || ''),
           linkedCollapseOnCloseGroupUuids: this.app.normalizeLinkedCollapseGroupUuidList(freshGroup.linkedCollapseOnCloseGroupUuids || [], freshGroup.uuid || ''),
           groupOwnerUuid: (freshGroup.ownerUuid||this.app.data.identity?.uuid||''), 
@@ -14101,7 +14299,8 @@ function getDefaultFaviconRules() {
           globalShortcuts: [],
           globalPlaceholders: [],
           noteCollapsedState: {},
-          faviconRules: getDefaultFaviconRules()
+          faviconRules: getDefaultFaviconRules(),
+          faviconRulesFirstMatchStop: false
         },
         backupReminder: {
           enabled: true,
@@ -14111,7 +14310,8 @@ function getDefaultFaviconRules() {
           remindBeforeImport: true,
           reminderCooldownHours: 24,
           showUrgencyIndicator: true,
-          exportBlinkEnabled: true
+          exportBlinkEnabled: true,
+          showLinkedSnapshotsInLog: true
         },
         automaticSnapshots: {
           enabled: true,
@@ -14337,6 +14537,7 @@ function getDefaultFaviconRules() {
         designTokensCollapsed: false,
         // Feature Overview Sidebar
         featureSidebarVisible: false,
+        backupActivitySidebarVisible: false,
         helpLanguageTab: 'de', // Default to German
         selectedColor: '#000000',
         // Browser Extension
@@ -14530,6 +14731,11 @@ function getDefaultFaviconRules() {
           '.mb-feature-sidebar-close',
           '.mb-feature-sidebar-content',
           '.feature-sidebar',
+          '.mb-backup-activity-sidebar',
+          '.mb-backup-activity-sidebar-header',
+          '.mb-backup-activity-sidebar-content',
+          '.mb-backup-activity-entry',
+          '.backup-activity-sidebar',
           '.feature-section',
           '.feature-card',
           '.context-menu',
@@ -14689,7 +14895,8 @@ function getDefaultFaviconRules() {
           lastBackupAt: 0,
           lastReminderAt: 0,
           changesSinceBackup: 0,
-          lastChangeAt: 0
+          lastChangeAt: 0,
+          activityLog: []
         },
         automaticSnapshotState: {
           lastAutoSnapshotAt: 0,
@@ -15009,9 +15216,17 @@ function getDefaultFaviconRules() {
                 optionPath: 'backupReminder.exportBlinkEnabled',
                 helpText: 'options.backupReminder.exportBlinkEnabled.help',
                 defaultValue: true
-	              }
-	            }
-	          },
+		              },
+              showLinkedSnapshotsInLog: {
+                id: 'BackupReminderShowLinkedSnapshotsInLog',
+                type: 'checkbox',
+                translateKey: 'options.backupReminder.showLinkedSnapshotsInLog',
+                optionPath: 'backupReminder.showLinkedSnapshotsInLog',
+                helpText: 'options.backupReminder.showLinkedSnapshotsInLog.help',
+                defaultValue: true
+              }
+		            }
+		          },
 	          automaticSnapshots: {
 	            translateKey: 'options.automaticSnapshots',
 	            fields: {
@@ -15388,11 +15603,16 @@ function getDefaultFaviconRules() {
                 placeholder: 'group.shortcut.placeholder',
                 helpText: 'group.shortcut.help'
               },
-              manualHeightResizeOverride: {
-                id: 'GroupManualHeightResizeOverride',
-                type: 'checkbox',
-                translateKey: 'group.manualHeightResizeOverride',
-                helpText: 'group.manualHeightResizeOverride.help'
+              autoAdjustHeightOnLinkChangesOverrideMode: {
+                id: 'GroupAutoAdjustHeightOverride',
+                type: 'select',
+                translateKey: 'group.autoAdjustHeightOnLinkChangesOverride',
+                helpText: 'group.autoAdjustHeightOnLinkChangesOverride.help',
+                values: {
+                  inherit: 'group.autoAdjustHeightOnLinkChangesOverride.inherit',
+                  enabled: 'group.autoAdjustHeightOnLinkChangesOverride.enabled',
+                  disabled: 'group.autoAdjustHeightOnLinkChangesOverride.disabled'
+                }
               },
               infoHtml: {
                 type: 'textarea',
@@ -15501,6 +15721,7 @@ function getDefaultFaviconRules() {
         // Favicon Rules working state (Options modal)
         faviconRulesWorking: [],
         faviconRulesTestUrl: '',
+        faviconRulesFirstMatchStopWorking: false,
         i18n: { // Übersetzungen jetzt hier
           'en': {
             // Favicon rules
@@ -15522,6 +15743,8 @@ function getDefaultFaviconRules() {
             'favicon.rules.autofetch': 'Auto-fetch',
             'favicon.rules.upload': 'Upload',
             'favicon.rules.delete': 'Delete',
+            'favicon.rules.moveUp': 'Move up',
+            'favicon.rules.moveDown': 'Move down',
             'favicon.rules.test': 'Test URL',
             'favicon.rules.matchPreview': 'Matched rule preview',
             'favicon.rules.restoreDefaults': 'Restore defaults',
@@ -15537,6 +15760,9 @@ function getDefaultFaviconRules() {
             'favicon.rules.needsExtension': 'Extension required to auto-fetch icons',
             'favicon.rules.saved': 'Favicon rules saved',
             'favicon.rules.applied': 'Favicon rules applied',
+            'favicon.rules.firstMatchStop': 'First-match-stop (use rule order)',
+            'favicon.rules.firstMatchStopHelp': 'When enabled, the first matching rule is applied and evaluation stops.',
+            'favicon.rules.firstMatchStopDisabledHelp': 'When disabled, the most specific matching rule is used and manual sorting has no effect.',
             // CardDAV
             'carddav.title': 'CardDAV Sync',
             'carddav.serverUrl': 'Server URL',
@@ -15620,7 +15846,7 @@ function getDefaultFaviconRules() {
             'options.groups.hoverExpandDelay': 'Auto-open delay while dragging links',
             'options.groups.hoverExpandDelay.help': 'Time to hover a collapsed group with a dragged link before it expands (milliseconds)',
             'options.groups.autoAdjustHeightOnLinkChanges': 'Automatically adjust group height when links are added/removed',
-            'options.groups.autoAdjustHeightOnLinkChanges.help': 'Automatically fit group height after adding/removing links if content would otherwise require scrolling. Disables manual height resize unless overridden per group.',
+            'options.groups.autoAdjustHeightOnLinkChanges.help': 'Automatically fit group height after adding/removing links if content would otherwise require scrolling. Manual height resize remains available.',
             'options.common.searchAsYouType': 'Instant search while typing',
             'options.common.searchAsYouType.help': 'You can start typing a search term without clicking in the search text field, unless you have focused on another input field',
             'options.common.debugEnabled': 'Enable diagnostic logging',
@@ -15674,7 +15900,7 @@ function getDefaultFaviconRules() {
             'options.groups.clearClosesAllGroups': 'Collapse all groups when clearing search',
             'options.groups.clearClosesAllGroups.help': 'On Clear, collapse all groups for privacy',
             'options.groups.keywordClickExpandsAll': 'Expand all groups on keyword click',
-            'options.groups.keywordClickExpandsAll.help': 'When clicking a keyword chip, expand all groups',
+            'options.groups.keywordClickExpandsAll.help': 'When clicking a keyword chip, auto-expand matching groups and collapse groups that no longer match',
             'options.groups.searchAutoExpandFound': 'Auto-expand matching groups during search',
             'options.groups.searchAutoExpandFound.help': 'Expand groups that match the current search text',
             'options.colors.generalSection': 'General Website Colors',
@@ -15899,6 +16125,8 @@ function getDefaultFaviconRules() {
 	            'options.backupReminder.showUrgencyIndicator.help': 'Shows the color score indicator next to the database size in the toolbar.',
 	            'options.backupReminder.exportBlinkEnabled': 'Blink export button on urgency',
 	            'options.backupReminder.exportBlinkEnabled.help': 'Makes the export button blink in score color when urgency reaches the yellow range.',
+	            'options.backupReminder.showLinkedSnapshotsInLog': 'Show linked snapshots in urgency log',
+	            'options.backupReminder.showLinkedSnapshotsInLog.help': 'Shows linked snapshots in the backup urgency sidebar and offers a restore link if available.',
 	            'options.automaticSnapshots': 'Automatic snapshots',
 	            'options.automaticSnapshots.enabled': 'Enable automatic snapshots',
 	            'options.automaticSnapshots.enabled.help': 'Automatically creates restore points based on your rules.',
@@ -15938,6 +16166,23 @@ function getDefaultFaviconRules() {
 	            'backup.urgency.thresholds': 'Thresholds: {days} day(s) / {changes} changes',
 	            'backup.urgency.empty': 'No links available yet',
 	            'backup.urgency.remindersDisabled': 'Backup reminders are currently disabled',
+	            'backup.urgency.openLogHint': 'Click to open backup activity log',
+	            'backup.activity.title': 'Backup activity log',
+	            'backup.activity.empty': 'No backup-related changes have been recorded yet.',
+	            'backup.activity.snapshot': 'Snapshot',
+	            'backup.activity.restore': 'Restore',
+	            'backup.activity.snapshotMissing': 'Snapshot no longer available',
+	            'backup.activity.type.change': 'Change registered ({count} since last backup).',
+	            'backup.activity.type.backupCreated': 'Backup created ({source}).',
+	            'backup.activity.type.snapshotRestored': 'Snapshot restored ({name}).',
+	            'backup.activity.type.snapshotDeleted': 'Snapshot deleted ({name}).',
+	            'backup.activity.type.generic': 'Backup-related update recorded.',
+	            'backup.activity.source.export-json': 'JSON export',
+	            'backup.activity.source.snapshot': 'manual snapshot',
+	            'backup.activity.source.automatic-snapshot': 'automatic snapshot',
+	            'backup.activity.source.before-full-import-restore': 'pre-restore snapshot',
+	            'backup.activity.source.manual': 'manual',
+	            'backup.activity.source.unknown': 'unknown source',
 	            'options.sharing': 'Sharing',
 	            'options.sync': 'NTFY Synchronization',
             // Role badges
@@ -16182,6 +16427,11 @@ function getDefaultFaviconRules() {
             'group.linkedCollapseGroups.column.group': 'Group',
             'group.linkedCollapseGroups.column.expand': 'Open',
             'group.linkedCollapseGroups.column.collapse': 'Close',
+            'group.autoAdjustHeightOnLinkChangesOverride': 'Auto-adjust height for this group',
+            'group.autoAdjustHeightOnLinkChangesOverride.help': 'Inherit the global auto-adjust setting or override it for this group.',
+            'group.autoAdjustHeightOnLinkChangesOverride.inherit': 'Inherit global setting',
+            'group.autoAdjustHeightOnLinkChangesOverride.enabled': 'Always enabled for this group',
+            'group.autoAdjustHeightOnLinkChangesOverride.disabled': 'Disabled for this group',
             'group.manualHeightResizeOverride': 'Allow manual height resize for this group',
             'group.manualHeightResizeOverride.help': 'Overrides the global auto-height setting for this group. When enabled, you can resize this group manually.',
             'group.color': 'Color',
@@ -16660,6 +16910,8 @@ function getDefaultFaviconRules() {
             'favicon.rules.autofetch': 'Auto laden',
             'favicon.rules.upload': 'Hochladen',
             'favicon.rules.delete': 'Löschen',
+            'favicon.rules.moveUp': 'Nach oben',
+            'favicon.rules.moveDown': 'Nach unten',
             'favicon.rules.test': 'Test-URL',
             'favicon.rules.matchPreview': 'Treffervorschau',
             'favicon.rules.restoreDefaults': 'Standardregeln wiederherstellen',
@@ -16675,6 +16927,9 @@ function getDefaultFaviconRules() {
             'favicon.rules.needsExtension': 'Extension erforderlich zum automatischen Laden von Icons',
             'favicon.rules.saved': 'Favicon-Regeln gespeichert',
             'favicon.rules.applied': 'Favicon-Regeln angewendet',
+            'favicon.rules.firstMatchStop': 'First-Match-Stop (Regelreihenfolge nutzen)',
+            'favicon.rules.firstMatchStopHelp': 'Wenn aktiv, wird die erste passende Regel genutzt und die Auswertung beendet.',
+            'favicon.rules.firstMatchStopDisabledHelp': 'Wenn deaktiviert, wird die spezifischste passende Regel genutzt und die manuelle Sortierung hat keine Wirkung.',
             // CardDAV
             'carddav.title': 'CardDAV-Sync',
             'carddav.serverUrl': 'Server-URL',
@@ -16758,7 +17013,7 @@ function getDefaultFaviconRules() {
             'options.groups.hoverExpandDelay': 'Verzögerung fürs Auto-Öffnen beim Link-Ziehen (ms)',
             'options.groups.hoverExpandDelay.help': 'Zeit in Millisekunden, die ein gezogener Link über einer eingeklappten Gruppe schweben muss, um sie zu öffnen',
             'options.groups.autoAdjustHeightOnLinkChanges': 'Gruppenhöhe beim Hinzufügen/Entfernen automatisch anpassen',
-            'options.groups.autoAdjustHeightOnLinkChanges.help': 'Passt die Gruppenhöhe nach dem Hinzufügen/Entfernen von Links automatisch an, wenn sonst gescrollt werden müsste. Deaktiviert manuelles Höhen-Resizing, außer bei Gruppen-Override.',
+            'options.groups.autoAdjustHeightOnLinkChanges.help': 'Passt die Gruppenhöhe nach dem Hinzufügen/Entfernen von Links automatisch an, wenn sonst gescrollt werden müsste. Manuelles Höhen-Resizing bleibt dabei verfügbar.',
             'options.common.searchAsYouType': 'Sofortsuche beim Tippen',
             'options.common.searchAsYouType.help': 'Du kannst anfangen, einen Suchbegriff einzugeben, ohne in das Suchfeld zu klicken, es sei denn, du hast ein anderes Eingabefeld fokussiert',
             'options.common.debugEnabled': 'Diagnose-Protokoll aktivieren',
@@ -16810,7 +17065,7 @@ function getDefaultFaviconRules() {
             'options.groups.clearClosesAllGroups': 'Beim Löschen der Suche alle Gruppen einklappen',
             'options.groups.clearClosesAllGroups.help': 'Beim Clear alle Gruppen einklappen (Datensicherheit)',
             'options.groups.keywordClickExpandsAll': 'Klick auf Keyword öffnet alle Gruppen',
-            'options.groups.keywordClickExpandsAll.help': 'Beim Klick auf ein Keyword alle Gruppen ausklappen',
+            'options.groups.keywordClickExpandsAll.help': 'Beim Klick auf ein Keyword passende Gruppen automatisch ausklappen und nicht mehr passende wieder einklappen',
             'options.groups.searchAutoExpandFound': 'Treffergruppen während der Suche automatisch öffnen',
             'options.groups.searchAutoExpandFound.help': 'Passende Gruppen bei aktiver Suche automatisch ausklappen',
             'options.colors': 'Darstellung & Farben',
@@ -16910,6 +17165,8 @@ function getDefaultFaviconRules() {
 	            'options.backupReminder.showUrgencyIndicator.help': 'Zeigt den farbigen Score-Indikator neben der DB-Größe in der Toolbar an.',
 	            'options.backupReminder.exportBlinkEnabled': 'Export-Button bei Dringlichkeit blinken lassen',
 	            'options.backupReminder.exportBlinkEnabled.help': 'Lässt den Export-Button in der Score-Farbe blinken, sobald der gelbe Bereich erreicht ist.',
+	            'options.backupReminder.showLinkedSnapshotsInLog': 'Verknüpfte Snapshots im Dringlichkeits-Log anzeigen',
+	            'options.backupReminder.showLinkedSnapshotsInLog.help': 'Zeigt verknüpfte Snapshots in der Backup-Dringlichkeits-Sidebar inkl. Wiederherstellen-Link an.',
 	            'options.automaticSnapshots': 'Automatische Snapshots',
 	            'options.automaticSnapshots.enabled': 'Automatische Snapshots aktivieren',
 	            'options.automaticSnapshots.enabled.help': 'Erstellt automatisch Wiederherstellungspunkte anhand Ihrer Regeln.',
@@ -16949,6 +17206,23 @@ function getDefaultFaviconRules() {
 	            'backup.urgency.thresholds': 'Schwellen: {days} Tag(e) / {changes} Änderungen',
 	            'backup.urgency.empty': 'Noch keine Links vorhanden',
 	            'backup.urgency.remindersDisabled': 'Backup-Erinnerungen sind derzeit deaktiviert',
+	            'backup.urgency.openLogHint': 'Klicken zum Öffnen des Backup-Aktivitätslogs',
+	            'backup.activity.title': 'Backup-Aktivitätslog',
+	            'backup.activity.empty': 'Bisher wurden keine backup-relevanten Änderungen protokolliert.',
+	            'backup.activity.snapshot': 'Snapshot',
+	            'backup.activity.restore': 'Wiederherstellen',
+	            'backup.activity.snapshotMissing': 'Snapshot ist nicht mehr vorhanden',
+	            'backup.activity.type.change': 'Änderung registriert ({count} seit letztem Backup).',
+	            'backup.activity.type.backupCreated': 'Backup erstellt ({source}).',
+	            'backup.activity.type.snapshotRestored': 'Snapshot wiederhergestellt ({name}).',
+	            'backup.activity.type.snapshotDeleted': 'Snapshot gelöscht ({name}).',
+	            'backup.activity.type.generic': 'Backup-relevante Aktualisierung registriert.',
+	            'backup.activity.source.export-json': 'JSON-Export',
+	            'backup.activity.source.snapshot': 'manueller Snapshot',
+	            'backup.activity.source.automatic-snapshot': 'automatischer Snapshot',
+	            'backup.activity.source.before-full-import-restore': 'Restore-Vorab-Snapshot',
+	            'backup.activity.source.manual': 'manuell',
+	            'backup.activity.source.unknown': 'unbekannte Quelle',
 	            'options.sharing': 'Teilen',
             'options.sharing.ntfyServerUrl': 'Benachrichtigungsserver (ntfy) URL',
             'options.sharing.ntfyServerUrl.help': 'URL des ntfy Push-Benachrichtigungsservers',
@@ -17247,6 +17521,11 @@ function getDefaultFaviconRules() {
             'group.linkedCollapseGroups.column.group': 'Gruppe',
             'group.linkedCollapseGroups.column.expand': 'Aufklappen',
             'group.linkedCollapseGroups.column.collapse': 'Zuklappen',
+            'group.autoAdjustHeightOnLinkChangesOverride': 'Auto-Höhenanpassung für diese Gruppe',
+            'group.autoAdjustHeightOnLinkChangesOverride.help': 'Übernimmt die globale Auto-Höhenanpassung oder überschreibt sie für diese Gruppe.',
+            'group.autoAdjustHeightOnLinkChangesOverride.inherit': 'Globale Einstellung übernehmen',
+            'group.autoAdjustHeightOnLinkChangesOverride.enabled': 'Für diese Gruppe immer aktiv',
+            'group.autoAdjustHeightOnLinkChangesOverride.disabled': 'Für diese Gruppe deaktiviert',
             'group.manualHeightResizeOverride': 'Manuelles Höhen-Resizing für diese Gruppe erlauben',
             'group.manualHeightResizeOverride.help': 'Überschreibt die globale Auto-Höhenanpassung für diese Gruppe. Wenn aktiv, kann die Gruppenhöhe manuell geändert werden.',
             'group.color': 'Farbe',
@@ -17809,24 +18088,12 @@ function getDefaultFaviconRules() {
           this._debouncedMeta();
         },
         filterText(newVal, oldVal) {
-          if (!this.data?.options?.groups?.searchAutoExpandFound) return;
-          // Save collapsed state once when starting a search
-          if (newVal && !oldVal && !this._savedCollapsedStates) {
-            this._savedCollapsedStates = {};
-            (this.data.groups || []).forEach(g => { this._savedCollapsedStates[g.id] = !!g.collapsed; });
-          }
-          if (newVal) {
-            // Expand matched groups
-            (this.data.groups || []).forEach(g => {
-              if (this.isGroupMatched(g, newVal)) this.$set(g, 'collapsed', false);
-            });
-          } else if (!newVal && this._savedCollapsedStates) {
-            // Restore previous collapsed states after clearing search
-            (this.data.groups || []).forEach(g => {
-              const prev = this._savedCollapsedStates[g.id];
-              if (prev !== undefined) this.$set(g, 'collapsed', prev);
-            });
-            this._savedCollapsedStates = null;
+          this.handleSearchAutoExpandChange(newVal, oldVal);
+        },
+        activeKeywordFilters: {
+          deep: true,
+          handler(newVal, oldVal) {
+            this.handleKeywordAutoExpandChange(newVal, oldVal);
           }
         },
         dragState(newValue, oldValue) {
@@ -18243,13 +18510,14 @@ function getDefaultFaviconRules() {
           if (!this._onEscapeKeyup) {
             this._onEscapeKeyup = (e) => {
               if (e.key !== 'Escape') return;
-              if (this.dropManager && typeof this.dropManager.reset === 'function') {
-                this.dropManager.reset();
-              }
-              this.hideMenus();
-              this.cancelEditing(this.editGroup); // Cancel group editing
-              this.cancelEditing(this.editLink); // Cancel link editing
-            };
+	              if (this.dropManager && typeof this.dropManager.reset === 'function') {
+	                this.dropManager.reset();
+	              }
+	              this.hideMenus();
+	              this.backupActivitySidebarVisible = false;
+	              this.cancelEditing(this.editGroup); // Cancel group editing
+	              this.cancelEditing(this.editLink); // Cancel link editing
+	            };
           }
           window.addEventListener('keyup', this._onEscapeKeyup);
           // Global click listener to hide menus
@@ -28095,11 +28363,17 @@ footer a:hover {
           this.syncVisualCssStateToLocalStorage();
         },
 
-        openFeatureSidebar() {
-          this.featureSidebarVisible = true;
-        },
-        
-        saveCssTemplate() {
+	        openFeatureSidebar() {
+	          this.featureSidebarVisible = true;
+	        },
+	        openBackupActivitySidebar() {
+	          this.backupActivitySidebarVisible = true;
+	        },
+	        closeBackupActivitySidebar() {
+	          this.backupActivitySidebarVisible = false;
+	        },
+	        
+	        saveCssTemplate() {
           if (!this.newTemplateName.trim()) return;
           
           // Initialize templates array if needed
@@ -28846,6 +29120,7 @@ footer a:hover {
                 color: group.color || '',
                 keywords: group.keywords || '',
                 urlPlaceholders: this.normalizePlaceholderList(group.urlPlaceholders || []),
+                autoAdjustHeightOnLinkChangesOverride: this.normalizeGroupAutoAdjustHeightOverride(group.autoAdjustHeightOnLinkChangesOverride),
                 linkedCollapseGroupUuids: this.normalizeLinkedCollapseGroupUuidList(group.linkedCollapseGroupUuids || [], group.uuid || ''),
                 linkedCollapseOnCloseGroupUuids: this.normalizeLinkedCollapseGroupUuidList(group.linkedCollapseOnCloseGroupUuids || [], group.uuid || ''),
                 emoji: group.emoji || '',
@@ -29935,6 +30210,7 @@ footer a:hover {
                   opacity:100, 
                   keywords:'', 
                   urlPlaceholders: this.normalizePlaceholderList(env.urlPlaceholders || []),
+                  autoAdjustHeightOnLinkChangesOverride: this.normalizeGroupAutoAdjustHeightOverride(env.autoAdjustHeightOnLinkChangesOverride),
                   linkedCollapseGroupUuids: this.normalizeLinkedCollapseGroupUuidList(env.linkedCollapseGroupUuids || [], env.groupId || ''),
                   linkedCollapseOnCloseGroupUuids: this.normalizeLinkedCollapseGroupUuidList(env.linkedCollapseOnCloseGroupUuids || [], env.groupId || ''),
                   column: Math.max(0, ...(this.getGroupColumns()||[0])), 
@@ -30009,6 +30285,15 @@ footer a:hover {
               if (typeof env.groupColor === 'string') this.$set(g, 'color', env.groupColor);
               if (typeof env.groupOpacity === 'number') this.$set(g, 'opacity', Math.max(0, Math.min(100, env.groupOpacity)));
               if (typeof env.groupOwnerUuid === 'string' && env.groupOwnerUuid) this.$set(g, 'ownerUuid', env.groupOwnerUuid);
+              if (env.autoAdjustHeightOnLinkChangesOverride !== undefined) {
+                this.$set(
+                  g,
+                  'autoAdjustHeightOnLinkChangesOverride',
+                  this.normalizeGroupAutoAdjustHeightOverride(env.autoAdjustHeightOnLinkChangesOverride)
+                );
+              } else {
+                this.normalizeGroupAutoAdjustHeightSettings(g);
+              }
               this.$set(g, 'urlPlaceholders', this.normalizePlaceholderList(env.urlPlaceholders || g.urlPlaceholders || []));
               const normalizedLinkedCollapseGroupUuids = this.normalizeLinkedCollapseGroupUuidList(
                 env.linkedCollapseGroupUuids || g.linkedCollapseGroupUuids || [],
@@ -30247,6 +30532,7 @@ footer a:hover {
                 opacity: typeof sharedGroup.opacity === 'number' ? sharedGroup.opacity : 100,
                 keywords: sharedGroup.keywords || '',
                 urlPlaceholders: this.normalizePlaceholderList(sharedGroup.urlPlaceholders || []),
+                autoAdjustHeightOnLinkChangesOverride: this.normalizeGroupAutoAdjustHeightOverride(sharedGroup.autoAdjustHeightOnLinkChangesOverride),
                 linkedCollapseGroupUuids: isSharedGroup
                   ? this.normalizeLinkedCollapseGroupUuidList(sharedGroup.linkedCollapseGroupUuids || [], newGroupUUID)
                   : [],
@@ -30345,6 +30631,7 @@ footer a:hover {
               opacity: 100, 
               keywords: '', 
               urlPlaceholders: [],
+              autoAdjustHeightOnLinkChangesOverride: null,
               linkedCollapseGroupUuids: [],
               linkedCollapseOnCloseGroupUuids: [],
               column: Math.max(0, ...(this.getGroupColumns() || [0])), 
@@ -31401,7 +31688,10 @@ footer a:hover {
 		                if (!this.data.snapshots) this.data.snapshots = [];
 		                this.data.snapshots.unshift(preRestoreSnapshot);
 		                if (this.data.snapshots.length > 20) this.data.snapshots.length = 20;
-			                this.recordBackupCreated('before-full-import-restore');
+			                this.recordBackupCreated('before-full-import-restore', {
+			                  snapshotId: preRestoreSnapshot.id,
+			                  snapshotName: preRestoreSnapshot.name
+			                });
 		                this.markSnapshotCreatedForAutomaticTracking(Date.now(), 'before-full-import-restore');
 			                
 			                // Complete database restore - preserve all UUIDs exactly as they are
@@ -32360,24 +32650,124 @@ footer a:hover {
 	            const parsed = Number(value);
 	            return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
 	          };
+	          const normalizedActivityLog = Array.isArray(source.activityLog)
+	            ? source.activityLog
+	                .map(entry => this.normalizeBackupActivityLogEntry(entry))
+	                .filter(Boolean)
+	                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+	                .slice(0, CONSTS.BACKUP_ACTIVITY_LOG_MAX_ENTRIES)
+	            : [];
 	          return {
 	            lastBackupAt: normalizeTs(source.lastBackupAt),
 	            lastReminderAt: normalizeTs(source.lastReminderAt),
 	            changesSinceBackup: normalizeCounter(source.changesSinceBackup),
-	            lastChangeAt: normalizeTs(source.lastChangeAt)
+	            lastChangeAt: normalizeTs(source.lastChangeAt),
+	            activityLog: normalizedActivityLog
 	          };
 	        },
-	        getBackupReminderOptions() {
-	          const defaults = initialData.options?.backupReminder || {
-	            enabled: true,
-	            intervalDays: 14,
-	            changeThreshold: 30,
-	            startupCheck: true,
-	            remindBeforeImport: true,
-	            reminderCooldownHours: 24,
-	            showUrgencyIndicator: true,
-	            exportBlinkEnabled: true
+	        normalizeBackupActivityLogEntry(entry = null) {
+	          if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null;
+	          const normalizeTs = (value) => {
+	            const parsed = Number(value);
+	            return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 0;
 	          };
+	          const normalizeCounter = (value) => {
+	            const parsed = Number(value);
+	            return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
+	          };
+	          const ts = normalizeTs(entry.timestamp) || Date.now();
+	          return {
+	            id: String(entry.id || '').trim() || (`backup-log-${ts}-${Math.random().toString(36).slice(2, 8)}`),
+	            type: String(entry.type || 'generic').trim() || 'generic',
+	            trigger: String(entry.trigger || '').trim(),
+	            source: String(entry.source || '').trim(),
+	            timestamp: ts,
+	            changesSinceBackup: normalizeCounter(entry.changesSinceBackup),
+	            snapshotId: String(entry.snapshotId || '').trim(),
+	            snapshotName: String(entry.snapshotName || '').trim()
+	          };
+	        },
+	        buildBackupActivityLogEntry(payload = {}) {
+	          return this.normalizeBackupActivityLogEntry({
+	            id: payload.id || this.generateUUID(),
+	            type: payload.type || 'generic',
+	            trigger: payload.trigger || '',
+	            source: payload.source || '',
+	            timestamp: payload.timestamp || Date.now(),
+	            changesSinceBackup: payload.changesSinceBackup || 0,
+	            snapshotId: payload.snapshotId || '',
+	            snapshotName: payload.snapshotName || ''
+	          });
+	        },
+	        prependBackupActivityEntryToState(state, entry) {
+	          if (!state || typeof state !== 'object' || !entry) return state;
+	          const normalizedEntry = this.normalizeBackupActivityLogEntry(entry);
+	          if (!normalizedEntry) return state;
+	          const existingLog = Array.isArray(state.activityLog) ? state.activityLog : [];
+	          state.activityLog = [normalizedEntry, ...existingLog]
+	            .map(item => this.normalizeBackupActivityLogEntry(item))
+	            .filter(Boolean)
+	            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+	            .slice(0, CONSTS.BACKUP_ACTIVITY_LOG_MAX_ENTRIES);
+	          return state;
+	        },
+	        getBackupActivityLogEntries() {
+	          const state = this.normalizeBackupReminderState();
+	          return state.activityLog || [];
+	        },
+	        getBackupActivitySourceLabel(source = '') {
+	          const normalized = String(source || '').trim();
+	          const key = `backup.activity.source.${normalized || 'unknown'}`;
+	          const fallback = this.getTranslation('backup.activity.source.unknown') || 'unknown source';
+	          return this.getTranslation(key) || fallback;
+	        },
+	        formatBackupActivityMessage(entry = null) {
+	          if (!entry || typeof entry !== 'object') {
+	            return this.getTranslation('backup.activity.type.generic') || 'Backup-related update recorded.';
+	          }
+	          const type = String(entry.type || 'generic').trim();
+	          if (type === 'change') {
+	            const template = this.getTranslation('backup.activity.type.change') || 'Change registered ({count} since last backup).';
+	            return template.replace('{count}', String(Math.max(0, Number(entry.changesSinceBackup) || 0)));
+	          }
+	          if (type === 'backup-created') {
+	            const template = this.getTranslation('backup.activity.type.backupCreated') || 'Backup created ({source}).';
+	            return template.replace('{source}', this.getBackupActivitySourceLabel(entry.source));
+	          }
+	          if (type === 'snapshot-restored') {
+	            const template = this.getTranslation('backup.activity.type.snapshotRestored') || 'Snapshot restored ({name}).';
+	            const name = String(entry.snapshotName || entry.snapshotId || '').trim() || 'N/A';
+	            return template.replace('{name}', name);
+	          }
+	          if (type === 'snapshot-deleted') {
+	            const template = this.getTranslation('backup.activity.type.snapshotDeleted') || 'Snapshot deleted ({name}).';
+	            const name = String(entry.snapshotName || entry.snapshotId || '').trim() || 'N/A';
+	            return template.replace('{name}', name);
+	          }
+	          return this.getTranslation('backup.activity.type.generic') || 'Backup-related update recorded.';
+	        },
+	        shouldShowLinkedSnapshotsInBackupLog() {
+	          const options = this.getBackupReminderOptions();
+	          return options.showLinkedSnapshotsInLog !== false;
+	        },
+	        findSnapshotById(snapshotId = '') {
+	          const target = String(snapshotId || '').trim();
+	          if (!target) return null;
+	          const snapshots = Array.isArray(this.data?.snapshots) ? this.data.snapshots : [];
+	          return snapshots.find(snap => String(snap?.id || '').trim() === target) || null;
+	        },
+	        getBackupReminderOptions() {
+		          const defaults = initialData.options?.backupReminder || {
+		            enabled: true,
+		            intervalDays: 14,
+		            changeThreshold: 30,
+		            startupCheck: true,
+		            remindBeforeImport: true,
+		            reminderCooldownHours: 24,
+		            showUrgencyIndicator: true,
+		            exportBlinkEnabled: true,
+		            showLinkedSnapshotsInLog: true
+		          };
 	          const options = Object.assign({}, defaults, this.data?.options?.backupReminder || {});
 	          const normalizeNumber = (value, fallback, min, max) => {
 	            const parsed = Number(value);
@@ -32388,13 +32778,14 @@ footer a:hover {
 	            enabled: options.enabled !== false,
 	            intervalDays: normalizeNumber(options.intervalDays, defaults.intervalDays, 1, 365),
 	            changeThreshold: normalizeNumber(options.changeThreshold, defaults.changeThreshold, 1, 1000),
-	            startupCheck: options.startupCheck !== false,
-	            remindBeforeImport: options.remindBeforeImport !== false,
-	            reminderCooldownHours: normalizeNumber(options.reminderCooldownHours, defaults.reminderCooldownHours, 1, 168),
-	            showUrgencyIndicator: options.showUrgencyIndicator !== false,
-	            exportBlinkEnabled: options.exportBlinkEnabled !== false
-	          };
-	        },
+		            startupCheck: options.startupCheck !== false,
+		            remindBeforeImport: options.remindBeforeImport !== false,
+		            reminderCooldownHours: normalizeNumber(options.reminderCooldownHours, defaults.reminderCooldownHours, 1, 168),
+		            showUrgencyIndicator: options.showUrgencyIndicator !== false,
+		            exportBlinkEnabled: options.exportBlinkEnabled !== false,
+		            showLinkedSnapshotsInLog: options.showLinkedSnapshotsInLog !== false
+		          };
+		        },
 	        loadBackupReminderState() {
 	          try {
 	            const raw = localStorage.getItem(CONSTS.STORAGE_KEY_BACKUP_REMINDER_STATE);
@@ -32481,16 +32872,30 @@ footer a:hover {
 	          this.persistBackupReminderState();
 	          return true;
 	        },
-	        recordBackupCreated(source = 'manual') {
+	        recordBackupCreated(source = 'manual', metadata = {}) {
 	          const now = Date.now();
-	          this.backupReminderState = this.normalizeBackupReminderState({
+	          const previousState = this.normalizeBackupReminderState();
+	          const nextState = this.normalizeBackupReminderState({
+	            ...previousState,
 	            lastBackupAt: now,
 	            lastReminderAt: 0,
 	            changesSinceBackup: 0,
 	            lastChangeAt: now
 	          });
+	          this.prependBackupActivityEntryToState(nextState, this.buildBackupActivityLogEntry({
+	            type: 'backup-created',
+	            source,
+	            timestamp: now,
+	            snapshotId: metadata?.snapshotId || '',
+	            snapshotName: metadata?.snapshotName || ''
+	          }));
+	          this.backupReminderState = nextState;
 	          this.persistBackupReminderState();
-	          debugLog('log', '[BACKUP REMINDER] Backup recorded', { source, timestamp: now });
+	          debugLog('log', '[BACKUP REMINDER] Backup recorded', {
+	            source,
+	            timestamp: now,
+	            snapshotId: metadata?.snapshotId || null
+	          });
 	        },
 	        recordBackupRelevantChange(trigger = 'save') {
 	          if (this._suppressBackupReminderChangeTracking) return;
@@ -32499,6 +32904,12 @@ footer a:hover {
 	          const now = Date.now();
 	          state.changesSinceBackup += 1;
 	          state.lastChangeAt = now;
+	          this.prependBackupActivityEntryToState(state, this.buildBackupActivityLogEntry({
+	            type: 'change',
+	            trigger,
+	            timestamp: now,
+	            changesSinceBackup: state.changesSinceBackup
+	          }));
 	          this.backupReminderState = state;
 	          this.persistBackupReminderState();
 	          this.maybeShowBackupReminder(trigger);
@@ -32728,7 +33139,7 @@ footer a:hover {
 	            this._suppressBackupReminderChangeTracking = false;
 	            this._suppressAutomaticSnapshotTracking = false;
 	          }
-	          this.recordBackupCreated('automatic-snapshot');
+	          this.recordBackupCreated('automatic-snapshot', { snapshotId: snap.id, snapshotName: snap.name });
 	          this.markSnapshotCreatedForAutomaticTracking(nowTs, reasonKey);
 	          if (!context.silent) {
 	            const messageTemplate = this.getTranslation('snapshots.auto.created') || 'Automatic snapshot created (%s)';
@@ -32776,26 +33187,45 @@ footer a:hover {
 	          } finally {
 	            this._suppressBackupReminderChangeTracking = false;
 	          }
-	          this.recordBackupCreated('snapshot');
-	          this.markSnapshotCreatedForAutomaticTracking(Date.now(), 'manual');
+		          this.recordBackupCreated('snapshot', { snapshotId: snap.id, snapshotName: snap.name });
+		          this.markSnapshotCreatedForAutomaticTracking(Date.now(), 'manual');
+		        },
+	        restoreSnapshot(id) {
+	          const snap = (this.data.snapshots || []).find(s => s.id === id);
+	          if (!snap) return;
+	          if (!confirm(this.getTranslation('snapshots.restore.confirm'))) return;
+	          // push current to history before restore
+	          this.historyPast.push(this.getSavableData());
+	          this._applySnapshot(snap.payload || snap.data || null);
+	          const state = this.normalizeBackupReminderState();
+	          this.prependBackupActivityEntryToState(state, this.buildBackupActivityLogEntry({
+	            type: 'snapshot-restored',
+	            timestamp: Date.now(),
+	            snapshotId: snap.id,
+	            snapshotName: snap.name || ''
+	          }));
+	          this.backupReminderState = state;
+	          this.persistBackupReminderState();
 	        },
-        restoreSnapshot(id) {
-          const snap = (this.data.snapshots || []).find(s => s.id === id);
-          if (!snap) return;
-          if (!confirm(this.getTranslation('snapshots.restore.confirm'))) return;
-          // push current to history before restore
-          this.historyPast.push(this.getSavableData());
-          this._applySnapshot(snap.payload || snap.data || null);
-        },
-        async deleteSnapshot(id) {
-          if (!confirm(this.getTranslation('snapshots.delete.confirm'))) return;
-          const arr = this.data.snapshots || [];
-          const idx = arr.findIndex(s => s.id === id);
-          if (idx >= 0) {
-            arr.splice(idx, 1);
-            if (typeof this.saveDataImmediate === 'function') await this.saveDataImmediate(); else this.saveData();
-          }
-        },
+	        async deleteSnapshot(id) {
+	          if (!confirm(this.getTranslation('snapshots.delete.confirm'))) return;
+	          const arr = this.data.snapshots || [];
+	          const idx = arr.findIndex(s => s.id === id);
+	          if (idx >= 0) {
+	            const deletedSnapshot = arr[idx];
+	            arr.splice(idx, 1);
+	            if (typeof this.saveDataImmediate === 'function') await this.saveDataImmediate(); else this.saveData();
+	            const state = this.normalizeBackupReminderState();
+	            this.prependBackupActivityEntryToState(state, this.buildBackupActivityLogEntry({
+	              type: 'snapshot-deleted',
+	              timestamp: Date.now(),
+	              snapshotId: deletedSnapshot?.id || '',
+	              snapshotName: deletedSnapshot?.name || ''
+	            }));
+	            this.backupReminderState = state;
+	            this.persistBackupReminderState();
+	          }
+	        },
         formatSnapshotLabel(s) {
           const d = new Date(s.createdAt || s.timestamp || Date.now());
           const ds = moment(d).format('LLL');
@@ -32921,6 +33351,73 @@ footer a:hover {
           }
           this.hideMenus();
         },
+        getGroupCollapseStateKey(group, fallbackIndex = -1) {
+          const stableKey = String(group?.uuid || group?.id || group?.groupId || '').trim();
+          if (stableKey) return stableKey;
+          if (Number.isInteger(fallbackIndex) && fallbackIndex >= 0) return `__idx_${fallbackIndex}`;
+          return '';
+        },
+        captureGroupCollapsedStates() {
+          const snapshot = {};
+          (this.data.groups || []).forEach((group, index) => {
+            const key = this.getGroupCollapseStateKey(group, index);
+            if (!key) return;
+            snapshot[key] = !!group.collapsed;
+          });
+          return snapshot;
+        },
+        restoreGroupCollapsedStates(snapshot) {
+          if (!snapshot || typeof snapshot !== 'object') return;
+          (this.data.groups || []).forEach((group, index) => {
+            const key = this.getGroupCollapseStateKey(group, index);
+            if (!key) return;
+            if (Object.prototype.hasOwnProperty.call(snapshot, key)) {
+              this.$set(group, 'collapsed', !!snapshot[key]);
+            }
+          });
+        },
+        handleSearchAutoExpandChange(newVal, oldVal) {
+          if (!this.data?.options?.groups?.searchAutoExpandFound) return;
+          if (newVal && !oldVal && !this._savedCollapsedStates) {
+            this._savedCollapsedStates = this.captureGroupCollapsedStates();
+          }
+          if (newVal) {
+            (this.data.groups || []).forEach(group => {
+              if (this.isGroupMatched(group, newVal)) this.$set(group, 'collapsed', false);
+            });
+          } else if (!newVal && this._savedCollapsedStates) {
+            this.restoreGroupCollapsedStates(this._savedCollapsedStates);
+            this._savedCollapsedStates = null;
+          }
+        },
+        handleKeywordAutoExpandChange(newVal, _oldVal) {
+          const nextFilters = this.normalizeKeywordList(Array.isArray(newVal) ? newVal : []);
+          const hasFilters = nextFilters.length > 0;
+          if (!this.data?.options?.groups?.keywordClickExpandsAll) {
+            if (!hasFilters) this._savedKeywordCollapsedStates = null;
+            return;
+          }
+          if (hasFilters && !this._savedKeywordCollapsedStates) {
+            this._savedKeywordCollapsedStates = this.captureGroupCollapsedStates();
+          }
+          if (hasFilters) {
+            (this.data.groups || []).forEach((group, index) => {
+              if (this.groupMatchesKeywordFilters(group, nextFilters)) {
+                this.$set(group, 'collapsed', false);
+                return;
+              }
+              if (!this._savedKeywordCollapsedStates) return;
+              const key = this.getGroupCollapseStateKey(group, index);
+              if (!key) return;
+              if (Object.prototype.hasOwnProperty.call(this._savedKeywordCollapsedStates, key)) {
+                this.$set(group, 'collapsed', !!this._savedKeywordCollapsedStates[key]);
+              }
+            });
+          } else if (!hasFilters && this._savedKeywordCollapsedStates) {
+            this.restoreGroupCollapsedStates(this._savedKeywordCollapsedStates);
+            this._savedKeywordCollapsedStates = null;
+          }
+        },
         onClearClick() {
           this.filterText = '';
           this.activeKeywordFilters = [];
@@ -32934,9 +33431,6 @@ footer a:hover {
           const idx = (this.activeKeywordFilters || []).findIndex(item => this.normalizeKeyword(item) === normalized);
           if (idx >= 0) this.activeKeywordFilters.splice(idx, 1);
           else this.activeKeywordFilters.push(kw);
-          if (this.data.options?.groups?.keywordClickExpandsAll) {
-            this.expandAllGroups();
-          }
         },
         normalizeKeyword(keyword) {
           return String(keyword || '').trim().toLowerCase();
@@ -33197,8 +33691,12 @@ footer a:hover {
             if (modalInstance) {
               modalInstance.hide();
             }
+            const instanceShown = !!(modalInstance && modalInstance._isShown);
+            const instanceTransitioning = !!(modalInstance && modalInstance._isTransitioning);
+            const domHidden = modalElement.getAttribute('aria-hidden') === 'true' && !modalElement.classList.contains('show');
+            const needsFallback = modalElement.classList.contains('show') || (domHidden && (instanceShown || instanceTransitioning));
             // Fallback: if Bootstrap state is out of sync, ensure the modal is fully closed.
-            if (modalElement.classList.contains('show')) {
+            if (needsFallback) {
               modalElement.classList.remove('show');
               modalElement.style.display = 'none';
               modalElement.setAttribute('aria-hidden', 'true');
@@ -33206,6 +33704,10 @@ footer a:hover {
               document.body.classList.remove('modal-open');
               document.body.style.removeProperty('padding-right');
               document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+              if (modalInstance && typeof modalInstance.dispose === 'function') {
+                try { modalInstance.dispose(); } catch {}
+                bootstrap.Modal.getOrCreateInstance(modalElement);
+              }
             }
           }
           this.resetKeywordQuickDialog();
@@ -34192,7 +34694,7 @@ footer a:hover {
             borderColor
           };
         },
-        getBackupUrgencyTooltip() {
+	        getBackupUrgencyTooltip() {
           const status = this.getBackupUrgencyStatus();
           const levelLabel = this.getTranslation(`backup.urgency.level.${status.level}`) || status.level;
           const lines = [
@@ -34226,10 +34728,15 @@ footer a:hover {
             lines.push(this.getTranslation('backup.urgency.remindersDisabled') || 'Backup reminders are currently disabled');
           }
 
-          return lines.join('\n');
-        },
-        
-        getStorageTooltip() {
+	          return lines.join('\n');
+	        },
+	        getBackupUrgencyIndicatorTooltip() {
+	          const tooltip = this.getBackupUrgencyTooltip();
+	          const hint = this.getTranslation('backup.urgency.openLogHint') || 'Click to open backup activity log';
+	          return `${tooltip}\n${hint}`;
+	        },
+	        
+	        getStorageTooltip() {
           const used = this.formatStorageSize(this.storageUsed);
           return `${used}`;
         },
@@ -34463,6 +34970,7 @@ footer a:hover {
           if (!this.isBackgroundPointTarget(pointElements)) return false;
 
           const newGroup = this.createGroupWithDefaults('New Group');
+          const newGroupPreChangeWasOptimal = this.wasGroupHeightOptimalBeforeLinkChange(newGroup);
           const beforeCount = (newGroup.links || []).length;
           await this.dropManager.onDrop(event, newGroup.links, null, beforeCount, 0, 'link');
           const inserted = (newGroup.links || []).length > beforeCount;
@@ -34478,7 +34986,7 @@ footer a:hover {
 
           this.touchGroup(newGroup, Date.now());
           this.saveData();
-          this.maybeAutoAdjustGroupHeightAfterLinkChange(newGroup);
+          this.maybeAutoAdjustGroupHeightAfterLinkChange(newGroup, { preChangeWasOptimal: newGroupPreChangeWasOptimal });
           return true;
         },
         async handleGlobalExternalDrop(event) {
@@ -34512,6 +35020,7 @@ footer a:hover {
             event.stopPropagation();
 
             const newGroup = this.createGroupWithDefaults('New Group');
+            const newGroupPreChangeWasOptimal = this.wasGroupHeightOptimalBeforeLinkChange(newGroup);
             let linkWasInserted = false;
 
             if (hasInternalLinkDrop) {
@@ -34534,7 +35043,7 @@ footer a:hover {
             } else {
               this.touchGroup(newGroup, Date.now());
               this.saveData();
-              this.maybeAutoAdjustGroupHeightAfterLinkChange(newGroup);
+              this.maybeAutoAdjustGroupHeightAfterLinkChange(newGroup, { preChangeWasOptimal: newGroupPreChangeWasOptimal });
             }
           } catch (error) {
             debugLog('warn', '[DND] Background link drop handler failed', error);
@@ -35387,6 +35896,7 @@ footer a:hover {
               } else {
                 g.bodyHeight = this.normalizeGroupBodyHeight(g.bodyHeight);
               }
+              this.normalizeGroupAutoAdjustHeightSettings(g);
               
               // Clean up shared flag for groups without active members
               if (g.shared) {
@@ -35934,21 +36444,23 @@ footer a:hover {
           }
           this.data.options.links = Object.assign({}, defaultOptions.links || {}, this.data.options.links || {});
           this.data.options.links.showReferenceMarker = this.data.options.links.showReferenceMarker !== false;
-          this.data.options.backupReminder = Object.assign({}, defaultOptions.backupReminder || {
-            enabled: true,
-            intervalDays: 14,
-            changeThreshold: 30,
-            startupCheck: true,
-            remindBeforeImport: true,
-            reminderCooldownHours: 24,
-            showUrgencyIndicator: true,
-            exportBlinkEnabled: true
-          }, this.data.options.backupReminder || {});
+	          this.data.options.backupReminder = Object.assign({}, defaultOptions.backupReminder || {
+	            enabled: true,
+	            intervalDays: 14,
+	            changeThreshold: 30,
+	            startupCheck: true,
+	            remindBeforeImport: true,
+	            reminderCooldownHours: 24,
+	            showUrgencyIndicator: true,
+	            exportBlinkEnabled: true,
+	            showLinkedSnapshotsInLog: true
+	          }, this.data.options.backupReminder || {});
           this.data.options.backupReminder.enabled = this.data.options.backupReminder.enabled !== false;
           this.data.options.backupReminder.startupCheck = this.data.options.backupReminder.startupCheck !== false;
-          this.data.options.backupReminder.remindBeforeImport = this.data.options.backupReminder.remindBeforeImport !== false;
-          this.data.options.backupReminder.showUrgencyIndicator = this.data.options.backupReminder.showUrgencyIndicator !== false;
-          this.data.options.backupReminder.exportBlinkEnabled = this.data.options.backupReminder.exportBlinkEnabled !== false;
+	          this.data.options.backupReminder.remindBeforeImport = this.data.options.backupReminder.remindBeforeImport !== false;
+	          this.data.options.backupReminder.showUrgencyIndicator = this.data.options.backupReminder.showUrgencyIndicator !== false;
+	          this.data.options.backupReminder.exportBlinkEnabled = this.data.options.backupReminder.exportBlinkEnabled !== false;
+	          this.data.options.backupReminder.showLinkedSnapshotsInLog = this.data.options.backupReminder.showLinkedSnapshotsInLog !== false;
           const normalizedBackupIntervalDays = Number(this.data.options.backupReminder.intervalDays);
           this.data.options.backupReminder.intervalDays = Number.isFinite(normalizedBackupIntervalDays)
             ? Math.max(1, Math.min(365, Math.round(normalizedBackupIntervalDays)))
@@ -36012,6 +36524,7 @@ footer a:hover {
           if (!Array.isArray(this.data.options.links.faviconRules)) {
             this.$set(this.data.options.links, 'faviconRules', getDefaultFaviconRules());
           }
+          this.data.options.links.faviconRulesFirstMatchStop = this.data.options.links.faviconRulesFirstMatchStop === true;
           if (!Array.isArray(this.data.options.links.globalShortcuts)) {
             this.$set(this.data.options.links, 'globalShortcuts', []);
           }
@@ -36179,7 +36692,7 @@ footer a:hover {
             if (g.keywords === undefined) this.$set(g, 'keywords', '');
             if (g.shortcut === undefined) this.$set(g, 'shortcut', '');
             this.normalizeGroupLinkedCollapseFields(g);
-            if (g.manualHeightResizeOverride === undefined) this.$set(g, 'manualHeightResizeOverride', false);
+            this.normalizeGroupAutoAdjustHeightSettings(g);
             this.$set(g, 'urlPlaceholders', this.normalizePlaceholderList(g.urlPlaceholders || []));
             (g.links || []).forEach(l => {
               if (l.keywords === undefined) this.$set(l, 'keywords', '');
@@ -37192,7 +37705,9 @@ footer a:hover {
           if (!this.data.options) this.$set(this, 'data', { options: {} });
           if (!this.data.options.links) this.$set(this.data.options, 'links', {});
           if (!Array.isArray(this.data.options.links.faviconRules)) this.$set(this.data.options.links, 'faviconRules', []);
+          if (typeof this.data.options.links.faviconRulesFirstMatchStop !== 'boolean') this.$set(this.data.options.links, 'faviconRulesFirstMatchStop', false);
           this.faviconRulesWorking = JSON.parse(JSON.stringify(this.data.options.links.faviconRules));
+          this.faviconRulesFirstMatchStopWorking = this.data.options.links.faviconRulesFirstMatchStop === true;
           this.faviconRulesWorking.forEach((rule, idx) => {
             if (rule.comment === undefined) {
               this.$set(this.faviconRulesWorking[idx], 'comment', '');
@@ -37379,6 +37894,23 @@ footer a:hover {
             r.click();
           }
         },
+        moveFaviconRule(index, delta) {
+          if (!Array.isArray(this.faviconRulesWorking)) return;
+          const from = Number(index);
+          const step = Number(delta);
+          if (!Number.isInteger(from) || !Number.isInteger(step) || step === 0) return;
+          const to = from + step;
+          if (from < 0 || from >= this.faviconRulesWorking.length) return;
+          if (to < 0 || to >= this.faviconRulesWorking.length) return;
+          const [rule] = this.faviconRulesWorking.splice(from, 1);
+          this.faviconRulesWorking.splice(to, 0, rule);
+        },
+        moveFaviconRuleUp(index) {
+          this.moveFaviconRule(index, -1);
+        },
+        moveFaviconRuleDown(index) {
+          this.moveFaviconRule(index, 1);
+        },
         deleteFaviconRule(idx) {
           this.faviconRulesWorking.splice(idx, 1);
         },
@@ -37458,6 +37990,7 @@ footer a:hover {
           if (!this.data.options) this.$set(this, 'data', { options: {} });
           if (!this.data.options.links) this.$set(this.data.options, 'links', {});
           this.$set(this.data.options.links, 'faviconRules', JSON.parse(JSON.stringify(this.faviconRulesWorking)));
+          this.$set(this.data.options.links, 'faviconRulesFirstMatchStop', this.faviconRulesFirstMatchStopWorking === true);
           this.saveData();
           this.showToast(this.getTranslation('favicon.rules.saved') || 'Favicon rules saved', 'success');
           this.refreshVisibleFavicons();
@@ -37468,12 +38001,15 @@ footer a:hover {
             if (modal) modal.hide();
           } catch {}
         },
-        findRuleForUrl(url, rulesOverride = null, rawInput = null) {
+        findRuleForUrl(url, rulesOverride = null, rawInput = null, firstMatchStopOverride = null) {
           try {
             if (!url && !rawInput) return null;
             const sourceRules = Array.isArray(rulesOverride) ? rulesOverride : (this.data.options?.links?.faviconRules || []);
             const rules = sourceRules.filter(r => r && r.enabled && r.iconDataUrl);
             if (!rules.length) return null;
+            const firstMatchStop = typeof firstMatchStopOverride === 'boolean'
+              ? firstMatchStopOverride
+              : this.data?.options?.links?.faviconRulesFirstMatchStop === true;
 
             const normalizedSource = (url || '').trim();
             const normalizedCandidate = MB.Utils.ensureProtocol(normalizedSource);
@@ -37534,6 +38070,7 @@ footer a:hover {
             for (const r of rules) {
               const patternRaw = (r.pattern || '').toString().trim();
               if (!patternRaw) continue;
+              let score = -1;
               if (r.patternType === 'domain') {
                 const patRaw = patternRaw.toLowerCase();
                 // Normalize: strip scheme, //, wildcard, and path
@@ -37545,7 +38082,7 @@ footer a:hover {
                   .replace(/\.+$/, '');
                 if (!pat) continue;
                 if (host && (host === pat || host.endsWith('.' + pat))) {
-                  const len = pat.length; if (len > bestLen) { best = r; bestLen = len; }
+                  score = pat.length;
                 }
               } else if (r.patternType === 'prefix') {
                 const patRaw = patternRaw.toLowerCase();
@@ -37569,7 +38106,7 @@ footer a:hover {
                   });
                   return found ? Math.max(bestLocalLen, len) : bestLocalLen;
                 }, -1);
-                if (matchedVariant > bestLen) { best = r; bestLen = matchedVariant; }
+                score = matchedVariant;
               } else if (r.patternType === 'regex') {
                 try {
                   // Be forgiving: unescape \/ to /
@@ -37579,17 +38116,22 @@ footer a:hover {
                     try { return re.test(candidate); } finally { re.lastIndex = 0; }
                   });
                   if (matched) {
-                    const len = rxSrc.length;
-                    if (len > bestLen) { best = r; bestLen = len; }
+                    score = rxSrc.length;
                   }
                 } catch {}
+              }
+              if (score < 0) continue;
+              if (firstMatchStop) return r;
+              if (score > bestLen) {
+                best = r;
+                bestLen = score;
               }
             }
             return best;
           } catch { return null; }
         },
-        findRuleIconForUrl(url, rulesOverride = null, rawInput = null) {
-          const r = this.findRuleForUrl(url, rulesOverride, rawInput);
+        findRuleIconForUrl(url, rulesOverride = null, rawInput = null, firstMatchStopOverride = null) {
+          const r = this.findRuleForUrl(url, rulesOverride, rawInput, firstMatchStopOverride);
           return r ? r.iconDataUrl : null;
         },
 
@@ -38328,6 +38870,7 @@ footer a:hover {
             linksExpanded: false, // Start with limited links for performance
             bodyHeight: CONSTS.GROUP_BODY_HEIGHT_DEFAULT,
             manualHeightResizeOverride: false,
+            autoAdjustHeightOnLinkChangesOverride: null,
             // If true, disable colored background and use neutral styling
             shared: false,
             members: [ { uuid: this.data.identity?.uuid || '', name: this.data.identity?.name || '', role: 'owner' } ],
@@ -38370,6 +38913,7 @@ footer a:hover {
               keywords: '',
               shortcut: '',
               urlPlaceholders: [],
+              autoAdjustHeightOnLinkChangesOverride: null,
               linkedCollapseGroupUuids: [],
               linkedCollapseOnCloseGroupUuids: [],
               members: newGroup.members
@@ -38475,6 +39019,7 @@ footer a:hover {
               opacity:g0.opacity, 
               keywords:g0.keywords, 
               urlPlaceholders: this.normalizePlaceholderList(g0.urlPlaceholders || []),
+              autoAdjustHeightOnLinkChangesOverride: this.normalizeGroupAutoAdjustHeightOverride(g0.autoAdjustHeightOnLinkChangesOverride),
               linkedCollapseGroupUuids: this.normalizeLinkedCollapseGroupUuidList(g0.linkedCollapseGroupUuids || [], g0.uuid || ''),
               linkedCollapseOnCloseGroupUuids: this.normalizeLinkedCollapseGroupUuidList(g0.linkedCollapseOnCloseGroupUuids || [], g0.uuid || ''),
               favicon:g0.favicon || '',
@@ -38527,6 +39072,7 @@ footer a:hover {
             urlPlaceholders: this.normalizePlaceholderList(group.urlPlaceholders || []),
             linkedCollapseGroupUuids: [],
             linkedCollapseOnCloseGroupUuids: [],
+            autoAdjustHeightOnLinkChangesOverride: this.normalizeGroupAutoAdjustHeightOverride(group.autoAdjustHeightOnLinkChangesOverride),
             links: [],
             index: (this.data.groups && this.data.groups.length ? Math.max(...this.data.groups.map(g=>g.index)) + 1 : 0),
             column: group.column || 0,
@@ -39120,6 +39666,7 @@ footer a:hover {
           
           if (!this.canAdd(group)) { alert(this.getTranslation('error.perm.add')); return; }
           if (!group.newLinkText.trim() && !group.newLinkUrl.trim()) return; // Require at least text or URL
+          const preChangeWasOptimal = this.wasGroupHeightOptimalBeforeLinkChange(group);
           const rawNewLinkInput = group.newLinkUrl;
           const newLink = this.getNewLinkTemplate(group);
           debugLog('log', '[DEBUG] Created new link:', { 
@@ -39198,7 +39745,7 @@ footer a:hover {
           }
           
           this.saveData();
-          this.maybeAutoAdjustGroupHeightAfterLinkChange(group);
+          this.maybeAutoAdjustGroupHeightAfterLinkChange(group, { preChangeWasOptimal });
           // Broadcast to shared group (legacy for backward compatibility)
           try {
             if (group.shared && group.groupTopic && group.groupKey && !group.useEventLog) {
@@ -39234,6 +39781,7 @@ footer a:hover {
           // Try external data first
           if (isExternalUrlDrop) {
             if (!this.canAdd(group)) { alert(this.getTranslation('error.perm.add')); return; }
+            const preChangeWasOptimal = this.wasGroupHeightOptimalBeforeLinkChange(group);
             const url = ext.url.trim();
             const title = (ext.title || '').trim();
             const nowTs = Date.now();
@@ -39294,7 +39842,7 @@ footer a:hover {
             }
             
             this.saveData();
-            this.maybeAutoAdjustGroupHeightAfterLinkChange(group);
+            this.maybeAutoAdjustGroupHeightAfterLinkChange(group, { preChangeWasOptimal });
             // Broadcast to shared group (legacy only)
             try {
               if (group.shared && group.groupTopic && group.groupKey && !group.useEventLog) {
@@ -39311,6 +39859,10 @@ footer a:hover {
           if (this.dragState === 'link' && this.dropManager && this.dropManager.oldItem) {
             const draggedLink = this.dropManager.oldItem;
             const sourceGroup = this.dropManager.oldArr ? this.data.groups.find(g => g.links === this.dropManager.oldArr) : null;
+            const targetPreChangeWasOptimal = this.wasGroupHeightOptimalBeforeLinkChange(group);
+            const sourcePreChangeWasOptimal = sourceGroup && sourceGroup !== group
+              ? this.wasGroupHeightOptimalBeforeLinkChange(sourceGroup)
+              : false;
             await this.dropManager.onDrop(evt, group.links, null, targetIndex, targetColumn, 'link');
             const nowTs = Date.now();
             const linkTs = draggedLink ? this.touchLink(draggedLink, nowTs) : nowTs;
@@ -39318,8 +39870,8 @@ footer a:hover {
             if (sourceGroup && sourceGroup !== group) this.touchGroup(sourceGroup, nowTs);
             this.saveData();
             if (sourceGroup && sourceGroup !== group) {
-              this.maybeAutoAdjustGroupHeightAfterLinkChange(group);
-              this.maybeAutoAdjustGroupHeightAfterLinkChange(sourceGroup);
+              this.maybeAutoAdjustGroupHeightAfterLinkChange(group, { preChangeWasOptimal: targetPreChangeWasOptimal });
+              this.maybeAutoAdjustGroupHeightAfterLinkChange(sourceGroup, { preChangeWasOptimal: sourcePreChangeWasOptimal });
             }
           }
         },
@@ -39355,6 +39907,10 @@ footer a:hover {
 
           // Check if this is a cross-group move
           const isCrossGroup = sourceGroup && sourceGroup !== group;
+          const targetPreChangeWasOptimal = this.wasGroupHeightOptimalBeforeLinkChange(group);
+          const sourcePreChangeWasOptimal = isCrossGroup
+            ? this.wasGroupHeightOptimalBeforeLinkChange(sourceGroup)
+            : false;
 
           if (isCrossGroup) {
             debugLog('log', 'Cross-group move detected');
@@ -39623,8 +40179,8 @@ footer a:hover {
           }
           this.saveData();
           if (isCrossGroup && sourceGroup) {
-            this.maybeAutoAdjustGroupHeightAfterLinkChange(group);
-            this.maybeAutoAdjustGroupHeightAfterLinkChange(sourceGroup);
+            this.maybeAutoAdjustGroupHeightAfterLinkChange(group, { preChangeWasOptimal: targetPreChangeWasOptimal });
+            this.maybeAutoAdjustGroupHeightAfterLinkChange(sourceGroup, { preChangeWasOptimal: sourcePreChangeWasOptimal });
           }
           this.dropManager.reset();
         },
@@ -39700,15 +40256,16 @@ footer a:hover {
           const group = this.data.groups.find(g => g.links.some(l => 
             link.uuid && l.uuid === link.uuid
           ));
-	          if (group) {
-	            if (!this.canDelete(group)) { alert(this.getTranslation('error.perm.delete')); return; }
-	            const linkIndex = group.links.findIndex(l => 
-	              link.uuid && l.uuid === link.uuid
-	            );
-	            if (linkIndex > -1) {
-	              await this.createDestructiveActionSnapshot();
-	              const nowTs = Date.now();
-	              const removed = group.links.splice(linkIndex, 1)[0];
+		          if (group) {
+		            if (!this.canDelete(group)) { alert(this.getTranslation('error.perm.delete')); return; }
+		            const linkIndex = group.links.findIndex(l => 
+		              link.uuid && l.uuid === link.uuid
+		            );
+		            if (linkIndex > -1) {
+		              const preChangeWasOptimal = this.wasGroupHeightOptimalBeforeLinkChange(group);
+		              await this.createDestructiveActionSnapshot();
+		              const nowTs = Date.now();
+		              const removed = group.links.splice(linkIndex, 1)[0];
               const noteState = this.data?.options?.links?.noteCollapsedState;
               if (removed?.uuid && noteState && Object.prototype.hasOwnProperty.call(noteState, removed.uuid)) {
                 this.$delete(noteState, removed.uuid);
@@ -39746,11 +40303,11 @@ footer a:hover {
                   }
                 });
               }
-              this.reindexArr(group.links.filter(l => l.column === link.column)); // Reindex affected column
-              this.touchGroup(group, nowTs);
-              this.saveData();
-              this.maybeAutoAdjustGroupHeightAfterLinkChange(group);
-              // Propagate delete to group members (legacy sync)
+		              this.reindexArr(group.links.filter(l => l.column === link.column)); // Reindex affected column
+		              this.touchGroup(group, nowTs);
+		              this.saveData();
+		              this.maybeAutoAdjustGroupHeightAfterLinkChange(group, { preChangeWasOptimal });
+		              // Propagate delete to group members (legacy sync)
               try {
                 if (group.shared && group.groupTopic && group.groupKey) {
                   const from = { uuid: this.data.identity?.uuid, name: this.data.identity?.name||'' };
@@ -39855,19 +40412,53 @@ footer a:hover {
         isAutoAdjustGroupHeightOnLinkChangesEnabled() {
           return !!this.data?.options?.groups?.autoAdjustHeightOnLinkChanges;
         },
-        isGroupManualHeightResizeOverride(group) {
-          return !!group?.manualHeightResizeOverride;
+        normalizeGroupAutoAdjustHeightOverride(value) {
+          if (value === true || value === false) return value;
+          const normalized = String(value ?? '').trim().toLowerCase();
+          if (normalized === 'enabled' || normalized === 'true' || normalized === '1') return true;
+          if (normalized === 'disabled' || normalized === 'false' || normalized === '0') return false;
+          return null;
+        },
+        groupAutoAdjustHeightOverrideToMode(value) {
+          const normalized = this.normalizeGroupAutoAdjustHeightOverride(value);
+          if (normalized === true) return 'enabled';
+          if (normalized === false) return 'disabled';
+          return 'inherit';
+        },
+        normalizeGroupAutoAdjustHeightSettings(group) {
+          if (!group || typeof group !== 'object') return;
+          const legacyManualOverride = group.manualHeightResizeOverride === true;
+          const explicitOverride = this.normalizeGroupAutoAdjustHeightOverride(group.autoAdjustHeightOnLinkChangesOverride);
+          const mergedOverride = (explicitOverride === null && legacyManualOverride) ? false : explicitOverride;
+          this.$set(group, 'autoAdjustHeightOnLinkChangesOverride', mergedOverride);
+          if (group.manualHeightResizeOverride !== undefined) {
+            this.$set(group, 'manualHeightResizeOverride', false);
+          }
+        },
+        isAutoAdjustGroupHeightOnLinkChangesEnabledForGroup(group) {
+          const override = this.normalizeGroupAutoAdjustHeightOverride(group?.autoAdjustHeightOnLinkChangesOverride);
+          if (override === null) return this.isAutoAdjustGroupHeightOnLinkChangesEnabled();
+          return override;
         },
         canManuallyResizeGroupHeight(group) {
-          if (!group || group.collapsed) return false;
-          if (!this.isAutoAdjustGroupHeightOnLinkChangesEnabled()) return true;
-          return this.isGroupManualHeightResizeOverride(group);
+          return !!group && !group.collapsed;
         },
         shouldAutoAdjustGroupHeightAfterLinkChange(group) {
           if (!group || group.collapsed) return false;
-          if (!this.isAutoAdjustGroupHeightOnLinkChangesEnabled()) return false;
-          if (this.isGroupManualHeightResizeOverride(group)) return false;
-          return true;
+          return this.isAutoAdjustGroupHeightOnLinkChangesEnabledForGroup(group);
+        },
+        wasGroupHeightOptimalBeforeLinkChange(group) {
+          if (!group || group.collapsed) return false;
+          const contentHeight = this.measureGroupContentHeight(group);
+          if (!Number.isFinite(contentHeight)) return false;
+          const targetHeight = this.normalizeGroupBodyHeight(contentHeight + 2);
+          const currentHeight = this.getGroupBodyHeight(group);
+          const hasOverflow = contentHeight > currentHeight + 1;
+          const hasExtraSpace = contentHeight < currentHeight - 1;
+          const missingStoredHeight = group.bodyHeight === undefined || group.bodyHeight === null;
+          if (!hasOverflow && !hasExtraSpace && !missingStoredHeight) return true;
+          if (!missingStoredHeight && currentHeight === targetHeight) return true;
+          return false;
         },
         measureGroupContentHeight(group) {
           if (!group) return null;
@@ -39898,7 +40489,8 @@ footer a:hover {
           if (save) this.saveData();
           return true;
         },
-        maybeAutoAdjustGroupHeightAfterLinkChange(group) {
+        maybeAutoAdjustGroupHeightAfterLinkChange(group, { preChangeWasOptimal = true } = {}) {
+          if (!preChangeWasOptimal) return;
           if (!this.shouldAutoAdjustGroupHeightAfterLinkChange(group)) return;
           this.$nextTick(() => {
             const apply = () => {
@@ -40795,6 +41387,7 @@ footer a:hover {
           const nowTs = Date.now();
           if (!Array.isArray(targetGroup.links)) this.$set(targetGroup, 'links', []);
           const links = targetGroup.links;
+          const preChangeWasOptimal = this.wasGroupHeightOptimalBeforeLinkChange(targetGroup);
 
           const insertAfterLink = options?.insertAfterLinkUuid
             ? links.find(l => l.uuid === options.insertAfterLinkUuid)
@@ -40843,7 +41436,7 @@ footer a:hover {
           const refTs = this.touchLink(refLink, nowTs);
           this.touchGroup(targetGroup, refTs);
           this.saveData();
-          this.maybeAutoAdjustGroupHeightAfterLinkChange(targetGroup);
+          this.maybeAutoAdjustGroupHeightAfterLinkChange(targetGroup, { preChangeWasOptimal });
           this.showToast(this.getTranslation('link.ref.created') || 'Reference link created.', 'success');
         },
         editOriginalLinkFromReference(link) {
@@ -41211,6 +41804,7 @@ footer a:hover {
             const targetGroup = (this.data.groups || []).find(g => g.uuid === this.pendingNewLinkGroupId);
             if (!targetGroup) { debugLog('warn', 'No target group for new link'); return; }
             if (!this.canAdd(targetGroup)) { alert(this.getTranslation('error.perm.add')); return; }
+            const preChangeWasOptimal = this.wasGroupHeightOptimalBeforeLinkChange(targetGroup);
             const nowTs = Date.now();
             const itemType = this.normalizeLinkItemType(this.editLink);
             const newLink = {
@@ -41245,7 +41839,7 @@ footer a:hover {
             }
 
             this.saveData();
-            this.maybeAutoAdjustGroupHeightAfterLinkChange(targetGroup);
+            this.maybeAutoAdjustGroupHeightAfterLinkChange(targetGroup, { preChangeWasOptimal });
 
             // Update version for sync tracking (only for shared groups)
             if (targetGroup.shared) {
@@ -41372,6 +41966,7 @@ footer a:hover {
             async (edited) => {
               try {
                 if (!this.canAdd(targetGroup)) { alert(this.getTranslation('error.perm.add')); return; }
+                const preChangeWasOptimal = this.wasGroupHeightOptimalBeforeLinkChange(targetGroup);
                 const itemType = this.normalizeLinkItemType(edited);
                 const rawInput = this.isNonUrlItemType(itemType) ? '' : (edited.url || '').trim();
                 const url = this.isNonUrlItemType(itemType) ? '' : MB.Utils.ensureProtocol(edited.url || '');
@@ -41411,7 +42006,7 @@ footer a:hover {
                 }
 
                 this.saveData();
-                this.maybeAutoAdjustGroupHeightAfterLinkChange(targetGroup);
+                this.maybeAutoAdjustGroupHeightAfterLinkChange(targetGroup, { preChangeWasOptimal });
 
                 // Update version for sync tracking (only for shared groups)
                 if (targetGroup.shared) {
@@ -42396,6 +42991,7 @@ footer a:hover {
             faviconRuleId: group.faviconRuleId || null,
             infoHtml: group.infoHtml || '',
             urlPlaceholders: this.normalizePlaceholderList(group.urlPlaceholders || []),
+            autoAdjustHeightOnLinkChangesOverride: this.normalizeGroupAutoAdjustHeightOverride(group.autoAdjustHeightOnLinkChangesOverride),
             linkedCollapseGroupUuids: this.normalizeLinkedCollapseGroupUuidList(group.linkedCollapseGroupUuids || [], group.uuid || ''),
             linkedCollapseOnCloseGroupUuids: this.normalizeLinkedCollapseGroupUuidList(group.linkedCollapseOnCloseGroupUuids || [], group.uuid || '')
           };
@@ -42431,6 +43027,13 @@ footer a:hover {
             if (groupData.linkedCollapseGroupUuids === undefined) groupData.linkedCollapseGroupUuids = [];
             if (groupData.linkedCollapseOnCloseGroupUuids === undefined) groupData.linkedCollapseOnCloseGroupUuids = [];
             if (groupData.manualHeightResizeOverride === undefined) groupData.manualHeightResizeOverride = false;
+            if (groupData.autoAdjustHeightOnLinkChangesOverride === undefined) groupData.autoAdjustHeightOnLinkChangesOverride = null;
+            groupData.autoAdjustHeightOnLinkChangesOverride = this.normalizeGroupAutoAdjustHeightOverride(
+              groupData.autoAdjustHeightOnLinkChangesOverride
+            );
+            groupData.autoAdjustHeightOnLinkChangesOverrideMode = this.groupAutoAdjustHeightOverrideToMode(
+              groupData.autoAdjustHeightOnLinkChangesOverride
+            );
             if (groupData.color === undefined) groupData.color = '';
             if (groupData.titleFormatting === undefined) groupData.titleFormatting = '';
             if (groupData.linkColor === undefined) groupData.linkColor = '';
@@ -42459,6 +43062,10 @@ footer a:hover {
               this.getTranslation('menu.group.editGroup'),
               (editedData) => {
                 editedData.shortcut = this.normalizeShortcutText(editedData.shortcut || '');
+                editedData.autoAdjustHeightOnLinkChangesOverride = this.normalizeGroupAutoAdjustHeightOverride(
+                  editedData.autoAdjustHeightOnLinkChangesOverrideMode
+                );
+                delete editedData.autoAdjustHeightOnLinkChangesOverrideMode;
                 const linkedCollapseGroupUuids = this.normalizeLinkedCollapseGroupUuidList(
                   editedData.linkedCollapseGroupUuids || [],
                   originalGroup.uuid
@@ -42472,6 +43079,11 @@ footer a:hover {
                 Object.assign(originalGroup, editedData);
                 this.$set(originalGroup, 'keywords', (editedData.keywords || '').trim());
                 this.$set(originalGroup, 'shortcut', editedData.shortcut || '');
+                this.$set(
+                  originalGroup,
+                  'autoAdjustHeightOnLinkChangesOverride',
+                  this.normalizeGroupAutoAdjustHeightOverride(editedData.autoAdjustHeightOnLinkChangesOverride)
+                );
                 this.$set(originalGroup, 'linkedCollapseGroupUuids', linkedCollapseGroupUuids);
                 this.$set(originalGroup, 'linkedCollapseOnCloseGroupUuids', linkedCollapseOnCloseGroupUuids);
                 this.applyLinkedCollapseAssignmentsForGroup(originalGroup, linkedCollapseGroupUuids, linkedCollapseOnCloseGroupUuids, nowTs);
@@ -43433,7 +44045,7 @@ footer a:hover {
       new Vue({
         el: '#footer',
         data: {
-          version: '2026-03-01', // Updated version string
+          version: '2026-03-03', // Updated version string
         },
       });
     })();
