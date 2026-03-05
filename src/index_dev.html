@@ -1297,6 +1297,35 @@
       user-select: none;
     }
 
+    .mb-link-separator__toggle {
+      border: 0;
+      background: transparent;
+      color: #6c757d;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      line-height: 1;
+      flex: 0 0 auto;
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mb-link-separator__toggle:hover {
+      color: #334155;
+    }
+
+    .mb-link-separator__chevron {
+      display: block;
+      width: 100%;
+      line-height: 1;
+      font-size: 1.35rem;
+      text-align: center;
+      user-select: none;
+    }
+
     .mb-link-separator::before,
     .mb-link-separator::after {
       content: '';
@@ -1311,6 +1340,14 @@
       max-width: 65%;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .mb-link-separator__hidden-count {
+      margin-left: auto;
+      font-size: 0.72rem;
+      color: #64748b;
+      letter-spacing: 0;
+      text-transform: none;
     }
 
     .mb-link-note {
@@ -2968,9 +3005,10 @@
     }
 
     .css-sidebar.template-dark-active {
-      background-color: var(--bg-primary, #1f2428);
-      color: var(--text-primary, #f1f3f5);
-      box-shadow: -2px 0 12px rgba(0, 0, 0, 0.45);
+      background-color: #1f242c;
+      color: #e6e8eb;
+      border-left: 1px solid #454f5e;
+      box-shadow: -4px 0 14px rgba(0, 0, 0, 0.45);
     }
 
     /* When sidebar is open, shift the main content */
@@ -3121,24 +3159,52 @@
       overflow-y: auto;
     }
 
+    .css-sidebar.template-dark-active .sidebar-header {
+      background-color: #2c333d;
+      border-bottom-color: #4a5565;
+      color: #e6e8eb;
+    }
+
     .css-sidebar.template-dark-active .sidebar-top-section,
     .css-sidebar.template-dark-active .sidebar-bottom-section {
-      background-color: var(--bg-primary, #1f2428);
-      color: var(--text-primary, #f1f3f5);
-      border-color: var(--border-color, #495057);
+      color: #e6e8eb;
+      border-color: #4a5565;
+    }
+
+    .css-sidebar.template-dark-active .sidebar-top-section {
+      background-color: #2b323c;
+    }
+
+    .css-sidebar.template-dark-active .sidebar-bottom-section {
+      background-color: #2a3038;
     }
 
     .css-sidebar.template-dark-active .editor-header {
-      background-color: var(--bg-secondary, #2a2f34);
-      border-color: var(--border-color, #495057);
+      background-color: #323a45;
+      border-color: #4a5565;
+      color: #e6e8eb;
+    }
+
+    .css-sidebar.template-dark-active .editor-content,
+    .css-sidebar.template-dark-active .sidebar-content {
+      background-color: #2a3038;
+      color: #e6e8eb;
     }
 
     .css-sidebar.template-dark-active .sidebar-divider {
-      background-color: var(--bg-tertiary, #343a40);
+      background-color: #3a424f;
+    }
+
+    .css-sidebar.template-dark-active .sidebar-divider::before {
+      background-color: #69778b;
     }
 
     .css-sidebar.template-dark-active .sidebar-divider:hover {
-      background-color: var(--surface-hover, #3f464d);
+      background-color: #465061;
+    }
+
+    .css-sidebar.template-dark-active .mb-css-property-editor .options-section {
+      border-color: #4a5565;
     }
 
     .css-sidebar .mb-css-property-editor .options-section {
@@ -3173,22 +3239,22 @@
     }
 
     .css-sidebar.template-dark-active .mb-css-property-editor .options-section-header {
-      background-color: var(--bg-secondary, #2a2f34);
-      color: var(--text-primary, #f1f3f5);
-      border-color: var(--border-color, #495057);
+      background-color: #323a45;
+      color: #e6e8eb;
+      border-color: #4a5565;
     }
 
     .css-sidebar.template-dark-active .mb-css-property-editor .options-section-header:hover {
-      background-color: var(--surface-hover, #3f464d);
+      background-color: #3b4452;
     }
 
     .css-sidebar.template-dark-active .mb-css-property-editor .options-section-body {
-      background-color: var(--bg-primary, #1f2428);
-      color: var(--text-primary, #f1f3f5);
+      background-color: #2a3038;
+      color: #e6e8eb;
     }
 
     .css-sidebar.template-dark-active .mb-css-property-editor .text-muted {
-      color: var(--text-muted, #adb5bd) !important;
+      color: #a8b0bb !important;
     }
     
     .css-sidebar .sidebar-content {
@@ -3442,6 +3508,65 @@
       gap: 0.4rem;
       flex-wrap: wrap;
       font-size: 0.8rem;
+    }
+
+    .backup-activity-sidebar.template-dark-active {
+      background-color: #252525;
+      color: #e0e0e0;
+      border-left-color: #444;
+      box-shadow: -6px 0 20px rgba(0, 0, 0, 0.45);
+    }
+
+    .backup-activity-sidebar.template-dark-active .sidebar-header {
+      background: linear-gradient(135deg, #2f2f2f 0%, #252525 100%);
+      border-bottom-color: #3a3a3a;
+      color: #f0f0f0;
+    }
+
+    .backup-activity-sidebar.template-dark-active .sidebar-content .text-muted {
+      color: #9ca3af !important;
+    }
+
+    .backup-activity-sidebar.template-dark-active .mb-backup-activity-entry {
+      background: #2a2a2a;
+      border-color: #3a3a3a;
+    }
+
+    .backup-activity-sidebar.template-dark-active .mb-backup-activity-entry__title {
+      color: #f0f0f0;
+    }
+
+    .backup-activity-sidebar.template-dark-active .mb-backup-activity-entry__meta {
+      color: #9ca3af;
+    }
+
+    .backup-activity-sidebar.template-dark-active .mb-backup-activity-entry__snapshot {
+      color: #e0e0e0;
+    }
+
+    .backup-activity-sidebar.template-dark-active .mb-backup-activity-entry__snapshot code {
+      background: #1e1e1e;
+      border: 1px solid #444;
+      color: #6cb2ff;
+      border-radius: 0.35rem;
+      padding: 0.08rem 0.35rem;
+    }
+
+    .backup-activity-sidebar.template-dark-active .mb-backup-activity-entry__snapshot a {
+      color: #6cb2ff;
+    }
+
+    .backup-activity-sidebar.template-dark-active .mb-backup-activity-entry__snapshot a:hover {
+      color: #9cc9ff;
+    }
+
+    .backup-activity-sidebar.template-dark-active .mb-backup-activity-sidebar-close {
+      filter: invert(1) grayscale(100%);
+      opacity: 0.78;
+    }
+
+    .backup-activity-sidebar.template-dark-active .mb-backup-activity-sidebar-close:hover {
+      opacity: 1;
     }
     
     .feature-section {
@@ -4150,7 +4275,18 @@
                                   <template v-if="!link.editing">
                                     <template v-if="isSeparatorLink(link)">
                                       <div class="mb-link-separator">
+                                        <button type="button"
+                                          class="mb-link-separator__toggle"
+                                          :title="isSeparatorCollapsed(link) ? (getTranslation('separator.expand') || 'Expand section') : (getTranslation('separator.collapse') || 'Collapse section')"
+                                          @mousedown.stop
+                                          @click.stop="toggleSeparatorCollapsed(link, $event)">
+                                          <span class="mb-link-separator__chevron">{{ isSeparatorCollapsed(link) ? '▸' : '▾' }}</span>
+                                        </button>
                                         <span v-if="(link.text || '').trim()" class="mb-link-separator__label" v-html="sanitizeInlineNoAnchor(link.text || '')"></span>
+                                        <span v-if="isSeparatorCollapsed(link) && getSeparatorCollapsedHiddenCount(group, link) > 0"
+                                          class="mb-link-separator__hidden-count">
+                                          {{ getSeparatorCollapsedHiddenCount(group, link) }}
+                                        </span>
                                       </div>
                                     </template>
                                     <template v-else-if="isNoteLink(link)">
@@ -5483,7 +5619,7 @@
   <div
     v-if="backupActivitySidebarVisible"
     class="backup-activity-sidebar mb-backup-activity-sidebar"
-    :class="{ 'sidebar-open': backupActivitySidebarVisible }">
+    :class="{ 'sidebar-open': backupActivitySidebarVisible, 'template-dark-active': selectedVisualTemplate === 'dark-mode' }">
     <div class="sidebar-header mb-backup-activity-sidebar-header">
       <h5 class="mb-0">{{ getTranslation('backup.activity.title') || 'Backup activity log' }}</h5>
       <button
@@ -14242,6 +14378,7 @@ function getDefaultFaviconRules() {
           globalShortcuts: [],
           globalPlaceholders: [],
           noteCollapsedState: {},
+          separatorCollapsedState: {},
           faviconRules: getDefaultFaviconRules(),
           faviconRulesFirstMatchStop: false
         },
@@ -16116,10 +16253,19 @@ function getDefaultFaviconRules() {
 	            'backup.activity.restore': 'Restore',
 	            'backup.activity.snapshotMissing': 'Snapshot no longer available',
 	            'backup.activity.type.change': 'Change registered ({count} since last backup).',
+	            'backup.activity.type.changeDetailed': '{details} ({count} since last backup).',
 	            'backup.activity.type.backupCreated': 'Backup created ({source}).',
 	            'backup.activity.type.snapshotRestored': 'Snapshot restored ({name}).',
 	            'backup.activity.type.snapshotDeleted': 'Snapshot deleted ({name}).',
 	            'backup.activity.type.generic': 'Backup-related update recorded.',
+	            'backup.activity.change.detail.groupsAdded': '{count} group(s) added',
+	            'backup.activity.change.detail.groupsRemoved': '{count} group(s) removed',
+	            'backup.activity.change.detail.groupsRenamed': '{count} group(s) renamed',
+	            'backup.activity.change.detail.linksAdded': '{count} link(s) added',
+	            'backup.activity.change.detail.linksRemoved': '{count} link(s) removed',
+	            'backup.activity.change.detail.linksUpdated': '{count} link(s) updated',
+	            'backup.activity.change.detail.linksMoved': '{count} link(s) moved',
+	            'backup.activity.change.detail.settingsChanged': 'settings updated',
 	            'backup.activity.source.export-json': 'JSON export',
 	            'backup.activity.source.snapshot': 'manual snapshot',
 	            'backup.activity.source.automatic-snapshot': 'automatic snapshot',
@@ -16456,6 +16602,8 @@ function getDefaultFaviconRules() {
             'link.note.defaultLabel': 'Note',
             'note.expand': 'Expand note',
             'note.collapse': 'Collapse note',
+            'separator.expand': 'Expand section',
+            'separator.collapse': 'Collapse section',
             'link.separator.defaultLabel': 'Separator',
             'link.keywords': 'Keywords',
             'link.keywords.help': 'Keywords for searching and filtering (separate with comma or semicolon)',
@@ -17156,10 +17304,19 @@ function getDefaultFaviconRules() {
 	            'backup.activity.restore': 'Wiederherstellen',
 	            'backup.activity.snapshotMissing': 'Snapshot ist nicht mehr vorhanden',
 	            'backup.activity.type.change': 'Änderung registriert ({count} seit letztem Backup).',
+	            'backup.activity.type.changeDetailed': '{details} ({count} seit letztem Backup).',
 	            'backup.activity.type.backupCreated': 'Backup erstellt ({source}).',
 	            'backup.activity.type.snapshotRestored': 'Snapshot wiederhergestellt ({name}).',
 	            'backup.activity.type.snapshotDeleted': 'Snapshot gelöscht ({name}).',
 	            'backup.activity.type.generic': 'Backup-relevante Aktualisierung registriert.',
+	            'backup.activity.change.detail.groupsAdded': '{count} Gruppe(n) hinzugefügt',
+	            'backup.activity.change.detail.groupsRemoved': '{count} Gruppe(n) entfernt',
+	            'backup.activity.change.detail.groupsRenamed': '{count} Gruppe(n) umbenannt',
+	            'backup.activity.change.detail.linksAdded': '{count} Link(s) hinzugefügt',
+	            'backup.activity.change.detail.linksRemoved': '{count} Link(s) entfernt',
+	            'backup.activity.change.detail.linksUpdated': '{count} Link(s) aktualisiert',
+	            'backup.activity.change.detail.linksMoved': '{count} Link(s) verschoben',
+	            'backup.activity.change.detail.settingsChanged': 'Einstellungen aktualisiert',
 	            'backup.activity.source.export-json': 'JSON-Export',
 	            'backup.activity.source.snapshot': 'manueller Snapshot',
 	            'backup.activity.source.automatic-snapshot': 'automatischer Snapshot',
@@ -17511,6 +17668,8 @@ function getDefaultFaviconRules() {
             'link.note.defaultLabel': 'Notiz',
             'note.expand': 'Notiz aufklappen',
             'note.collapse': 'Notiz einklappen',
+            'separator.expand': 'Bereich aufklappen',
+            'separator.collapse': 'Bereich zuklappen',
             'link.separator.defaultLabel': 'Trenner',
             'link.keywords': 'Schlagwörter',
             'link.keywords.help': 'Schlagwörter für Suche und Filterung (mit Komma oder Semikolon trennen)',
@@ -32626,6 +32785,7 @@ footer a:hover {
 	            source: String(entry.source || '').trim(),
 	            timestamp: ts,
 	            changesSinceBackup: normalizeCounter(entry.changesSinceBackup),
+	            details: String(entry.details || entry.detail || '').trim(),
 	            snapshotId: String(entry.snapshotId || '').trim(),
 	            snapshotName: String(entry.snapshotName || '').trim()
 	          };
@@ -32638,6 +32798,7 @@ footer a:hover {
 	            source: payload.source || '',
 	            timestamp: payload.timestamp || Date.now(),
 	            changesSinceBackup: payload.changesSinceBackup || 0,
+	            details: payload.details || '',
 	            snapshotId: payload.snapshotId || '',
 	            snapshotName: payload.snapshotName || ''
 	          });
@@ -32664,14 +32825,166 @@ footer a:hover {
 	          const fallback = this.getTranslation('backup.activity.source.unknown') || 'unknown source';
 	          return this.getTranslation(key) || fallback;
 	        },
+	        formatBackupActivityChangeDetailCount(key, fallback, count = 0) {
+	          const safeCount = Math.max(0, Number(count) || 0);
+	          const template = this.getTranslation(key) || fallback;
+	          return template.replace('{count}', String(safeCount));
+	        },
+	        describeBackupRelevantDataChange(previousData = null, nextData = null) {
+	          const prevGroups = Array.isArray(previousData?.groups) ? previousData.groups : [];
+	          const nextGroups = Array.isArray(nextData?.groups) ? nextData.groups : [];
+
+	          const buildGroupMap = (groups = []) => {
+	            const map = new Map();
+	            groups.forEach((group) => {
+	              const uuid = String(group?.uuid || '').trim();
+	              if (!uuid || map.has(uuid)) return;
+	              map.set(uuid, {
+	                name: String(group?.name || '').trim()
+	              });
+	            });
+	            return map;
+	          };
+
+	          const buildLinkMap = (groups = []) => {
+	            const map = new Map();
+	            groups.forEach((group) => {
+	              const groupUuid = String(group?.uuid || '').trim();
+	              const links = Array.isArray(group?.links) ? group.links : [];
+	              links.forEach((link, fallbackIndex) => {
+	                const uuid = String(link?.uuid || '').trim();
+	                if (!uuid || map.has(uuid)) return;
+	                const itemType = (typeof this.normalizeLinkItemType === 'function')
+	                  ? this.normalizeLinkItemType(link)
+	                  : (String(link?.itemType || 'link').trim().toLowerCase() || 'link');
+	                map.set(uuid, {
+	                  groupUuid,
+	                  column: Number(link?.column || 0),
+	                  index: Number.isFinite(Number(link?.index)) ? Number(link?.index) : fallbackIndex,
+	                  itemType,
+	                  text: String(link?.text || '').trim(),
+	                  url: String(link?.url || '').trim()
+	                });
+	              });
+	            });
+	            return map;
+	          };
+
+	          const prevGroupMap = buildGroupMap(prevGroups);
+	          const nextGroupMap = buildGroupMap(nextGroups);
+	          const prevLinkMap = buildLinkMap(prevGroups);
+	          const nextLinkMap = buildLinkMap(nextGroups);
+
+	          let groupsAdded = 0;
+	          let groupsRemoved = 0;
+	          let groupsRenamed = 0;
+	          nextGroupMap.forEach((group, uuid) => {
+	            const before = prevGroupMap.get(uuid);
+	            if (!before) {
+	              groupsAdded += 1;
+	              return;
+	            }
+	            if (before.name !== group.name) groupsRenamed += 1;
+	          });
+	          prevGroupMap.forEach((_, uuid) => {
+	            if (!nextGroupMap.has(uuid)) groupsRemoved += 1;
+	          });
+
+	          let linksAdded = 0;
+	          let linksRemoved = 0;
+	          let linksUpdated = 0;
+	          let linksMoved = 0;
+	          nextLinkMap.forEach((link, uuid) => {
+	            const before = prevLinkMap.get(uuid);
+	            if (!before) {
+	              linksAdded += 1;
+	              return;
+	            }
+	            const contentChanged = before.itemType !== link.itemType
+	              || before.text !== link.text
+	              || before.url !== link.url;
+	            if (contentChanged) linksUpdated += 1;
+	            const positionChanged = before.groupUuid !== link.groupUuid
+	              || before.column !== link.column
+	              || before.index !== link.index;
+	            if (positionChanged) linksMoved += 1;
+	          });
+	          prevLinkMap.forEach((_, uuid) => {
+	            if (!nextLinkMap.has(uuid)) linksRemoved += 1;
+	          });
+
+	          const detailParts = [];
+	          if (groupsAdded > 0) {
+	            detailParts.push(this.formatBackupActivityChangeDetailCount(
+	              'backup.activity.change.detail.groupsAdded',
+	              '{count} group(s) added',
+	              groupsAdded
+	            ));
+	          }
+	          if (groupsRemoved > 0) {
+	            detailParts.push(this.formatBackupActivityChangeDetailCount(
+	              'backup.activity.change.detail.groupsRemoved',
+	              '{count} group(s) removed',
+	              groupsRemoved
+	            ));
+	          }
+	          if (groupsRenamed > 0) {
+	            detailParts.push(this.formatBackupActivityChangeDetailCount(
+	              'backup.activity.change.detail.groupsRenamed',
+	              '{count} group(s) renamed',
+	              groupsRenamed
+	            ));
+	          }
+	          if (linksAdded > 0) {
+	            detailParts.push(this.formatBackupActivityChangeDetailCount(
+	              'backup.activity.change.detail.linksAdded',
+	              '{count} link(s) added',
+	              linksAdded
+	            ));
+	          }
+	          if (linksRemoved > 0) {
+	            detailParts.push(this.formatBackupActivityChangeDetailCount(
+	              'backup.activity.change.detail.linksRemoved',
+	              '{count} link(s) removed',
+	              linksRemoved
+	            ));
+	          }
+	          if (linksUpdated > 0) {
+	            detailParts.push(this.formatBackupActivityChangeDetailCount(
+	              'backup.activity.change.detail.linksUpdated',
+	              '{count} link(s) updated',
+	              linksUpdated
+	            ));
+	          }
+	          if (linksMoved > 0) {
+	            detailParts.push(this.formatBackupActivityChangeDetailCount(
+	              'backup.activity.change.detail.linksMoved',
+	              '{count} link(s) moved',
+	              linksMoved
+	            ));
+	          }
+
+	          if (!detailParts.length) {
+	            return this.getTranslation('backup.activity.change.detail.settingsChanged') || 'settings updated';
+	          }
+	          return detailParts.join('; ');
+	        },
 	        formatBackupActivityMessage(entry = null) {
 	          if (!entry || typeof entry !== 'object') {
 	            return this.getTranslation('backup.activity.type.generic') || 'Backup-related update recorded.';
 	          }
 	          const type = String(entry.type || 'generic').trim();
 	          if (type === 'change') {
+	            const details = String(entry.details || '').trim();
+	            const count = String(Math.max(0, Number(entry.changesSinceBackup) || 0));
+	            if (details) {
+	              const template = this.getTranslation('backup.activity.type.changeDetailed') || '{details} ({count} since last backup).';
+	              return template
+	                .replace('{details}', details)
+	                .replace('{count}', count);
+	            }
 	            const template = this.getTranslation('backup.activity.type.change') || 'Change registered ({count} since last backup).';
-	            return template.replace('{count}', String(Math.max(0, Number(entry.changesSinceBackup) || 0)));
+	            return template.replace('{count}', count);
 	          }
 	          if (type === 'backup-created') {
 	            const template = this.getTranslation('backup.activity.type.backupCreated') || 'Backup created ({source}).';
@@ -32840,18 +33153,20 @@ footer a:hover {
 	            snapshotId: metadata?.snapshotId || null
 	          });
 	        },
-	        recordBackupRelevantChange(trigger = 'save') {
+	        recordBackupRelevantChange(trigger = 'save', metadata = {}) {
 	          if (this._suppressBackupReminderChangeTracking) return;
 	          if (!this.dataLoaded || this.loadFailed || !this.appInitialized) return;
 	          const state = this.normalizeBackupReminderState();
 	          const now = Date.now();
+	          const details = String(metadata?.details || '').trim();
 	          state.changesSinceBackup += 1;
 	          state.lastChangeAt = now;
 	          this.prependBackupActivityEntryToState(state, this.buildBackupActivityLogEntry({
 	            type: 'change',
 	            trigger,
 	            timestamp: now,
-	            changesSinceBackup: state.changesSinceBackup
+	            changesSinceBackup: state.changesSinceBackup,
+	            details
 	          }));
 	          this.backupReminderState = state;
 	          this.persistBackupReminderState();
@@ -36476,6 +36791,12 @@ footer a:hover {
           } else {
             this.$set(this.data.options.links, 'globalPlaceholders', this.normalizePlaceholderList(this.data.options.links.globalPlaceholders));
           }
+          if (!this.data.options.links.noteCollapsedState || typeof this.data.options.links.noteCollapsedState !== 'object' || Array.isArray(this.data.options.links.noteCollapsedState)) {
+            this.$set(this.data.options.links, 'noteCollapsedState', {});
+          }
+          if (!this.data.options.links.separatorCollapsedState || typeof this.data.options.links.separatorCollapsedState !== 'object' || Array.isArray(this.data.options.links.separatorCollapsedState)) {
+            this.$set(this.data.options.links, 'separatorCollapsedState', {});
+          }
           // Ensure Nextcloud Bookmarks block exists and preserves saved values (including rootFolderId)
           this.data.options.bookmarks = Object.assign({}, defaultOptions.bookmarks || { serverUrl:'', username:'', password:'', rootFolderId:0, syncIntervalSec:0, folderHashes:{} }, this.data.options.bookmarks || {});
           this.data.options.sharing = Object.assign({}, defaultOptions.sharing || {}, this.data.options.sharing || {});
@@ -36708,6 +37029,12 @@ footer a:hover {
               
               // Ensure focus is set when modal is shown
               modalElement.addEventListener('shown.bs.modal', () => {
+                const activeElement = document.activeElement;
+                // Do not steal focus if something inside the modal was already focused
+                // (for example by fast keyboard interaction while the fade transition finishes).
+                if (activeElement && activeElement !== document.body && modalElement.contains(activeElement)) {
+                  return;
+                }
                 // Prefer explicit autofocus fields, then URL inputs, else first focusable
                 const auto = modalElement.querySelector('[data-autofocus="true"]');
                 if (auto) { auto.focus(); return; }
@@ -40208,10 +40535,14 @@ footer a:hover {
 		              const preChangeWasOptimal = this.wasGroupHeightOptimalBeforeLinkChange(group);
 		              await this.createDestructiveActionSnapshot();
 		              const nowTs = Date.now();
-		              const removed = group.links.splice(linkIndex, 1)[0];
+              const removed = group.links.splice(linkIndex, 1)[0];
               const noteState = this.data?.options?.links?.noteCollapsedState;
               if (removed?.uuid && noteState && Object.prototype.hasOwnProperty.call(noteState, removed.uuid)) {
                 this.$delete(noteState, removed.uuid);
+              }
+              const separatorState = this.data?.options?.links?.separatorCollapsedState;
+              if (removed?.uuid && separatorState && Object.prototype.hasOwnProperty.call(separatorState, removed.uuid)) {
+                this.$delete(separatorState, removed.uuid);
               }
               // Queue deletion to Nextcloud if this link was synced
               try {
@@ -40278,6 +40609,40 @@ footer a:hover {
           const columns = [...new Set(links.map(l => l.column))];
           return columns.sort((a, b) => a - b);
         },
+        applySeparatorCollapseToLinkList(linksInColumn, options = {}) {
+          const list = Array.isArray(linksInColumn) ? linksInColumn : [];
+          const ignoreCollapsed = !!options.ignoreCollapsed;
+          if (!list.length || ignoreCollapsed) return list;
+          const visible = [];
+          let activeSectionCollapsed = false;
+          list.forEach((link) => {
+            if (this.isSeparatorLink(link)) {
+              activeSectionCollapsed = this.isSeparatorCollapsed(link);
+              visible.push(link);
+              return;
+            }
+            if (!activeSectionCollapsed) visible.push(link);
+          });
+          return visible;
+        },
+        getSeparatorCollapsedHiddenCount(group, separatorLink) {
+          if (!group || !this.isSeparatorLink(separatorLink) || !this.isSeparatorCollapsed(separatorLink)) return 0;
+          const separatorUuid = String(separatorLink?.uuid || '');
+          if (!separatorUuid) return 0;
+          const targetColumn = Number(separatorLink?.column || 0);
+          const linksInColumn = (Array.isArray(group?.links) ? group.links : [])
+            .filter(link => Number(link?.column || 0) === targetColumn)
+            .sort((a, b) => (Number(a?.index) || 0) - (Number(b?.index) || 0));
+          const separatorPos = linksInColumn.findIndex(link => String(link?.uuid || '') === separatorUuid);
+          if (separatorPos < 0) return 0;
+          let hiddenCount = 0;
+          for (let idx = separatorPos + 1; idx < linksInColumn.length; idx += 1) {
+            const current = linksInColumn[idx];
+            if (this.isSeparatorLink(current)) break;
+            hiddenCount += 1;
+          }
+          return hiddenCount;
+        },
         getLinksByColumn(links, colIndex) {
           // First, find the group that contains these links
           const group = this.data.groups.find(g => g.links === links);
@@ -40304,6 +40669,9 @@ footer a:hover {
               return this.groupOrLinkKeywordsContainAll(group, l, activeKeywords);
             })
             .sort((a, b) => a.index - b.index); // Sort by index
+
+          const hasActiveFilters = !!(tokens.length || (activeKeywords && activeKeywords.length));
+          result = this.applySeparatorCollapseToLinkList(result, { ignoreCollapsed: hasActiveFilters });
 
           // Progressive loading: limit display if not expanded
           if (group && !this.filterText && (!activeKeywords || activeKeywords.length === 0)) {
@@ -40570,16 +40938,23 @@ footer a:hover {
           if (strategy === 'within-columns') {
             columns.forEach(col => {
               const list = byCol(col).sort((a, b) => (a.index || 0) - (b.index || 0));
-              const sortable = list
-                .filter(link => !this.isSeparatorLink(link))
-                .sort((a, b) => this._compareLinks(a, b, collator, { direction, ignoreArticles }));
-              let sortablePos = 0;
-              const reordered = list.map((entry) => {
-                if (this.isSeparatorLink(entry)) return entry;
-                const next = sortable[sortablePos];
-                sortablePos += 1;
-                return next;
+              const reordered = [];
+              let sectionBuffer = [];
+              const flushSection = () => {
+                if (!sectionBuffer.length) return;
+                sectionBuffer.sort((a, b) => this._compareLinks(a, b, collator, { direction, ignoreArticles }));
+                reordered.push(...sectionBuffer);
+                sectionBuffer = [];
+              };
+              list.forEach((entry) => {
+                if (this.isSeparatorLink(entry)) {
+                  flushSection();
+                  reordered.push(entry);
+                  return;
+                }
+                sectionBuffer.push(entry);
               });
+              flushSection();
               reordered.forEach((l, idx) => {
                 l.column = col;
                 l.index = idx;
@@ -40665,6 +41040,43 @@ footer a:hover {
             this.$delete(stateMap, link.uuid);
           } else {
             this.$set(stateMap, link.uuid, true);
+          }
+          this.saveData();
+        },
+        getSeparatorCollapsedStateMap() {
+          const map = this.data?.options?.links?.separatorCollapsedState;
+          if (!map || typeof map !== 'object' || Array.isArray(map)) return {};
+          return map;
+        },
+        ensureSeparatorCollapsedStateMap() {
+          if (!this.data.options) this.$set(this.data, 'options', {});
+          if (!this.data.options.links) this.$set(this.data.options, 'links', {});
+          const current = this.data.options.links.separatorCollapsedState;
+          if (!current || typeof current !== 'object' || Array.isArray(current)) {
+            this.$set(this.data.options.links, 'separatorCollapsedState', {});
+          }
+          return this.data.options.links.separatorCollapsedState;
+        },
+        isSeparatorCollapsed(link) {
+          if (!this.isSeparatorLink(link) || !link?.uuid) return false;
+          const map = this.getSeparatorCollapsedStateMap();
+          return !!map[link.uuid];
+        },
+        toggleSeparatorCollapsed(link, event = null) {
+          if (!this.isSeparatorLink(link) || !link?.uuid) return;
+          this.$set(link, 'isMouseOver', false);
+          this.$set(link, 'isKeywordQuickAddBadgeHover', false);
+          const stateMap = this.ensureSeparatorCollapsedStateMap();
+          if (stateMap[link.uuid]) {
+            this.$delete(stateMap, link.uuid);
+          } else {
+            this.$set(stateMap, link.uuid, true);
+          }
+          if (event && typeof event.detail === 'number' && event.detail > 0) {
+            const toggleButton = event.currentTarget;
+            if (toggleButton && typeof toggleButton.blur === 'function') {
+              toggleButton.blur();
+            }
           }
           this.saveData();
         },
@@ -41494,6 +41906,12 @@ footer a:hover {
                 // Apply changes to the original link
                 Object.assign(originalLink, editedData);
                 this.$set(originalLink, 'keywords', (editedData.keywords || '').trim());
+                if (!this.isSeparatorLink(originalLink)) {
+                  const separatorState = this.data?.options?.links?.separatorCollapsedState;
+                  if (originalLink?.uuid && separatorState && Object.prototype.hasOwnProperty.call(separatorState, originalLink.uuid)) {
+                    this.$delete(separatorState, originalLink.uuid);
+                  }
+                }
                 const nowTs = this.touchLink(originalLink);
                 originalLink.lastEdited = nowTs;
                 this.touchGroup(parentGroup, nowTs);
@@ -41621,6 +42039,12 @@ footer a:hover {
             this.$set(originalLink, 'color', this.editLink.color || '');
             this.$set(originalLink, 'infoHtml', this.sanitizeHtml(this.editLink.infoHtml?.trim() || ''));
             this.normalizeLinkDataForItemType(originalLink, editItemType);
+            if (!this.isSeparatorLink(originalLink)) {
+              const separatorState = this.data?.options?.links?.separatorCollapsedState;
+              if (originalLink?.uuid && separatorState && Object.prototype.hasOwnProperty.call(separatorState, originalLink.uuid)) {
+                this.$delete(separatorState, originalLink.uuid);
+              }
+            }
             // Update local timestamps for conflict resolution
             const nowTs = this.touchLink(originalLink);
             try {
@@ -43965,7 +44389,16 @@ footer a:hover {
 	            }
 	            if (this.localSecurity.isEncryptedStore) this.localSecurity.encryptedDataId = this.dataId;
 	            if (hasDataChanged) {
-	              this.recordBackupRelevantChange('changes');
+	              let changeDetails = '';
+	              if (this.lastSavedJson) {
+	                try {
+	                  const previousData = JSON.parse(this.lastSavedJson);
+	                  changeDetails = this.describeBackupRelevantDataChange(previousData, savableData);
+	                } catch (error) {
+	                  debugLog('warn', '[BACKUP REMINDER] Could not compute change details', error);
+	                }
+	              }
+	              this.recordBackupRelevantChange('changes', { details: changeDetails });
 	            }
 	            this.lastSavedJson = plainJson;
             // Update storage usage after save (debounced to reduce repeated JSON work)
@@ -43988,7 +44421,7 @@ footer a:hover {
       new Vue({
         el: '#footer',
         data: {
-          version: '2026-03-03', // Updated version string
+          version: '2026-03-05', // Updated version string
         },
       });
     })();
