@@ -105,10 +105,52 @@ local2/extensions/
 │   ├── inject.js         # Page context API
 │   ├── popup.html        # Extension popup (not used yet)
 │   └── popup.js          # Popup logic (not used yet)
+├── proxy/
+│   ├── local-http-proxy.py   # Local HTTP/HTTPS proxy (Python)
+│   ├── local-http-proxy.ps1  # Local HTTP/HTTPS proxy (PowerShell)
+│   └── README.md             # Proxy usage and API
 ├── mybookmarks-firefox.xpi  # Firefox package
 ├── mybookmarks-chrome.zip   # Chrome package
 └── INSTALLATION.md         # This file
 ```
+
+## Alternative: Local Proxy Scripts
+
+If you want a second approach next to the browser extensions, use the scripts in `local2/extensions/proxy/`.
+
+They expose a local HTTP endpoint that can forward outbound internet requests with CORS headers, which is useful for:
+
+- metadata fetching
+- DAV/CardDAV requests
+- imports from remote URLs
+- other HTTP-based integrations
+
+Important limitation:
+
+- the proxy does not replace browser bookmark access
+- browser-only APIs still require the extension
+
+Quick start:
+
+```bash
+python3 local2/extensions/proxy/local-http-proxy.py --port 8788
+```
+
+```powershell
+pwsh -File local2/extensions/proxy/local-http-proxy.ps1 -Port 8788
+```
+
+Then in MyBookmarks open `Options` → `Transport`, switch `Web request transport` to `Manual proxy`, and set the proxy base URL if needed.
+
+If the Python proxy reports `CERTIFICATE_VERIFY_FAILED` for HTTPS targets, start it with a CA bundle:
+
+```bash
+python3 local2/extensions/proxy/local-http-proxy.py --port 8788 --ca-bundle /path/to/cacert.pem
+```
+
+For local debugging only, `--insecure-skip-tls-verify` is also available.
+
+See `local2/extensions/proxy/README.md` for endpoint details and security notes.
 
 ## 🔄 Updating the Extension
 
