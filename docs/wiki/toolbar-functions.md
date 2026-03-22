@@ -84,7 +84,7 @@ What it does:
 - Opens the contacts dialog with two tabs: Contacts and Quick-Connect.
 
 Read more:
-- [Dialog: Contacts and Quick-Connect](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Contacts-and-Quick-Connect)
+- [Dialog: Contacts and Quick-Connect](https://github.com/akdk7/mybookmarks/wiki/Dialog:-Contacts-and-Quick%E2%80%90Connect)
 
 ## 11) Expand all groups
 What it does:
@@ -140,12 +140,21 @@ Important relationship:
 - Undo/redo is short-term history.
 - Snapshots are explicit named restore points.
 
-## 20) Clear search
+## 20) Backup urgency indicator
+What it does:
+- Appears next to storage usage when backup reminders are active
+- Opens the backup activity log sidebar
+- Helps decide when another export or snapshot is sensible
+
+Read more:
+- [Sidebar: Backup Activity Log](https://github.com/akdk7/mybookmarks/wiki/Sidebar:-Backup-Activity-Log)
+
+## 21) Clear search
 What it does:
 - Clears search text and active keyword filters.
 - Optionally collapses all groups based on options.
 
-## 21) Help / Feature Overview
+## 22) Help / Feature Overview
 What it does:
 - Opens a right help sidebar with German/English tabs.
 
@@ -154,9 +163,10 @@ Read more:
 
 ## Key relationships at a glance
 - Options affect almost all toolbar functions.
-- Global placeholders affect link URLs, import/export, and shortcut targets.
+- Global placeholders affect link URLs, import/export, shortcut targets, and expression-driven templates.
 - Favicon rules affect link rendering in lists and edit dialogs.
 - Contacts/Quick-Connect is the basis for sharing workflows.
+- Backup urgency complements Export and Snapshots.
 
 ## Technical
 - Add group button: `addGroup`
@@ -178,5 +188,6 @@ Read more:
 - Undo button: `undo`
 - Redo button: `redo`
 - Snapshot actions: `saveSnapshot`, `restoreSnapshot`, `deleteSnapshot`
+- Backup activity sidebar: `openBackupActivitySidebar`
 - Clear search action: `onClearClick`
 - Feature Overview button: `openFeatureSidebar`

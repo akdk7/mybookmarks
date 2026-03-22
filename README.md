@@ -1,6 +1,6 @@
 # MyBookmarks
 
-A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js powers the reactive UI layer, while Bootstrap provides layout components and utility styling. The main app runs entirely inside the browser, storing its data in `localStorage`. No build tooling is required—open the file in any modern browser to explore the full experience.
+A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js powers the reactive UI layer, while Bootstrap provides layout components and utility styling. The main app runs entirely inside the browser, keeps its data local, and uses browser storage plus IndexedDB-backed helper flows for encryption, API vault, and migration features. No build tooling is required—open the file in any modern browser to explore the full experience.
 
 ## Screenshot
 
@@ -11,7 +11,9 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 - **Rich bookmark workspace** – Organise links into draggable groups, expand/collapse sections, edit inline, tag with keywords, and surface link metadata with detailed popovers.
 - **Structured entries beyond URLs** – Add visual separators and rich note entries inside groups, collapse/expand note content inline, and keep sorting workflows separator-aware.
 - **Reference links** – Create symbolic links that point to one canonical link record, place them in multiple groups, and keep URL/metadata centrally maintained while allowing per-reference alias text, local keywords, and source-keyword inheritance control.
-- **URL templates & placeholders** – Use placeholder variables globally, per group, and per link/reference, including URL-encode switches, inherited values, resolved URL previews, and unresolved-placeholder hints.
+- **URL templates, placeholder rules & Prompt Flow** – Use placeholder variables globally, per group, and per link/reference, layer inherited rules on top, and build guided runtime flows with conditional steps, branches, workflow variables, API load points, assign steps, and resolved preview hints.
+- **Guided link setup & Quick Add** – Start from a simplified link editor with simple/advanced modes, presets, Quick Add, per-field API badges, and deep links into the full technical configuration.
+- **API integrations & API Vault** – Configure shared connections, endpoints, response mappings, placeholder sources, and link actions in one manager, with inline testing, path picking, runtime prompt integration, OAuth2 PKCE/Device Code/Client Credentials, and encrypted local secret storage.
 - **Advanced search & discovery** – Filter across groups and links, highlight duplicates, inspect JSON payloads, and capture snapshots for undo/redo workflows.
 - **Flexible import/export** – Round-trip data through JSON, CSV, Netscape HTML, and clipboard pastes. Dedicated dialogs support import previews (selectable groups/links), and full exports include settings, identity, contacts, snapshots, and Visual CSS Editor state.
 - **Favicon management** – Auto-fetch icons, upload/remove per item, maintain reusable favicon rules with presets/comments/testing/JSON export-import/default restoration, and optionally enable an external fallback provider for missing icons.
@@ -31,6 +33,7 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 - **Bootstrap 5 (JS/CSS)** – Modal/dialog behaviour, layout helpers, and component styling.
 - **jQuery (trimmed build)** – Legacy DOM utilities leveraged by helper routines.
 - **Dexie.js** – IndexedDB wrapper used for local persistence and migration flows.
+- **JMESPath & JSONata** – Expression and transformation engines used by API response mapping, Prompt Flow assignments, and advanced conditions.
 - **Plain HTML/CSS/ES2015+ JavaScript** – Custom business logic, state management, and UI rendering.
 
 ## Getting Started
@@ -38,10 +41,12 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 1. Download the latest [release](https://github.com/akdk7/mybookmarks/releases)
 2. Open the MyBookmarks.html file in your browser from your local directory
 3. Enjoy the MyBookmarks app, it runs without a webserver :)
+4. Review the local [wiki overview](local2/wiki/home.md) and the versioned [release notes](release_notes/) for setup details on API integrations and Prompt Flow
 
 ## Data Management
 
-- All state is stored in `localStorage` under the `links` key. Use the built-in backup/restore dialogs for safer migrations.
+- Core workspace data is kept locally in browser storage. The classic bookmark payload lives under the `links` `localStorage` key, while encrypted and security-sensitive helper data is handled through IndexedDB-backed flows.
+- Use the built-in backup/restore dialogs and backup activity log for safer migrations; placeholder, rule, Prompt Flow, and API-binding changes are easier to audit there before an update.
 - The favicon rules dialog supports JSON import/export, letting you version-control shared rule sets.
 - Snapshots and duplicate reports are available from the toolbar for quick diagnostics.
 - The toolbar includes a storage usage indicator; regular full exports are recommended for backup and migration.
@@ -51,6 +56,13 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 - Enable local encryption under **Options → Security**. Once a password is set, all data saved to IndexedDB is encrypted; unlocking requires the same password and cannot be recovered if lost.
 - Use the lock icon next to “Add group” to manually re-lock an open session without refreshing. Enter the password again to continue working.
 - Toggle *Lock session automatically* to have MyBookmarks lock itself after a configurable period (5–60 minutes) of inactivity. Any keyboard, mouse, or touch interaction resets the timer.
+- The API Vault can store API keys, client secrets, and OAuth tokens locally behind its own password, so protected integrations stay out of plain-text workspace data.
+
+## API Integrations & Prompt Flow
+
+- Use the `API Integrations` manager to define connections, endpoints, response mappings, placeholder sources, action templates, cache settings, and test runs in one place.
+- Keep the technical request setup centralized, then consume it from links and runtime prompts through guided link configuration, API-backed placeholders, and execution modes.
+- Build multi-step Prompt Flow sequences that ask for input, branch conditionally, load API-backed values at explicit points, assign derived values to placeholders or workflow vars, and then execute the link.
 
 ## Sync & Sharing
 
