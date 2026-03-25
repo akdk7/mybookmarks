@@ -29,6 +29,8 @@ A standalone bookmark manager built with HTML, CSS, and JavaScript. Vue.js power
 
 ## Guides
 - [Guide: API Integration Quick Start](https://github.com/akdk7/mybookmarks/wiki/Guide:-API-Integration-Quick-Start)
+- [Guide: API Cascading Selects for Projects and Issues](https://github.com/akdk7/mybookmarks/wiki/Guide:-API-Cascading-Selects-for-Projects-and-Issues)
+- [Guide: API Cascading Select Examples for Jira Cloud and GitLab](https://github.com/akdk7/mybookmarks/wiki/Guide:-API-Cascading-Select-Examples-for-Jira-Cloud-and-GitLab)
 - [Guide: API Request Bodies and Overrides](https://github.com/akdk7/mybookmarks/wiki/Guide:-API-Request-Bodies-and-Overrides)
 - [Guide: API Response Mapping Recipes](https://github.com/akdk7/mybookmarks/wiki/Guide:-API-Response-Mapping-Recipes)
 - [Guide: API Placeholder Sources and Actions](https://github.com/akdk7/mybookmarks/wiki/Guide:-API-Placeholder-Sources-and-Actions)
