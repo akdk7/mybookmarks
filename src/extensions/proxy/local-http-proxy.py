@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Local HTTP/HTTPS proxy helper for MyBookmarks.
+Local HTTP/HTTPS/file proxy helper for MyBookmarks.
 
 Routes:
 - GET  /health
@@ -24,10 +24,12 @@ import argparse
 import base64
 import ipaddress
 import json
+import mimetypes
 import os
 import socket
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -84,6 +86,8 @@ class ProxyConfig:
     timeout_sec: int
     max_response_bytes: int
     allow_private_network: bool
+    allow_file_scheme: bool
+    file_roots: List[str]
     ca_bundle: str | None
     insecure_skip_tls_verify: bool
 
@@ -164,6 +168,13 @@ def normalize_existing_file_path(raw_path: str, description: str) -> str:
     return candidate
 
 
+def normalize_existing_dir_path(raw_path: str, description: str) -> str:
+    candidate = os.path.abspath(os.path.expanduser(str(raw_path).strip()))
+    if not os.path.isdir(candidate):
+        raise ValueError(f"{description} not found or is not a directory: {raw_path}")
+    return candidate
+
+
 def auto_detect_ca_bundle_path() -> str | None:
     candidates: List[Tuple[str, str]] = []
     for env_name in ENV_CA_BUNDLE_VARS:
@@ -234,17 +245,60 @@ def format_upstream_url_error(reason: object, config: ProxyConfig) -> str:
     return f"Upstream request failed: {reason}"
 
 
-def validate_target_url(raw_url: str, allow_private_network: bool) -> urllib.parse.ParseResult:
+def normalize_local_file_url_path(parsed: urllib.parse.ParseResult) -> str:
+    if parsed.netloc and parsed.netloc.lower() not in {"", "localhost"}:
+        raise ProxyError(400, "Only local file:// URLs without a remote host are supported")
+    path_text = urllib.request.url2pathname(parsed.path or "")
+    candidate = os.path.abspath(os.path.normpath(os.path.expanduser(path_text)))
+    if not candidate:
+        raise ProxyError(400, "file:// URL must resolve to a local path")
+    return candidate
+
+
+def ensure_path_within_roots(candidate: str, file_roots: List[str]) -> None:
+    for root in file_roots:
+        try:
+            if os.path.commonpath([candidate, root]) == root:
+                return
+        except ValueError:
+            continue
+    raise ProxyError(403, "Requested file is outside the configured file roots")
+
+
+def guess_local_file_headers(file_path: str) -> List[Tuple[str, str]]:
+    content_type, content_encoding = mimetypes.guess_type(file_path)
+    headers: List[Tuple[str, str]] = [("Content-Type", content_type or "application/octet-stream")]
+    if content_encoding:
+        headers.append(("Content-Encoding", content_encoding))
+    try:
+        stat_result = os.stat(file_path)
+        headers.append(("Last-Modified", time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(stat_result.st_mtime))))
+    except OSError:
+        pass
+    return headers
+
+
+def validate_target_url(raw_url: str, config: ProxyConfig) -> urllib.parse.ParseResult:
     if not raw_url:
         raise ProxyError(400, "Missing url parameter")
 
     parsed = urllib.parse.urlparse(raw_url)
+    if parsed.scheme == "file":
+        if not config.allow_file_scheme:
+            raise ProxyError(
+                403,
+                "file:// URLs are disabled. Restart the proxy with --allow-file-scheme and --file-root.",
+            )
+        candidate = normalize_local_file_url_path(parsed)
+        ensure_path_within_roots(candidate, config.file_roots)
+        return parsed
+
     if parsed.scheme not in {"http", "https"}:
-        raise ProxyError(400, "Only http:// and https:// URLs are supported")
+        raise ProxyError(400, "Only http://, https:// and explicitly enabled file:// URLs are supported")
     if not parsed.hostname:
         raise ProxyError(400, "Target URL must include a hostname")
 
-    if allow_private_network:
+    if config.allow_private_network:
         return parsed
 
     hostname = parsed.hostname
@@ -312,6 +366,8 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
                     "timeoutSec": self.config.timeout_sec,
                     "maxResponseBytes": self.config.max_response_bytes,
                     "allowPrivateNetwork": self.config.allow_private_network,
+                    "allowFileScheme": self.config.allow_file_scheme,
+                    "fileRoots": self.config.file_roots,
                     "tlsVerification": not self.config.insecure_skip_tls_verify,
                     "caBundle": self.config.ca_bundle,
                     "routes": ["GET /health", "GET /proxy?url=...", "POST /proxy"],
@@ -451,7 +507,7 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
         if not isinstance(header_map, dict):
             raise ProxyError(400, "headers must be an object")
 
-        validate_target_url(url, self.config.allow_private_network)
+        parsed_target = validate_target_url(url, self.config)
 
         body_bytes = None
         if body_text is not None:
@@ -461,6 +517,9 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
                 body_bytes = base64.b64decode(str(body_base64), validate=True)
             except (base64.binascii.Error, ValueError) as exc:
                 raise ProxyError(400, f"bodyBase64 is not valid base64: {exc}") from exc
+
+        if parsed_target.scheme == "file":
+            return self._perform_file_request(parsed_target, url, method, body_bytes)
 
         outgoing_headers = self._sanitize_outgoing_headers(self._headers_to_dict(header_map.items()))
         request = urllib.request.Request(url=url, data=body_bytes, headers=outgoing_headers, method=method)
@@ -495,6 +554,43 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
             "status": status,
             "status_text": status_text,
             "final_url": final_url,
+            "headers": headers,
+            "raw_headers": raw_headers,
+            "body": body,
+            "content_type": headers.get("Content-Type", headers.get("content-type", "")),
+        }
+
+    def _perform_file_request(
+        self,
+        parsed_target: urllib.parse.ParseResult,
+        raw_url: str,
+        method: str,
+        body_bytes: bytes | None,
+    ) -> Dict[str, object]:
+        if method not in {"GET", "HEAD"}:
+            raise ProxyError(405, "file:// URLs only support GET and HEAD")
+        if body_bytes:
+            raise ProxyError(400, "file:// URLs do not accept request bodies")
+
+        file_path = normalize_local_file_url_path(parsed_target)
+        ensure_path_within_roots(file_path, self.config.file_roots)
+        if not os.path.exists(file_path):
+            raise ProxyError(404, f"Local file not found: {file_path}")
+        if not os.path.isfile(file_path):
+            raise ProxyError(400, f"Local file target is not a file: {file_path}")
+
+        raw_headers = guess_local_file_headers(file_path)
+        headers = self._headers_to_dict(raw_headers)
+        if method == "HEAD":
+            body = b""
+        else:
+            with open(file_path, "rb") as handle:
+                body = read_limited(handle, self.config.max_response_bytes)
+
+        return {
+            "status": 200,
+            "status_text": "OK",
+            "final_url": raw_url,
             "headers": headers,
             "raw_headers": raw_headers,
             "body": body,
@@ -586,6 +682,17 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Allow requests to localhost, RFC1918 and other private/internal targets",
     )
+    parser.add_argument(
+        "--allow-file-scheme",
+        action="store_true",
+        help="Allow file:// URLs inside explicitly configured file roots",
+    )
+    parser.add_argument(
+        "--file-root",
+        action="append",
+        default=[],
+        help="Directory root allowed for file:// URLs. Repeat to allow multiple roots.",
+    )
     tls_group = parser.add_mutually_exclusive_group()
     tls_group.add_argument(
         "--ca-bundle",
@@ -602,6 +709,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
+        file_roots = [normalize_existing_dir_path(path, "File root") for path in args.file_root]
+        if args.allow_file_scheme and not file_roots:
+            raise ValueError("--allow-file-scheme requires at least one --file-root /path/to/dir")
         if args.insecure_skip_tls_verify:
             ca_bundle = None
         elif args.ca_bundle:
@@ -618,6 +728,8 @@ def main() -> int:
         timeout_sec=args.timeout_sec,
         max_response_bytes=args.max_response_bytes,
         allow_private_network=args.allow_private_network,
+        allow_file_scheme=args.allow_file_scheme,
+        file_roots=file_roots,
         ca_bundle=ca_bundle,
         insecure_skip_tls_verify=args.insecure_skip_tls_verify,
     )
@@ -630,8 +742,11 @@ def main() -> int:
 
     print(
         f"MyBookmarks local proxy listening on http://{config.host}:{config.port} "
-        f"(allow_private_network={str(config.allow_private_network).lower()})"
+        f"(allow_private_network={str(config.allow_private_network).lower()}, "
+        f"allow_file_scheme={str(config.allow_file_scheme).lower()})"
     )
+    if config.allow_file_scheme:
+        print(f"Allowed file roots: {', '.join(config.file_roots)}")
     if config.insecure_skip_tls_verify:
         print("HTTPS certificate verification: disabled (--insecure-skip-tls-verify)")
     elif config.ca_bundle:

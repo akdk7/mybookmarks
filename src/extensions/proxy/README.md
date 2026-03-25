@@ -13,6 +13,8 @@ Both scripts start a small local HTTP proxy that exposes the same routes:
 
 The goal is to let `MyBookmarks` reach external HTTP/HTTPS targets through a local port without requiring a browser extension for those network requests.
 
+Both proxies can also read local files through `file://` URLs, but only when you enable that explicitly and restrict access to allowed root directories.
+
 ## Important limitation
 
 This proxy does **not** replace browser-extension features that depend on browser APIs, especially:
@@ -30,6 +32,7 @@ By default both scripts:
 - bind to `127.0.0.1`
 - only allow `http://` and `https://` targets
 - block requests to `localhost`, loopback, RFC1918/private, link-local, multicast, and similar internal targets
+- block `file://` targets entirely
 
 If you explicitly need private/internal targets, start the script with the matching allow flag:
 
@@ -37,6 +40,16 @@ If you explicitly need private/internal targets, start the script with the match
 - PowerShell: `-AllowPrivateNetwork`
 
 Only use that mode if you trust the client side that can access the proxy port.
+
+If you explicitly need local file access, start the proxy with:
+
+- Python: `--allow-file-scheme --file-root /absolute/path`
+- PowerShell: `-AllowFileScheme -FileRoot /absolute/path`
+
+For multiple directories:
+
+- Python: repeat `--file-root`
+- PowerShell: pass multiple values to `-FileRoot`
 
 ## Start
 
@@ -46,10 +59,29 @@ Only use that mode if you trust the client side that can access the proxy port.
 python3 local2/extensions/proxy/local-http-proxy.py --port 8788
 ```
 
+Example with multiple allowed file roots:
+
+```bash
+python3 local2/extensions/proxy/local-http-proxy.py \
+  --port 8788 \
+  --allow-file-scheme \
+  --file-root /tmp/data \
+  --file-root /Volumes/4TB/git/mybookmarks/local2
+```
+
 ### PowerShell
 
 ```powershell
 pwsh -File local2/extensions/proxy/local-http-proxy.ps1 -Port 8788
+```
+
+Example with multiple allowed file roots:
+
+```powershell
+pwsh -File local2/extensions/proxy/local-http-proxy.ps1 `
+  -Port 8788 `
+  -AllowFileScheme `
+  -FileRoot /tmp/data,/Volumes/4TB/git/mybookmarks/local2
 ```
 
 Both scripts support:
@@ -58,6 +90,7 @@ Both scripts support:
 - port override: `--port` / `-Port`
 - timeout override: `--timeout-sec` / `-TimeoutSec`
 - max response size: `--max-response-bytes` / `-MaxResponseBytes`
+- local file access: `--allow-file-scheme --file-root ...` / `-AllowFileScheme -FileRoot ...`
 
 Python also supports HTTPS trust configuration:
 
@@ -97,6 +130,12 @@ Example:
 curl "http://127.0.0.1:8788/proxy?url=https%3A%2F%2Fexample.com"
 ```
 
+Local file example after starting the proxy with `--allow-file-scheme` and an allowed root:
+
+```bash
+curl "http://127.0.0.1:8788/proxy?url=file%3A%2F%2F%2Fabsolute%2Fpath%2Fto%2Fexample.csv"
+```
+
 ### `POST /proxy`
 
 For custom methods, headers, and bodies. The response is wrapped as JSON.
@@ -122,6 +161,12 @@ Supported request fields:
 - `bodyText` optional UTF-8 request body
 - `bodyBase64` optional binary request body
 - `returnMode` optional: `auto`, `text`, `base64`
+
+For `file://` targets:
+
+- only `GET` and `HEAD` are supported
+- request bodies are rejected
+- the resolved file must be inside one of the configured file roots
 
 Response body:
 
@@ -180,6 +225,7 @@ const res = await fetch("http://127.0.0.1:8788/proxy", {
 ## Notes
 
 - The proxy is intentionally local-first. Exposing it on `0.0.0.0` or opening the port beyond localhost should be a deliberate decision.
+- Enabling `file://` access is sensitive because it exposes local files through HTTP. Keep file roots as narrow as possible.
 - PowerShell uses `HttpListener`. Depending on the host OS and port, URL ACL or elevated rights may be required.
 - The scripts are dependency-free and only use the Python / PowerShell standard libraries.
 

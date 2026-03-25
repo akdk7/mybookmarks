@@ -3,13 +3,16 @@ param(
     [int]$Port = 8788,
     [int]$TimeoutSec = 20,
     [long]$MaxResponseBytes = 10485760,
-    [switch]$AllowPrivateNetwork
+    [switch]$AllowPrivateNetwork,
+    [switch]$AllowFileScheme,
+    [string[]]$FileRoot = @()
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $script:Listener = $null
+$script:NormalizedFileRoots = @()
 $script:TextualContentTypes = @(
     "application/json",
     "application/javascript",
@@ -205,6 +208,166 @@ function Test-TargetAllowed {
     }
 }
 
+function Resolve-ExistingDirectoryPath {
+    param(
+        [string]$PathValue,
+        [string]$Description
+    )
+
+    if ([string]::IsNullOrWhiteSpace($PathValue)) {
+        throw "$Description is required."
+    }
+
+    try {
+        $resolved = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($PathValue)
+    }
+    catch {
+        throw "$Description not found or is not a directory: $PathValue"
+    }
+
+    if (-not (Test-Path -LiteralPath $resolved -PathType Container)) {
+        throw "$Description not found or is not a directory: $PathValue"
+    }
+
+    return [System.IO.Path]::GetFullPath($resolved)
+}
+
+function Test-PathWithinAllowedRoots {
+    param(
+        [string]$CandidatePath,
+        [string[]]$AllowedRoots
+    )
+
+    $candidateFull = [System.IO.Path]::GetFullPath($CandidatePath)
+    $isWindows = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform(
+        [System.Runtime.InteropServices.OSPlatform]::Windows
+    )
+    $comparison = if ($isWindows) {
+        [System.StringComparison]::OrdinalIgnoreCase
+    }
+    else {
+        [System.StringComparison]::Ordinal
+    }
+
+    foreach ($root in $AllowedRoots) {
+        $rootFull = [System.IO.Path]::GetFullPath($root)
+        $normalizedRoot = if ($rootFull.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
+            $rootFull
+        }
+        else {
+            $rootFull + [System.IO.Path]::DirectorySeparatorChar
+        }
+
+        if ($candidateFull.Equals($rootFull, $comparison) -or $candidateFull.StartsWith($normalizedRoot, $comparison)) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function Resolve-LocalFilePath {
+    param(
+        [uri]$TargetUri,
+        [bool]$AllowFileTargets,
+        [string[]]$AllowedRoots
+    )
+
+    if (-not $AllowFileTargets) {
+        Throw-ProxyError -StatusCode 403 -Message "file:// URLs are disabled. Restart the proxy with -AllowFileScheme and -FileRoot."
+    }
+
+    $host = [string]$TargetUri.Host
+    if (-not [string]::IsNullOrWhiteSpace($host) -and $host.Trim().ToLowerInvariant() -ne "localhost") {
+        Throw-ProxyError -StatusCode 400 -Message "Only local file:// URLs without a remote host are supported"
+    }
+
+    $localPath = [string]$TargetUri.LocalPath
+    if ([string]::IsNullOrWhiteSpace($localPath)) {
+        Throw-ProxyError -StatusCode 400 -Message "file:// URL must resolve to a local path"
+    }
+
+    $resolvedPath = [System.IO.Path]::GetFullPath($localPath)
+    if (-not (Test-PathWithinAllowedRoots -CandidatePath $resolvedPath -AllowedRoots $AllowedRoots)) {
+        Throw-ProxyError -StatusCode 403 -Message "Requested file is outside the configured file roots"
+    }
+
+    return $resolvedPath
+}
+
+function Get-LocalFileContentType {
+    param([string]$PathValue)
+
+    switch ([System.IO.Path]::GetExtension($PathValue).ToLowerInvariant()) {
+        ".txt" { return "text/plain; charset=utf-8" }
+        ".json" { return "application/json; charset=utf-8" }
+        ".xml" { return "application/xml; charset=utf-8" }
+        ".html" { return "text/html; charset=utf-8" }
+        ".htm" { return "text/html; charset=utf-8" }
+        ".csv" { return "text/csv; charset=utf-8" }
+        ".tsv" { return "text/tab-separated-values; charset=utf-8" }
+        ".js" { return "application/javascript; charset=utf-8" }
+        ".css" { return "text/css; charset=utf-8" }
+        ".svg" { return "image/svg+xml" }
+        default { return "application/octet-stream" }
+    }
+}
+
+function Invoke-LocalFileRequest {
+    param(
+        [uri]$TargetUri,
+        [string]$MethodName,
+        [byte[]]$BodyBytes,
+        [bool]$AllowFileTargets,
+        [string[]]$AllowedRoots,
+        [long]$MaxBytes
+    )
+
+    if ($MethodName -notin @("GET", "HEAD")) {
+        Throw-ProxyError -StatusCode 405 -Message "file:// URLs only support GET and HEAD"
+    }
+    if ($null -ne $BodyBytes -and $BodyBytes.Length -gt 0) {
+        Throw-ProxyError -StatusCode 400 -Message "file:// URLs do not accept request bodies"
+    }
+
+    $filePath = Resolve-LocalFilePath -TargetUri $TargetUri -AllowFileTargets $AllowFileTargets -AllowedRoots $AllowedRoots
+    if (-not (Test-Path -LiteralPath $filePath -PathType Leaf)) {
+        if (Test-Path -LiteralPath $filePath) {
+            Throw-ProxyError -StatusCode 400 -Message "Local file target is not a file: $filePath"
+        }
+        Throw-ProxyError -StatusCode 404 -Message "Local file not found: $filePath"
+    }
+
+    $bodyBytesResult = [byte[]]@()
+    if ($MethodName -eq "GET") {
+        $stream = [System.IO.File]::OpenRead($filePath)
+        try {
+            $bodyBytesResult = Get-RequestBytes -Stream $stream -MaxBytes $MaxBytes
+        }
+        finally {
+            $stream.Dispose()
+        }
+    }
+
+    $headers = @{
+        "Content-Type" = (Get-LocalFileContentType -PathValue $filePath)
+    }
+    try {
+        $lastModified = (Get-Item -LiteralPath $filePath).LastWriteTimeUtc.ToString("r")
+        $headers["Last-Modified"] = $lastModified
+    }
+    catch {}
+
+    return [pscustomobject]@{
+        StatusCode = 200
+        ReasonPhrase = "OK"
+        FinalUrl = [string]$TargetUri.AbsoluteUri
+        Headers = $headers
+        BodyBytes = $bodyBytesResult
+        ContentType = [string]$headers["Content-Type"]
+    }
+}
+
 function Convert-RequestHeadersToHashtable {
     param([System.Collections.Specialized.NameValueCollection]$Headers)
 
@@ -286,6 +449,8 @@ function Invoke-ProxyRequest {
         [pscustomobject]$Spec,
         [System.Net.Http.HttpClient]$HttpClient,
         [bool]$AllowPrivateTargets,
+        [bool]$AllowFileTargets,
+        [string[]]$AllowedFileRoots,
         [long]$MaxBytes
     )
 
@@ -301,13 +466,24 @@ function Invoke-ProxyRequest {
         Throw-ProxyError -StatusCode 400 -Message "Invalid target URL: $url"
     }
 
-    Test-TargetAllowed -TargetUri $targetUri -AllowPrivateTargets $AllowPrivateTargets
-
     $methodName = [string]($Spec.method)
     if ([string]::IsNullOrWhiteSpace($methodName)) {
         $methodName = "GET"
     }
     $methodName = $methodName.ToUpperInvariant()
+
+    $bodyBytes = Get-BodyBytesFromSpec -Spec $Spec
+    if ($targetUri.Scheme -eq "file") {
+        return Invoke-LocalFileRequest `
+            -TargetUri $targetUri `
+            -MethodName $methodName `
+            -BodyBytes $bodyBytes `
+            -AllowFileTargets $AllowFileTargets `
+            -AllowedRoots $AllowedFileRoots `
+            -MaxBytes $MaxBytes
+    }
+
+    Test-TargetAllowed -TargetUri $targetUri -AllowPrivateTargets $AllowPrivateTargets
 
     $message = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::new($methodName), $targetUri)
     $response = $null
@@ -327,7 +503,6 @@ function Invoke-ProxyRequest {
         }
         $headers = Get-SanitizedHeaders -Headers $headers
 
-        $bodyBytes = Get-BodyBytesFromSpec -Spec $Spec
         if ($null -ne $bodyBytes) {
             $content = [System.Net.Http.ByteArrayContent]::new($bodyBytes)
             $message.Content = $content
@@ -446,6 +621,8 @@ function Handle-Context {
                 timeoutSec = $TimeoutSec
                 maxResponseBytes = $MaxResponseBytes
                 allowPrivateNetwork = [bool]$AllowPrivateNetwork
+                allowFileScheme = [bool]$AllowFileScheme
+                fileRoots = $script:NormalizedFileRoots
                 routes = @("GET /health", "GET /proxy?url=...", "POST /proxy")
             }
             return
@@ -458,7 +635,7 @@ function Handle-Context {
                 method = "GET"
                 headers = (Convert-RequestHeadersToHashtable -Headers $request.Headers)
             }
-            $result = Invoke-ProxyRequest -Spec $spec -HttpClient $HttpClient -AllowPrivateTargets ([bool]$AllowPrivateNetwork) -MaxBytes $MaxResponseBytes
+            $result = Invoke-ProxyRequest -Spec $spec -HttpClient $HttpClient -AllowPrivateTargets ([bool]$AllowPrivateNetwork) -AllowFileTargets ([bool]$AllowFileScheme) -AllowedFileRoots $script:NormalizedFileRoots -MaxBytes $MaxResponseBytes
             Write-UpstreamResponse -Response $response -Request $request -Result $result
             return
         }
@@ -481,7 +658,7 @@ function Handle-Context {
             }
             $targetUrl = if ($null -ne $spec.PSObject.Properties["url"]) { [string]$spec.url } else { "" }
 
-            $result = Invoke-ProxyRequest -Spec $spec -HttpClient $HttpClient -AllowPrivateTargets ([bool]$AllowPrivateNetwork) -MaxBytes $MaxResponseBytes
+            $result = Invoke-ProxyRequest -Spec $spec -HttpClient $HttpClient -AllowPrivateTargets ([bool]$AllowPrivateNetwork) -AllowFileTargets ([bool]$AllowFileScheme) -AllowedFileRoots $script:NormalizedFileRoots -MaxBytes $MaxResponseBytes
             $returnMode = if ($null -ne $spec.PSObject.Properties["returnMode"]) { [string]$spec.returnMode } else { "auto" }
             $returnMode = $returnMode.ToLowerInvariant()
             if ($returnMode -notin @("auto", "text", "base64")) {
@@ -560,6 +737,23 @@ function Handle-Context {
     }
 }
 
+try {
+    $script:NormalizedFileRoots = @(
+        foreach ($root in $FileRoot) {
+            if (-not [string]::IsNullOrWhiteSpace($root)) {
+                Resolve-ExistingDirectoryPath -PathValue $root -Description "File root"
+            }
+        }
+    )
+    if ([bool]$AllowFileScheme -and $script:NormalizedFileRoots.Count -eq 0) {
+        throw "-AllowFileScheme requires at least one -FileRoot /path/to/dir"
+    }
+}
+catch {
+    Write-Error $_.Exception.Message
+    exit 1
+}
+
 $handler = [System.Net.Http.HttpClientHandler]::new()
 $handler.AllowAutoRedirect = $true
 $handler.UseProxy = $false
@@ -592,7 +786,11 @@ $null = Register-EngineEvent PowerShell.Exiting -Action {
 }
 
 $allowPrivateNetworkText = ([bool]$AllowPrivateNetwork).ToString().ToLowerInvariant()
-Write-Host "MyBookmarks local proxy listening on $prefix (allow_private_network=$allowPrivateNetworkText)"
+$allowFileSchemeText = ([bool]$AllowFileScheme).ToString().ToLowerInvariant()
+Write-Host "MyBookmarks local proxy listening on $prefix (allow_private_network=$allowPrivateNetworkText, allow_file_scheme=$allowFileSchemeText)"
+if ([bool]$AllowFileScheme) {
+    Write-Host ("Allowed file roots: " + ($script:NormalizedFileRoots -join ", "))
+}
 Write-Host "Routes: GET /health, GET /proxy?url=..., POST /proxy"
 Write-Host "Press Ctrl+C to stop."
 
